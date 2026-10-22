@@ -67,7 +67,7 @@ variable "alert_emails" {
 
 variable "github_repository" {
   type    = string
-  default = "TanayJyot/VocaLocate"
+  default = "UofT-CSC490-F2026/VocaLocate"
 }
 
 variable "state_bucket" {
