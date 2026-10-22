@@ -9,6 +9,10 @@ pipeline/lake/
 *.duckdb
 *.duckdb.tmp
 
+# Demo outputs
+demo_out/
+demo/demo_out/
+
 # Terraform: providers, local state and real variable values never go into git.
 .terraform/
 *.tfstate

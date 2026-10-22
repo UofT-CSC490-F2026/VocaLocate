@@ -1,0 +1,136 @@
+"""A generic SFX dataset with a metadata CSV: references, extra candidate SFX and imitations.
+
+This is the layout for datasets that come with semantic metadata (the
+SFX_Metadata wish-list schema), such as the Vocal Imitation Set with its
+same-class recordings or our synthetic demo set. Layout:
+
+    metadata.csv with columns
+        file, role, sound_id, imitates, category, tags, recording_id, description, imitator_id
+    and optionally text_hint, hint_type; plus the audio files it lists (paths relative to the CSV).
+
+* role is reference (a sound with imitations), library (an extra candidate SFX
+  with no imitations, e.g. another take or a same-class recording), imitation, or
+  unpaired_imitation (an imitation kept only as a training negative, such as a rejected
+  or practice take: it gets its target's group key and split but never forms a pair).
+* imitates is the sound_id of the reference an imitation imitates.
+* tags are separated by ";".
+* An imitation with a text_hint becomes a voice, text and target triple in the
+  queries table, like the team recordings.
+* recording_id groups clips cut from the same original recording. All clips of
+  a recording, and the imitations of its reference, share a group key and so
+  always land in the same split. A recording may have at most one reference.
+"""
+
+from __future__ import annotations
+
+import csv
+import hashlib
+from pathlib import Path
+
+from . import IngestResult, RawFile
+
+SOURCE = "sfx_meta"
+VERSION = "1.0"
+ROLES = {"reference", "library", "imitation", "unpaired_imitation"}
+IMITATION_ROLES = {"imitation", "unpaired_imitation"}
+
+
+def _clean(value: str | None) -> str | None:
+    value = (value or "").strip()
+    return value or None
+
+
+def ingest(root: Path) -> IngestResult:
+    meta = root / "metadata.csv"
+    if not meta.exists():
+        raise FileNotFoundError(f"SFX metadata manifest not found at {meta}")
+    with open(meta, newline="", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    return ingest_rows(rows, root)
+
+
+def ingest_rows(
+    rows: list[dict], root: Path, source: str = SOURCE, version: str = VERSION, licence: str | None = None
+) -> IngestResult:
+    """Turn metadata rows (the metadata.csv columns) into raw files, SFX metadata and text-hint queries.
+
+    Other datasets with semantic metadata (e.g. the Vocal Imitation Set) convert their own
+    metadata to these rows and call this under their own source name. `file` may be absolute.
+    """
+    recording_of: dict[str, str] = {}
+    reference_of_recording: dict[str, str] = {}
+    for row in rows:
+        role = row["role"].strip()
+        if role not in ROLES:
+            raise ValueError(f"{row['file']}: unknown role {role!r}")
+        if role in IMITATION_ROLES:
+            continue
+        sound_id = row["sound_id"].strip()
+        recording = _clean(row.get("recording_id")) or sound_id
+        recording_of[sound_id] = recording
+        if role == "reference":
+            other = reference_of_recording.setdefault(recording, sound_id)
+            if other != sound_id:
+                raise ValueError(f"recording {recording!r} has two references: {other!r} and {sound_id!r}")
+
+    files, metadata, queries, missing = [], [], [], []
+    for row in rows:
+        path = root / row["file"]
+        if not path.exists():
+            missing.append(row["file"])
+            continue
+        role = row["role"].strip()
+        if role in IMITATION_ROLES:
+            target = row["imitates"].strip()
+            recording = recording_of.get(target)
+            group = f"{source}:{recording}" if target in reference_of_recording.values() else None
+            files.append(
+                RawFile(
+                    source=source,
+                    source_version=version,
+                    source_key=row["file"],
+                    path=path,
+                    role=role,
+                    label=_clean(row.get("category")),
+                    group_key=group,
+                    imitator_id=_clean(row.get("imitator_id")),
+                    licence=licence,
+                )
+            )
+            hint = _clean(row.get("text_hint"))
+            if hint and group and role == "imitation":
+                queries.append(
+                    {
+                        "query_id": hashlib.sha256(f"{row['file']}|{hint}".encode()).hexdigest()[:32],
+                        "source_key": row["file"],
+                        "text_hint": hint,
+                        "hint_type": _clean(row.get("hint_type")),
+                        "target_group_key": group,
+                    }
+                )
+            continue
+        sound_id = row["sound_id"].strip()
+        tags = [t.strip() for t in (row.get("tags") or "").split(";") if t.strip()]
+        files.append(
+            RawFile(
+                source=source,
+                source_version=version,
+                source_key=row["file"],
+                path=path,
+                role=role,
+                label=_clean(row.get("category")),
+                group_key=f"{source}:{recording_of[sound_id]}",
+                licence=licence,
+                extra={"sound_id": sound_id},
+            )
+        )
+        metadata.append(
+            {
+                "source_key": row["file"],
+                "category": _clean(row.get("category")),
+                "description": _clean(row.get("description")),
+                "tags": tags or None,
+                "recording_id": recording_of[sound_id],
+            }
+        )
+    return IngestResult(files=files, queries=queries, metadata=metadata, missing=missing)

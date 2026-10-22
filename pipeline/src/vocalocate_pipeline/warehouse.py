@@ -20,11 +20,14 @@ VIEWS = {
     "v_training_pairs": """
         SELECT p.source, p.group_key, s.split,
                i.clip_id AS imitation_clip_id, i.clean_path AS imitation_path, i.imitator_id,
-               r.clip_id AS reference_clip_id, r.clean_path AS reference_path, r.label
+               r.clip_id AS reference_clip_id, r.clean_path AS reference_path, r.label,
+               fi.feature_path AS imitation_feature_path, fr.feature_path AS reference_feature_path
         FROM pairs p
         JOIN clips i ON i.source = p.source AND i.clip_id = p.imitation_clip_id AND i.status = 'ok'
         JOIN clips r ON r.source = p.source AND r.clip_id = p.reference_clip_id AND r.status = 'ok'
         JOIN splits s ON s.source = r.source AND s.clip_id = r.clip_id
+        LEFT JOIN features fi ON fi.source = i.source AND fi.clip_id = i.clip_id
+        LEFT JOIN features fr ON fr.source = r.source AND fr.clip_id = r.clip_id
     """,
     # Voice, text and target triples. The target can live in any source.
     "v_triples": """
@@ -44,6 +47,49 @@ VIEWS = {
         JOIN clips c ON c.source = 'library_' || lf.library AND c.source_key = lf.path AND c.status = 'ok'
         JOIN features f ON f.source = c.source AND f.clip_id = c.clip_id
         WHERE lf.status = 'active'
+    """,
+    # Candidate SFX for mining and evaluation: clean references and library clips of
+    # dataset sources, with their split and any semantic metadata (category falls back
+    # to the dataset label).
+    "v_sfx_candidates": """
+        SELECT c.source, c.clip_id, c.role, c.group_key, s.split, c.clean_path, f.feature_path,
+               coalesce(m.category, c.label) AS category, m.tags, m.recording_id, m.description
+        FROM clips c
+        JOIN splits s ON s.source = c.source AND s.clip_id = c.clip_id
+        JOIN features f ON f.source = c.source AND f.clip_id = c.clip_id
+        LEFT JOIN sfx_metadata m ON m.source = c.source AND m.clip_id = c.clip_id
+        WHERE c.status = 'ok' AND c.role IN ('reference', 'library') AND c.source NOT LIKE 'library_%'
+    """,
+    # Imitations kept only as training negatives (rejected or practice takes), with the reference
+    # they imitate and its metadata. They share that reference's split, so a negative for a train
+    # sound never comes from a test sound's imitations.
+    "v_unpaired_imitations": """
+        SELECT u.source, u.clip_id, u.group_key, s.split, f.feature_path, u.imitator_id,
+               r.clip_id AS target_clip_id, coalesce(m.category, r.label) AS category, m.tags
+        FROM clips u
+        JOIN splits s ON s.source = u.source AND s.clip_id = u.clip_id
+        JOIN features f ON f.source = u.source AND f.clip_id = u.clip_id
+        JOIN clips r ON r.source = u.source AND r.group_key = u.group_key AND r.role = 'reference'
+                    AND r.status = 'ok'
+        LEFT JOIN sfx_metadata m ON m.source = r.source AND m.clip_id = r.clip_id
+        WHERE u.status = 'ok' AND u.role = 'unpaired_imitation'
+    """,
+    # Text-only queries (captions) with their target clip, for testing the CLAP text branch.
+    "v_captions": """
+        SELECT k.caption_id, k.source, k.caption, k.language, k.annotator_id, s.split,
+               c.clip_id AS target_clip_id, c.clean_path AS target_path, m.category, m.recording_id
+        FROM captions k
+        JOIN clips c ON c.source = k.source AND c.clip_id = k.clip_id AND c.status = 'ok'
+        JOIN splits s ON s.source = c.source AND s.clip_id = c.clip_id
+        LEFT JOIN sfx_metadata m ON m.source = c.source AND m.clip_id = c.clip_id
+    """,
+    # Mined negatives with the metadata of the target and the negative, for analysis.
+    "v_hard_negatives": """
+        SELECT h.*, pm.category AS positive_category, nm.category AS negative_category,
+               nm.recording_id AS negative_recording_id
+        FROM hard_negatives h
+        LEFT JOIN sfx_metadata pm ON pm.clip_id = h.positive_clip_id
+        LEFT JOIN sfx_metadata nm ON nm.clip_id = h.negative_clip_id
     """,
     # Data-quality summary per source.
     "v_clip_quality": """

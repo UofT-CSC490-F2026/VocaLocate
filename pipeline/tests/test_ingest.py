@@ -1,4 +1,5 @@
 import csv
+from pathlib import Path
 from datetime import datetime, timezone
 
 import pytest
@@ -39,6 +40,52 @@ def test_vimsketch_falls_back_to_listing_folders(vimsketch_dir):
     assert len(ingest("vimsketch", vimsketch_dir).files) == 8
 
 
+def test_vimsketch_labels_both_halves_and_adds_vocalsketch_excluded_imitations(vimsketch_release):
+    result = ingest("vimsketch", vimsketch_release)
+    files = {f.source_key: f for f in result.files}
+    meta = {m["source_key"]: m for m in result.metadata}
+    vim = "Vim_Sketch_Dataset/references/"
+    # Vocal Imitation Set half: tags are the AudioSet ontology path, so the two cat sounds share four.
+    growl = meta[vim + "001_000Animal_Domestic animals_pets_Cat_Growling.wav"]
+    hiss = meta[vim + "002_001Animal_Domestic animals_pets_Cat_Hiss.wav"]
+    assert len(set(growl["tags"]) & set(hiss["tags"])) == 4
+    # VocalSketch half: category is the subset, tags the subset plus the label's words.
+    zipper = meta[vim + "304_002-zipper_opening-everyday.wav"]
+    assert zipper["category"] == "everyday" and set(zipper["tags"]) == {"everyday", "zipper", "opening"}
+    # Excluded VocalSketch takes, by recording or by label alone, become unpaired imitations of their
+    # sound; included ones are already in VimSketch and are not read twice.
+    unpaired = [f for f in result.files if f.role == "unpaired_imitation"]
+    assert sorted(Path(f.source_key).name for f in unpaired) == ["abyss - 1.wav", "zipper - 2.wav", "zipper - 4.wav"]
+    zipper_group = files[vim + "304_002-zipper_opening-everyday.wav"].group_key
+    assert {f.group_key for f in unpaired if "zipper" in f.source_key} == {zipper_group}
+    assert not any("zipper - 3" in k for k in files)
+
+
+def test_vimsketch_without_vocalsketch_has_no_unpaired_imitations(vimsketch_release):
+    import shutil
+
+    shutil.rmtree(vimsketch_release / "interactiveaudiolab-VocalSketchDataSet-6c9f381")
+    result = ingest("vimsketch", vimsketch_release / "Vim_Sketch_Dataset")
+    assert len(result.files) == 8 and not any(f.role == "unpaired_imitation" for f in result.files)
+
+
+def test_qvim_eval_reads_the_released_layout(tmp_path):
+    root = tmp_path / "EVALDataset"
+    base = root / "EVALCheck2"
+    write(base / "Items" / "Birds" / "Bird Noise - 3.wav", tone(500, 2, 32_000), 32_000)
+    for q in ("Birds3-01.wav", "Birds3-02.wav"):
+        write(base / "Queries" / "Birds" / q, tone(520, 1, 32_000), 32_000)
+    with open(base / "EVAL Dataset - EVAL Dataset.csv", "w", newline="", encoding="utf-8") as f:
+        f.write(",,,Queries,,\n")
+        w = csv.writer(f)
+        w.writerow(["Label", "Class", "Items", "Query 1", "Query 2", "Query 3"])
+        w.writerow(["3", "Birds", "Bird Noise - 3.wav", "Birds3-01.wav", "Birds3-02.wav", ""])
+    files = _by_key(ingest("qvim_eval", root))
+    assert set(files) == {"Items/Birds/Bird Noise - 3.wav", "Queries/Birds/Birds3-01.wav", "Queries/Birds/Birds3-02.wav"}
+    assert {f.group_key for f in files.values()} == {"qvim_eval:Birds/Bird Noise - 3.wav"}
+    assert {f.source for f in files.values()} == {"qvim_eval"}
+
+
 def test_qvim_dev_reads_up_to_three_queries_per_reference(qvim_dir):
     files = _by_key(ingest("qvim_dev", qvim_dir))
     assert set(files) == {"Items/Dog/bark.wav", "Queries/Dog/q1.wav", "Queries/Dog/q2.wav"}
@@ -49,7 +96,7 @@ def test_team_recordings_produce_text_hint_queries(tmp_path):
     root = tmp_path / "team"
     write(root / "carmen" / "creak.wav", tone(300, 1, 48_000), 48_000)
     write(root / "carmen" / "thud.wav", tone(80, 1, 48_000), 48_000)
-    with open(root / "recordings.csv", "w", newline="") as f:
+    with open(root / "recordings.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["file", "imitator_id", "target_group_key", "text_hint", "hint_type"])
         w.writerow(["carmen/creak.wav", "carmen", "esc50:200", "wooden", "material"])
@@ -72,3 +119,16 @@ def test_manifest_rows_match_the_raw_files_schema(esc50_dir):
 def test_unknown_source_is_an_error(tmp_path):
     with pytest.raises(ValueError, match="Unknown source"):
         ingest("audioset", tmp_path)
+
+
+def test_qvim_dev_accepts_the_zenodo_release_layout(qvim_dir, tmp_path):
+    from vocalocate_pipeline.ingest import ingest
+
+    # DEVDataset.zip: everything inside DEVUpdatedDataset/, index named DEVUpdateComplete.csv.
+    release = tmp_path / "qvim-release"
+    (qvim_dir / "DEV Dataset.csv").rename(qvim_dir / "DEVUpdateComplete.csv")
+    release.mkdir()
+    qvim_dir.rename(release / "DEVUpdatedDataset")
+    result = ingest("qvim_dev", release)
+    assert sorted(f.role for f in result.files) == ["imitation", "imitation", "reference"]
+    assert not result.missing
