@@ -35,7 +35,7 @@ digraph G {
   }
 
   modal [label="Modal (GPU)\nrecipe_app.py\npull_lake → train → publish\n(OIDC role, no keys)", fillcolor="#e8f0fe", color="#4a6fa5"];
-  backup [label="AWS ca-west-1: backup stack\nraw, lake, models copies\n(separate Terraform state;\ndeletes not replicated)", fillcolor="#fde8e8", color="#b05a5a"];
+  backup [label="AWS us-east-1: backup stack\nraw, lake, models copies\n(separate Terraform state;\ndeletes not replicated)", fillcolor="#fde8e8", color="#b05a5a"];
 
   dev -> raw;
   gha -> ecr;
