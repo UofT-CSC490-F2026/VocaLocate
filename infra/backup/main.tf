@@ -1,4 +1,4 @@
-# Backup copies of the prod lake buckets, in a second region (Calgary) and in their own Terraform
+# Backup copies of the prod lake buckets, in a second region (N. Virginia) and in their own Terraform
 # state. Prod replicates every new object here (modules/data_lake), but delete markers are not
 # replicated, so destroying prod, or deleting objects in it, leaves these copies intact. This is
 # what the disaster-recovery demo restores the data from.
@@ -45,7 +45,7 @@ module "bucket" {
 variable "region" {
   description = "A different region from prod (ca-central-1), so one regional outage cannot take both."
   type        = string
-  default     = "ca-west-1"
+  default     = "us-east-1"
 }
 
 output "bucket_arns" {
