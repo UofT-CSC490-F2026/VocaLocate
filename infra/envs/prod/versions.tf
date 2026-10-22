@@ -26,7 +26,7 @@ provider "aws" {
       Project     = "vocalocate"
       Environment = "prod"
       ManagedBy   = "terraform"
-      Repository  = "TanayJyot/VocaLocate/infra/envs/prod"
+      Repository  = "UofT-CSC490-F2026/VocaLocate/infra/envs/prod"
     }
   }
 }
