@@ -14,7 +14,7 @@ computer, as promised in A1. AWS holds only the team's datasets, the processed l
 ```
 infra/
   bootstrap/              once per account: Terraform state bucket, GitHub and Modal OIDC providers, budget
-  backup/                 prod's backup buckets in ca-west-1, in their own state (survives a prod teardown)
+  backup/                 prod's backup buckets in us-east-1, in their own state (survives a prod teardown)
   envs/dev/, envs/prod/   one root per environment: backend, provider, sizes, safety settings
   modules/
     vocalocate_stack/     everything one environment needs; both envs call only this
@@ -73,7 +73,7 @@ The same commands work against local folders, which is how the tests run them.
 | Pipeline config | `pipeline/configs/dev.toml` (1 worker) | `pipeline/configs/prod.toml` (4 workers, one per vCPU) |
 | Buckets | destroyed with their data (`force_destroy`) | refuse to be destroyed while they hold data |
 | Old object versions kept | 7 days | 30 days |
-| Backup | none | every bucket replicated to `infra/backup` (ca-west-1) |
+| Backup | none | every bucket replicated to `infra/backup` (us-east-1) |
 | Schedules | none | warehouse rebuild + report every Monday 06:00 Toronto |
 | Logs kept | 7 days | 90 days |
 | Modal environment allowed to assume the training role | `dev` | `main` |
