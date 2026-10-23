@@ -7,7 +7,7 @@ variable "environment" {
 }
 
 variable "github_repository" {
-  description = "owner/name of the repository whose workflows may assume the CI role."
+  description = "Repository whose workflows may assume the CI role, as GitHub writes it in the token's sub claim (owner@owner_id/repo@repo_id)."
   type        = string
 }
 

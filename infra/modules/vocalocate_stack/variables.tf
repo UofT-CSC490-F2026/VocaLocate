@@ -66,8 +66,11 @@ variable "alert_emails" {
 }
 
 variable "github_repository" {
+  # GitHub writes our repository into its OIDC tokens with the organization's and repository's
+  # numeric IDs (owner@owner_id/repo@repo_id), so a renamed or re-created repository with the same
+  # name cannot assume the CI role.
   type    = string
-  default = "UofT-CSC490-F2026/VocaLocate"
+  default = "UofT-CSC490-F2026@312194999/VocaLocate@1388391727"
 }
 
 variable "state_bucket" {
