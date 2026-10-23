@@ -14,6 +14,9 @@ from .config import SplitConfig
 
 # Sources whose every clip is held out for evaluation.
 BENCHMARK_SOURCES = {"qvim_dev", "qvim_eval", "captdure"}
+# Sources whose every clip is training data: the fine-grained set's value is its within-class
+# negatives, which need each whole class in the training split.
+TRAIN_SOURCES = {"fgvis"}
 
 
 def split_for_group(group_key: str, cfg: SplitConfig) -> str:
@@ -35,6 +38,8 @@ def assign_splits(clips: list[dict], cfg: SplitConfig) -> list[dict]:
         group = clip["group_key"] or f"{clip['source']}:clip:{clip['clip_id']}"
         if clip["source"] in BENCHMARK_SOURCES:
             split, strategy = "test", "benchmark"
+        elif clip["source"] in TRAIN_SOURCES:
+            split, strategy = "train", "train_only"
         else:
             split, strategy = split_for_group(group, cfg), f"group_hash(seed={cfg.seed})"
         rows.append(
