@@ -73,10 +73,12 @@ def _registry() -> dict[str, Callable[[Path], IngestResult]]:
         "vis": vocal_imitation_set.ingest,
         "captdure": captdure.ingest,
         "fgvis": fine_grained_vis.ingest,
+        "vis_extras": vocal_imitation_set.ingest_extras,
     }
 
 
-SOURCES = ("esc50", "vimsketch", "qvim_dev", "qvim_eval", "team", "sfx_meta", "vis", "captdure", "fgvis")
+SOURCES = ("esc50", "vimsketch", "qvim_dev", "qvim_eval", "team", "sfx_meta", "vis", "captdure", "fgvis",
+           "vis_extras")
 
 
 def ingest(source: str, root: Path) -> IngestResult:

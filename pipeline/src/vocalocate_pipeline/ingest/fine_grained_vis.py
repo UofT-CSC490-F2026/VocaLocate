@@ -17,31 +17,29 @@ What it adds is same-class negatives that are known to be wrong: every recording
 its own imitations, so an imitation of one cat hiss is a true negative for the other eight.
 
 * Every recording is a reference with its own group, so it pairs only with its own imitations.
-* category is written the way the VimSketch ingester names the same class
-  ("Animal_Domestic animals_pets_Cat_Hiss"), and tags are its parts. In a lake that also holds
-  VimSketch, version B's same-category tier then holds a class's 9 recordings here plus its
-  VimSketch reference: 10 recordings per class.
+* category and tags are exactly what the VimSketch ingester gives the same class
+  ("Animal_Domestic animals_pets_Cat_Hiss"), so in a lake that also holds VimSketch a class has
+  10 imitated recordings: its 9 here plus its VimSketch reference.
 * All of it goes to train (``TRAIN_SOURCES`` in splits.py): its value is the within-class
   negatives, which need the whole class in one split, and the QVIM sets are the test sets.
-* recording_id is the Freesound ID. In a lake that also holds the original Vocal Imitation Set
-  (source "vis"), these 108 recordings are byte-identical to `vis` library clips; whichever source
-  is ingested first keeps them, so use it with VimSketch, not with `vis`.
+* recording_id is the Freesound ID. These 108 recordings are byte-identical to Vocal Imitation
+  Set library clips (sources "vis" and "vis_extras"); the demo's loader keeps one copy of a clip
+  and prefers it as a reference.
 """
 
 from __future__ import annotations
 
 import csv
-import re
 from pathlib import Path
 
 from ..audio import AUDIO_EXTENSIONS
 from . import IngestResult
 from .sfx_meta import ingest_rows
+from .vimsketch import sound_metadata, vis_class_sound
 
 SOURCE = "fgvis"
 VERSION = "1.0"
 LICENCE = "CC BY 4.0 (dataset); per-recording Freesound licences in original_recordings_license.csv"
-_INDEX = re.compile(r"^\d+")
 
 
 def _read_table(path: Path, delimiter: str) -> list[dict]:
@@ -54,8 +52,8 @@ def _true(value: str) -> bool:
 
 
 def class_category(folder: str) -> str:
-    """'001Animal_Domestic animals_ pets_Cat_Hiss' -> 'Animal_Domestic animals_pets_Cat_Hiss' (VimSketch's name)."""
-    return _INDEX.sub("", folder).replace("_ ", "_").strip()
+    """'001Animal_Domestic animals_ pets_Cat_Hiss' -> 'Animal_Domestic animals_pets_Cat_Hiss' (VimSketch's category)."""
+    return sound_metadata(vis_class_sound(folder))[0]
 
 
 def find_root(root: Path) -> Path:
@@ -80,8 +78,7 @@ def build_rows(root: Path) -> list[dict]:
 
     rows, category_of = [], {}
     for folder in sorted(p for p in (fg / "original_recordings").iterdir() if p.is_dir()):
-        category = class_category(folder.name)
-        tags = [t for t in category.split("_") if t]
+        category, tags, _ = sound_metadata(vis_class_sound(folder.name))
         for path in sorted(p for p in folder.iterdir() if p.suffix.lower() in AUDIO_EXTENSIONS):
             category_of[path.name] = category
             rows.append({"file": rel("original_recordings", folder.name, path.name), "role": "reference",

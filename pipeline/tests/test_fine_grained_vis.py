@@ -47,3 +47,51 @@ def test_with_vimsketch_a_class_shares_one_category(cfg, fgvis_dir, vimsketch_re
                                    WHERE category = 'Animal_Domestic animals_pets_Cat_Hiss' GROUP BY ALL ORDER BY ALL""")
     assert rows == [("fgvis", 2), ("vimsketch", 1)]
     assert warehouse.query(cfg, "SELECT count(*) FROM v_cross_source_duplicates")[0][0] == 0
+
+
+def test_vis_class_names_follow_vimsketch():
+    from vocalocate_pipeline.ingest.vimsketch import vis_class_sound
+
+    assert (vis_class_sound("017Animal_Livestock_ farm animals_ working animals_Horse_Snort (horse)")
+            == "017Animal_Livestock_farm animals_working animals_Horse_Snort (horse).wav")
+    assert (vis_class_sound("282Source-ambiguous sounds_Deformable shell_Crumpling_ crinkling")
+            == "282Source_ambiguous sounds_Deformable shell_Crumpling_crinkling.wav")
+    assert (vis_class_sound("029Animal_Wild animals_Rodents_ rats_ mice_Mouse___3Samples")
+            == "029Animal_Wild animals_Rodents_rats_mice_Mouse_3Samples.wav")
+
+
+def _vis_release(root):
+    """A Vocal Imitation Set whose class is VimSketch's 001 (Cat Hiss): a reference and two extras."""
+    import csv
+
+    from conftest import _mk, tone, write
+
+    cls = "001Animal_Domestic animals_ pets_Cat_Hiss"
+    with open(_mk(root / "original_recordings_classes.txt"), "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, delimiter="\t")
+        w.writerow(["filename", "classname", "category_d1", "category_d2", "category_d3", "category_d4",
+                    "category_d5", "category_d6", "is_reference", "multi_labeled"])
+        for i, (name, ref) in enumerate([("hiss_ref.wav", "TRUE"), ("hiss_x.wav", "FALSE"), ("hiss_y.wav", "FALSE")]):
+            write(root / "original_recordings" / ("reference" if ref == "TRUE" else "non_reference") / name,
+                  tone(500 + 120 * i, 1.5, 44_100), 44_100)
+            w.writerow([name, cls, "Animal", "Domestic animals, pets", "Cat", "Hiss", "", "", ref, "FALSE"])
+    return root
+
+
+def test_vis_extras_are_library_clips_in_their_vimsketch_class_and_split(cfg, tmp_path, vimsketch_release):
+    from vocalocate_pipeline.splits import split_for_group
+
+    vis = _vis_release(tmp_path / "VocalImitationSet")
+    result = ingest("vis_extras", vis)
+    assert sorted((_name(f.source_key), f.role) for f in result.files) == [("hiss_x.wav", "library"),
+                                                                          ("hiss_y.wav", "library")]
+    key = "vimsketch:001Animal_Domestic animals_pets_Cat_Hiss.wav"
+    assert {f.group_key for f in result.files} == {key}
+    run_dataset_flow("vimsketch", vimsketch_release, cfg)
+    run_dataset_flow("vis_extras", vis, cfg)
+    rows = warehouse.query(cfg, """SELECT source, role, split FROM v_sfx_candidates
+                                   WHERE category = 'Animal_Domestic animals_pets_Cat_Hiss' ORDER BY ALL""")
+    split = split_for_group(key, cfg.splits)
+    assert rows == [("vimsketch", "reference", split), ("vis_extras", "library", split), ("vis_extras", "library", split)]
+    # No pairs: the extras are candidates only.
+    assert warehouse.query(cfg, "SELECT count(*) FROM v_training_pairs WHERE source = 'vis_extras'")[0][0] == 0
