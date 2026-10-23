@@ -20,4 +20,3 @@ demo/demo_out/
 *.tfvars
 !*.tfvars.example
 crash.log
-.terraform.lock.hcl

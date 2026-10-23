@@ -159,7 +159,8 @@ a teammate's reviewed `terraform plan` and `apply`.
 ## Disaster recovery (Part Five)
 
 Prod's data survives a full teardown because it is replicated to the backup stack, which has its
-own state and does not replicate deletes. Outline of the demo:
+own state and does not replicate deletes. The step-by-step script for the recording, with what to
+show at each step, is [disaster-recovery.md](disaster-recovery.md). Outline:
 
 ```bash
 cd infra/envs/prod
