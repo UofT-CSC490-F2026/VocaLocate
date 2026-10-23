@@ -20,6 +20,7 @@ verification.
 
 ```bash
 eval "$(aws configure export-credentials --profile tanay --format env)"   # Terraform cannot read `aws login` sessions
+export MSYS_NO_PATHCONV=1   # stops Git Bash rewriting /vocalocate/... log group names into Windows paths
 aws sts get-caller-identity --query Account --output text                  # 266727734425
 cd infra/envs/prod
 SHA=$(aws ecs describe-task-definition --task-definition vocalocate-prod-pipeline \
