@@ -397,6 +397,51 @@ The share of anchors whose semi-hard triplet is still active, from epoch 1 to ep
 - The winners also trained in ways we did not copy, such as their own epoch count and
   hyperparameter search. They report no ablation, so the size of their gain from C is not known.
 
+## Same-class negatives: the Fine-grained Vocal Imitation Set
+
+None of the negatives above can be "another recording of the same class" whose wrongness we know:
+- VimSketch has one recording per class.
+- The Vocal Imitation Set's ~9 extra recordings per class were never imitated.
+
+The [Fine-grained Vocal Imitation Set](https://zenodo.org/records/3538534) fills that gap for 12
+animal classes. Each class has 9 recordings (exactly those classes' Vocal Imitation Set extras),
+with 705 imitations of them.
+
+Three sources go into the VimSketch lake:
+- `fgvis`: the fine-grained set. Each of its 108 recordings pairs with its own imitations, and all of
+  it goes to train.
+- `vis_extras`: the Vocal Imitation Set's 2,633 un-imitated recordings, as library clips. Each one
+  takes the category and split of its class's VimSketch reference.
+- `vimsketch`, as before.
+
+Both new sources use VimSketch's class names. A fine-grained class then holds 10 imitated
+recordings, and every Vocal Imitation Set class gains about 9 un-imitated ones.
+
+| run | negatives |
+| --- | --- |
+| `shared` | none (the reference) |
+| `same_class` | other *imitated* recordings of the anchor's class (12 classes) |
+| `same_class_extras` | the same plus the class's un-imitated recordings (all 302 VIS classes) |
+| `random` | random SFX (control) |
+
+The four runs are set up so that only the negatives differ:
+- **Same data in every run.** All four load the three sources, with the fine-grained pairs repeated
+  4 times per epoch (`--oversample fgvis=4`), so enough batches hold a same-class triplet.
+- **What counts as a class.** It means the same category *and* tag set, so VocalSketch's coarse
+  subsets never count as one class.
+- **No fallback.** An anchor with no other recording of its class gets no triplet.
+
+```bash
+vocalocate-pipeline --config demo/configs/vimsketch.toml ingest-dataset --source fgvis --path ~/data/fgvis
+vocalocate-pipeline --config demo/configs/vimsketch.toml ingest-dataset --source vis_extras --path ~/data/VocalImitationSet
+VOCALOCATE_MODAL_GPU=L40S VOCALOCATE_MODAL_VOLUME=vocalocate-vim modal run --detach demo/modal/recipe_app.py \
+    --no-sync --source vimsketch+fgvis+vis_extras --oversample fgvis=4 --extra-bench qvim_eval \
+    --models shared,same_class,same_class_extras,random
+```
+
+The 108 fine-grained recordings are byte-identical to Vocal Imitation Set extras. The loader keeps
+one copy of each clip, as the imitated reference.
+
 ## The synthetic data
 
 `synth.py` writes a dataset in the `sfx_meta` layout so the demo runs offline
