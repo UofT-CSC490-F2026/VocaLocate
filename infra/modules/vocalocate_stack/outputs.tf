@@ -29,7 +29,7 @@ output "modal_role_arn" {
 output "modal_secret_command" {
   description = "Creates the Modal secret the training launcher reads (demo/modal/recipe_app.py)."
   value = join(" ", [
-    "modal secret create vocalocate-aws-${var.environment} --force",
+    "modal secret create vocalocate-aws-${var.environment} --force --env ${var.modal_environment}",
     "VOCALOCATE_AWS_ROLE_ARN=${module.access.modal_role_arn}",
     "VOCALOCATE_LAKE_URI=s3://${module.data_lake.bucket_names.lake}",
     "VOCALOCATE_MODELS_URI=s3://${module.data_lake.bucket_names.models}",

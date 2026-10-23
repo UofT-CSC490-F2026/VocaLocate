@@ -77,6 +77,11 @@ run "dev_stack" {
     condition     = strcontains(output.modal_secret_command, "VOCALOCATE_LAKE_URI=s3://vocalocate-dev-lake-123456789012")
     error_message = "The Modal secret must point training at this environment's lake."
   }
+
+  assert {
+    condition     = strcontains(output.modal_secret_command, "--env dev")
+    error_message = "The Modal secret must be created in the Modal environment whose apps the role trusts."
+  }
 }
 
 run "rejects_unknown_environment" {
