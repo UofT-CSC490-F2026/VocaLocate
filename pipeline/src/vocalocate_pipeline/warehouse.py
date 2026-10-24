@@ -83,13 +83,115 @@ VIEWS = {
         JOIN splits s ON s.source = c.source AND s.clip_id = c.clip_id
         LEFT JOIN sfx_metadata m ON m.source = c.source AND m.clip_id = c.clip_id
     """,
-    # Mined negatives with the metadata of the target and the negative, for analysis.
+    # --- The A2 Part One wish-list schemas, with exactly their column names (NULL where no dataset
+    # has the field), then a few of our own columns. clip_id plays sound_id and imitation_id.
+    # SFX_Folder: the folders a user's libraries index.
+    "v_sfx_folder": """
+        SELECT root_id AS folder_id, root_path AS folder_path, index_status, last_indexed_at, library
+        FROM library_roots
+    """,
+    # SFX_File: every clean SFX, from datasets and libraries. file_path is relative to the folder
+    # for library files and to the dataset root otherwise; format fields describe the original file.
+    "v_sfx_file": """
+        SELECT lf.root_id AS folder_id, c.clip_id AS sound_id, coalesce(lf.rel_path, c.source_key) AS file_path,
+               c.orig_format AS audio_format, c.orig_sample_rate AS sample_rate, c.orig_bit_depth AS bit_depth,
+               c.orig_channels AS channel, c.orig_duration_sec AS duration_sec,
+               coalesce(m.category, c.label) AS category, m.description, m.tags, c.source
+        FROM clips c
+        LEFT JOIN library_files lf ON c.source = 'library_' || lf.library AND lf.path = c.source_key
+                                  AND lf.status = 'active'
+        LEFT JOIN sfx_metadata m ON m.source = c.source AND m.clip_id = c.clip_id
+        WHERE c.status = 'ok' AND c.role IN ('reference', 'library')
+    """,
+    # Vocal_Imitation: every clean imitation. noise_level_db is the original recording's noise floor (dBFS).
+    "v_vocal_imitation": """
+        SELECT c.clip_id AS imitation_id, c.clean_path AS imitation_path, c.duration_sec,
+               im.vocalization_type, im.device_type, c.noise_floor_dbfs AS noise_level_db, c.source, c.imitator_id
+        FROM clips c
+        LEFT JOIN imitation_metadata im ON im.source = c.source AND im.clip_id = c.clip_id
+        WHERE c.status = 'ok' AND c.role IN ('imitation', 'unpaired_imitation')
+    """,
+    # Retrieval_Query: recorded queries (an imitation with a text hint) and, for every other paired
+    # imitation, a query generated from the target's metadata: its category and tags as the text.
+    # A target outside the query's source (team recordings) is the one clean SFX its group key names:
+    # the group's reference if it has exactly one, else its only clip. A query's split is its own
+    # (team: val or test), else its imitation's or target's, which are the same for a pair.
+    # Benchmark sources are left to v_qvim_benchmark.
+    "v_retrieval_query": """
+        WITH candidates AS (
+            SELECT group_key, clip_id, source, role,
+                   sum(CASE WHEN role = 'reference' THEN 1 ELSE 0 END) OVER (PARTITION BY group_key) AS n_ref,
+                   count(*) OVER (PARTITION BY group_key) AS n
+            FROM clips WHERE status = 'ok' AND role IN ('reference', 'library') AND group_key IS NOT NULL
+        ),
+        targets AS (
+            SELECT group_key, clip_id, source FROM candidates
+            WHERE (n_ref = 1 AND role = 'reference') OR (n_ref = 0 AND n = 1)
+        ),
+        generated AS (
+            SELECT source, imitation_clip_id, reference_clip_id, source AS reference_source FROM pairs
+            UNION ALL
+            SELECT i.source, i.clip_id, t.clip_id, t.source
+            FROM clips i JOIN targets t ON t.group_key = i.group_key AND t.source <> i.source
+            WHERE i.status = 'ok' AND i.role = 'imitation'
+        ),
+        queries_all AS (
+            SELECT q.query_id, q.imitation_clip_id AS imitation_id, q.text_hint AS text_descriptor,
+                   coalesce(q.target_clip_id, t.clip_id) AS target_sound_id,
+                   CASE WHEN q.target_clip_id IS NOT NULL THEN q.source ELSE t.source END AS target_source,
+                   q.split, q.hint_type, 'recorded' AS query_type
+            FROM queries q
+            LEFT JOIN targets t ON t.group_key = q.target_group_key
+            UNION ALL
+            SELECT md5('meta:' || g.imitation_clip_id || g.reference_clip_id), g.imitation_clip_id,
+                   nullif(concat_ws(', ',
+                                    CASE WHEN list_contains(m.tags, coalesce(m.category, r.label)) THEN NULL
+                                         ELSE coalesce(m.category, r.label) END,
+                                    nullif(array_to_string(m.tags, ', '), '')), ''),
+                   g.reference_clip_id, g.reference_source, si.split, CAST(NULL AS VARCHAR), 'metadata'
+            FROM generated g
+            JOIN clips r ON r.source = g.reference_source AND r.clip_id = g.reference_clip_id
+            LEFT JOIN sfx_metadata m ON m.source = r.source AND m.clip_id = r.clip_id
+            LEFT JOIN splits si ON si.source = g.source AND si.clip_id = g.imitation_clip_id
+            WHERE g.source NOT IN ('qvim_dev', 'qvim_eval')
+              AND NOT EXISTS (SELECT 1 FROM queries q
+                              WHERE q.source = g.source AND q.imitation_clip_id = g.imitation_clip_id)
+        )
+        SELECT a.query_id, a.imitation_id, a.text_descriptor, a.target_sound_id,
+               coalesce(a.split, s.split) AS split, a.hint_type, a.query_type
+        FROM queries_all a
+        LEFT JOIN splits s ON s.source = a.target_source AND s.clip_id = a.target_sound_id
+    """,
+    # QVIM_Benchmark_Data: the challenge's DEV and EVAL query/target pairs.
+    "v_qvim_benchmark": """
+        SELECT imitation_clip_id AS benchmark_query_id, imitation_clip_id AS imitation_id,
+               reference_clip_id AS target_sound_id,
+               CASE source WHEN 'qvim_dev' THEN 'Development' ELSE 'Evaluation' END AS benchmark_split
+        FROM pairs WHERE source IN ('qvim_dev', 'qvim_eval')
+    """,
+    # Relevance_Judgement.
+    "v_relevance_judgement": """
+        SELECT query_id, candidate_clip_id AS candidate_sound_id, relevance, rater_id FROM relevance_judgements
+    """,
+    # Imitator profiles.
+    "v_imitator_profile": """
+        SELECT imitator_id, role, years_experience, first_language, music_training, consent_scope, source
+        FROM imitators
+    """,
+    # Mined negatives with the metadata of the target and the negative, for analysis, and the best
+    # human relevance rating of the negative for that imitation (NULL if never judged): a judged
+    # relevant "negative" is a false negative.
     "v_hard_negatives": """
         SELECT h.*, pm.category AS positive_category, nm.category AS negative_category,
-               nm.recording_id AS negative_recording_id
+               nm.recording_id AS negative_recording_id, j.judged_relevance
         FROM hard_negatives h
         LEFT JOIN sfx_metadata pm ON pm.clip_id = h.positive_clip_id
         LEFT JOIN sfx_metadata nm ON nm.clip_id = h.negative_clip_id
+        LEFT JOIN (
+            SELECT q.imitation_id, r.candidate_clip_id, max(r.relevance) AS judged_relevance
+            FROM relevance_judgements r JOIN v_retrieval_query q ON q.query_id = r.query_id
+            GROUP BY q.imitation_id, r.candidate_clip_id
+        ) j ON j.imitation_id = h.imitation_clip_id AND j.candidate_clip_id = h.negative_clip_id
     """,
     # Data-quality summary per source.
     "v_clip_quality": """
