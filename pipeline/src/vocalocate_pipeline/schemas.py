@@ -4,6 +4,22 @@ IDs line up with the A2 Part One wish-list schemas: `clip_id` plays the role
 of sound_id / imitation_id (it is the SHA-256 of the raw file, so the same
 file always gets the same ID), `imitator_id` links to imitator profiles and
 `query_id` links text hints to imitations.
+
+Where each Part One schema lives (the warehouse has a view per schema with
+exactly its column names, see warehouse.py):
+
+    SFX_Folder            library_roots                          v_sfx_folder
+    SFX_File              clips + library_files + sfx_metadata   v_sfx_file
+    SFX_Metadata          sfx_metadata                           v_sfx_candidates
+    Vocal_Imitation       clips + imitation_metadata             v_vocal_imitation
+    Retrieval_Query       queries (+ generated from metadata)    v_retrieval_query
+    QVIM_Benchmark_Data   pairs of qvim_dev / qvim_eval          v_qvim_benchmark
+    Relevance_Judgement   relevance_judgements                   v_relevance_judgement
+    Imitator profiles     imitators                              v_imitator_profile
+    Search session logs   search_sessions (written by the app)
+
+Columns added after the first release are nullable, so Parquet files written
+before them still load (the warehouse reads with union_by_name).
 """
 
 from __future__ import annotations
