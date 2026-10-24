@@ -13,7 +13,7 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-from . import IngestResult, RawFile
+from . import IngestBuilder, IngestResult
 
 SOURCE = "qvim_dev"
 VERSION = "dev"
@@ -41,31 +41,7 @@ def ingest(root: Path) -> IngestResult:
 
 def read_challenge_set(root: Path, meta: Path, source: str, version: str) -> IngestResult:
     """Read a QVIM challenge set (DEV or EVAL): one row per reference, up to three queries each."""
-    files: list[RawFile] = []
-    missing: list[str] = []
-    seen: set[str] = set()
-
-    def add(key: str, role: str, cls: str, group: str) -> None:
-        if key in seen:
-            return
-        seen.add(key)
-        path = root / key
-        if not path.exists():
-            missing.append(key)
-            return
-        files.append(
-            RawFile(
-                source=source,
-                source_version=version,
-                source_key=key,
-                path=path,
-                role=role,
-                label=cls,
-                group_key=group,
-                licence=LICENCE,
-            )
-        )
-
+    b = IngestBuilder(root, source, version, LICENCE)
     with open(meta, newline="", encoding="utf-8") as f:
         next(f)  # the file has a title row above the header
         for row in csv.DictReader(f):
@@ -73,8 +49,8 @@ def read_challenge_set(root: Path, meta: Path, source: str, version: str) -> Ing
             if not cls or not item:
                 continue
             group = f"{source}:{cls}/{item}"
-            add(f"Items/{cls}/{item}", "reference", cls, group)
+            b.add_file(f"Items/{cls}/{item}", "reference", label=cls, group_key=group)
             for col in QUERY_COLUMNS:
                 if row.get(col):
-                    add(f"Queries/{cls}/{row[col]}", "imitation", cls, group)
-    return IngestResult(files=files, missing=missing)
+                    b.add_file(f"Queries/{cls}/{row[col]}", "imitation", label=cls, group_key=group)
+    return b.result()

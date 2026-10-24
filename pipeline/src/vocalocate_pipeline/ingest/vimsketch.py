@@ -35,13 +35,12 @@ the participant IDs, so its own imitations have no imitator_id.
 
 from __future__ import annotations
 
-import csv
 import os
 import re
 from pathlib import Path
 
 from ..audio import AUDIO_EXTENSIONS
-from . import IngestResult
+from . import IngestResult, read_table
 from .sfx_meta import ingest_rows
 from .vocal_imitation_set import survey_imitators
 
@@ -108,11 +107,6 @@ def find_dirs(root: Path) -> tuple[Path, Path | None]:
     return vim, None
 
 
-def _read_csv(path: Path) -> list[dict]:
-    with open(path, newline="", encoding="utf-8-sig", errors="replace") as f:
-        return [{(k or "").strip(): (v or "").strip() for k, v in row.items()} for row in csv.DictReader(f)]
-
-
 def vocalsketch_excluded(vs: Path) -> list[dict]:
     """VocalSketch's excluded imitations: [{path, key, participant_id}], key = (label slug, subset slug).
 
@@ -120,14 +114,14 @@ def vocalsketch_excluded(vs: Path) -> list[dict]:
     hearing a recording names it (sound_recording); one made from a text label only has the label,
     which sound_recordings.csv maps to its recording.
     """
-    recording_of_label = {r["sound_label_id"]: r["filename"] for r in _read_csv(vs / "sound_recordings.csv")}
+    recording_of_label = {r["sound_label_id"]: r["filename"] for r in read_table(vs / "sound_recordings.csv")}
     out = []
     for table, folder in (("vocal_imitations.csv", "vocal_imitations"),
                           ("vocal_imitaitons_set2.csv", "vocal_imitations_set2"),  # sic, as released
                           ("vocal_imitations_set2.csv", "vocal_imitations_set2")):
         if not (vs / table).exists():
             continue
-        for row in _read_csv(vs / table):
+        for row in read_table(vs / table):
             if row.get("included", "").lower() == "true":
                 continue
             recording = row.get("sound_recording") or recording_of_label.get(row.get("sound_label_id", ""), "")
@@ -180,7 +174,7 @@ def ingest(root: Path) -> IngestResult:
     result = ingest_rows(rows, Path(root), source=SOURCE, version=VERSION, licence=LICENCE)
     _, vs = find_dirs(Path(root))
     ids = {r["imitator_id"] for r in rows if r["imitator_id"]}
-    survey = [r for name in VOCALSKETCH_SURVEYS if vs and (vs / name).exists() for r in _read_csv(vs / name)]
+    survey = [r for name in VOCALSKETCH_SURVEYS if vs and (vs / name).exists() for r in read_table(vs / name)]
     result.imitators = survey_imitators(
         survey, lambda pid: f"vocalsketch:{pid}" if f"vocalsketch:{pid}" in ids else None)
     return result

@@ -31,13 +31,11 @@ every clip) or a clip_id.
 
 from __future__ import annotations
 
-import csv
-import hashlib
 from pathlib import Path
 
 from ..audio import sha256_file
 from ..schemas import SchemaError
-from . import IngestResult, RawFile
+from . import IngestBuilder, IngestResult, read_table, require
 
 SOURCE = "team"
 VERSION = "live"
@@ -84,10 +82,8 @@ def _int(value: str | None) -> int | None:
 
 
 def _read(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
-    with open(path, newline="", encoding="utf-8") as f:
-        return list(csv.DictReader(f))
+    """An optional team CSV: no rows when the file is absent."""
+    return read_table(path) if path.exists() else []
 
 
 def read_imitators(root: Path) -> list[dict]:
@@ -141,54 +137,20 @@ def target_splits(rows: list[dict]) -> dict[str, str]:
 
 
 def ingest(root: Path) -> IngestResult:
-    meta = root / "recordings.csv"
-    if not meta.exists():
-        raise FileNotFoundError(f"Team recordings manifest not found at {meta}")
-    with open(meta, newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
+    rows = read_table(require(root / "recordings.csv", "Team recordings manifest"))
     split_of = target_splits(rows)
-    files, queries, metadata, splits, missing = [], [], [], {}, []
+    b = IngestBuilder(root, SOURCE, VERSION, LICENCE)
     for row in rows:
-        path = root / row["file"]
-        if not path.exists():
-            missing.append(row["file"])
+        key, target = row["file"], row["target_group_key"]
+        if not b.add_file(key, "imitation", group_key=target, imitator_id=row["imitator_id"]):
             continue
-        target = row["target_group_key"].strip()
-        files.append(
-            RawFile(
-                source=SOURCE,
-                source_version=VERSION,
-                source_key=row["file"],
-                path=path,
-                role="imitation",
-                group_key=target,
-                imitator_id=row["imitator_id"].strip(),
-                licence=LICENCE,
-            )
-        )
         if target in split_of:
-            splits[row["file"]] = split_of[target]
+            b.set_split(key, split_of[target])
         vocalization, device = _clean(row.get("vocalization_type")), _device(row)
         if vocalization or device:
-            metadata.append({"source_key": row["file"], "vocalization_type": vocalization, "device_type": device})
-        hint = (row.get("text_hint") or "").strip()
-        if hint:
-            queries.append(
-                {
-                    "query_id": _clean(row.get("query_id"))
-                    or hashlib.sha256(f"{row['file']}|{hint}".encode()).hexdigest()[:32],
-                    "source_key": row["file"],
-                    "text_hint": hint,
-                    "hint_type": (row.get("hint_type") or "").strip() or None,
-                    "target_group_key": target,
-                }
-            )
-    return IngestResult(
-        files=files,
-        queries=queries,
-        imitation_metadata=metadata,
-        imitators=read_imitators(root),
-        judgements=read_judgements(root, missing),
-        splits=splits,
-        missing=missing,
-    )
+            b.add_imitation_metadata(key, vocalization, device)
+        if row.get("text_hint"):
+            b.add_query(key, row["text_hint"], _clean(row.get("hint_type")), target, query_id=_clean(row.get("query_id")))
+    b.imitators = read_imitators(root)
+    b.judgements = read_judgements(root, b.missing)
+    return b.result()
