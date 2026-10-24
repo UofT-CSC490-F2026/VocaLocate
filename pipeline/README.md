@@ -27,7 +27,7 @@ and the folder layout is in [`lake.py`](vocalocate_pipeline/lake.py).
 ## Two flows
 
 * **Dataset flow** (`ingest-dataset`): VimSketch, the QVIM DEV set, ESC-50,
-  team recordings and `sfx_meta` (any SFX set with a category/tags/recording
+  ESC-50-Voice, team recordings and `sfx_meta` (any SFX set with a category/tags/recording
   metadata CSV). Run when a dataset is first downloaded, when its version
   changes, or when the cleaning/feature settings change.
 * **Library flow** (`index-library`): a user's SFX folders, processed
@@ -55,6 +55,12 @@ provides is NULL.
 | Relevance_Judgement | `v_relevance_judgement` | `relevance_judgements` (relevance 0 to 3) |
 | Imitator profiles | `v_imitator_profile` | `imitators` |
 | Search session logs | table `search_sessions` | written by the app (milestone 4); empty until then |
+
+`v_shared_recordings` lists original recordings (Freesound uploads) that more than one
+source holds as different files, with the splits they landed in. More than one split
+there means train and test share a recording. ESC-50-Voice hashes its splits by the
+Vocal Imitation Set's group for the same upload, so the 64 uploads the two share stay
+in one split.
 
 `v_hard_negatives` also has `judged_relevance`, the highest human rating of the
 negative for that imitation, so negatives a person judged relevant can be dropped.
@@ -101,6 +107,8 @@ pip install -e '.[dev]'
 vocalocate-pipeline --lake lake --workers 4 -v ingest-dataset --source esc50 --path ESC-50
 vocalocate-pipeline --lake lake ingest-dataset --source vimsketch --path Vim_Sketch_Dataset
 vocalocate-pipeline --lake lake ingest-dataset --source qvim_dev --path qvim-dev
+# ESC-50-Voice (zenodo.org/records/11385662, research use only): unpack vocal_imitation.7z, with ESC-50 inside or next to it
+vocalocate-pipeline --lake lake ingest-dataset --source esc50_voice --path ESC-50-Voice
 vocalocate-pipeline --lake lake index-library --root ~/SFX --name my_library
 
 vocalocate-pipeline --lake lake report            # data-quality summary

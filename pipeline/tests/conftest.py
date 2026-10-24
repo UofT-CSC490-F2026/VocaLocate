@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -47,6 +48,22 @@ def esc50_dir(tmp_path) -> Path:
             write(root / "audio" / name, x, sr)
             w.writerow([name, name[0], i, cat, "False", src, take])
         w.writerow(["5-500-A-4.wav", 5, 4, "frog", "False", "500", "A"])  # listed but missing
+    return root
+
+
+@pytest.fixture
+def esc50_voice_dir(tmp_path, esc50_dir) -> Path:
+    """ESC-50-Voice with ESC-50 unpacked inside: two speakers imitate both takes of upload 100 and 2-200-A-1."""
+    root = tmp_path / "ESC-50-Voice"
+    shutil.copytree(esc50_dir, root / "ESC-50")
+    names = {
+        "000": ["1-100-A-0_000.wav", "1-100-B-0_000.wav", "2-200-A-1_000.wav"],
+        "001": ["1-100-A-0_001.wav", "1-100-B-0.wav_001.wav",  # the release also uses <target>.wav_<speaker>.wav
+                "5-500-A-4_001.wav"],  # its ESC-50 clip is listed but missing
+    }
+    for i, (speaker, files) in enumerate(names.items()):
+        for j, name in enumerate(files):
+            write(root / "vocal_imitation" / speaker / name, tone(200 + 70 * i + 30 * j, 1.5, 48_000), 48_000)
     return root
 
 
