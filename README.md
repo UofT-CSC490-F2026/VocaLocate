@@ -29,7 +29,8 @@ VocaLocate/
 │   │   ├── flow_functions/         the per-clip steps the flows run:
 │   │   │   ├── audio.py              2. Clean: mono, 32 kHz, trim, loudness; reject or flag bad clips
 │   │   │   ├── features.py           3. Transform: log-mel features, as the QVIM baseline computes them
-│   │   │   └── splits.py                train/val/test by a seeded hash of each reference sound
+│   │   │   ├── splits.py                train/val/test by a seeded hash of each reference sound
+│   │   │   └── pairs.py                 links each imitation to its reference sound
 │   │   ├── flows.py                the two flows (dataset, library) that run stages 1-4 with caching
 │   │   ├── schemas.py              the columns and types of every lake table
 │   │   ├── lake.py                 4. Load: where each file goes in bronze/silver/gold
@@ -89,6 +90,7 @@ One line per file. Paths are relative to the folder in each heading.
 | `flow_functions/audio.py` | Cleans one clip: decode, mono, 32 kHz, trim silence, loudness; rejects or flags bad clips; SHA-256 file hashing |
 | `flow_functions/features.py` | Log-mel spectrogram and 256-value summary vector, matching the QVIM baseline |
 | `flow_functions/splits.py` | Assigns train/val/test by a seeded hash of each reference sound; benchmarks always go to test |
+| `flow_functions/pairs.py` | Links each clean imitation to the clean reference sound it imitates (the `pairs` table) |
 | `ingest/__init__.py` | Shared ingest code (`RawFile`, `IngestBuilder`, `read_table`) and the source registry |
 | `ingest/<dataset>.py` | One reader per dataset (see the table above) |
 | `schemas.py` | Columns, types and allowed values of all 17 lake tables; every write is checked against them |
@@ -176,7 +178,7 @@ One line per file. Paths are relative to the folder in each heading.
 | I want to... | Look at |
 | --- | --- |
 | Change a cleaning threshold or feature setting | `pipeline/configs/*.toml` and `pipeline/vocalocate_pipeline/config.py` |
-| Change how a clip is cleaned, featurised or split | `pipeline/vocalocate_pipeline/flow_functions/` |
+| Change how a clip is cleaned, featurised, split or paired | `pipeline/vocalocate_pipeline/flow_functions/` |
 | Add a dataset | A new module in `pipeline/vocalocate_pipeline/ingest/`, registered in `ingest/__init__.py` |
 | See or change a table's columns | `pipeline/vocalocate_pipeline/schemas.py` |
 | Add a SQL view | `VIEWS` in `pipeline/vocalocate_pipeline/warehouse.py` |
@@ -211,7 +213,8 @@ datasets / team recordings / editor folders
    │  1. ingest     ingest/*.py                  → bronze: raw_files manifest (raw audio never modified)
    │  2. clean      flow_functions/audio.py      → silver: clips table + clean 32 kHz mono WAV
    │  3. transform  flow_functions/features.py,  → gold:   log-mel features, splits
-   │                flow_functions/splits.py        (pairs and queries in silver)
+   │                flow_functions/splits.py,       (pairs and queries in silver)
+   │                flow_functions/pairs.py
    ▼  4. load       warehouse.py                 → warehouse/vocalocate.duckdb with SQL views
 training (v_training_pairs) · fusion tuning (v_retrieval_query) · search app (v_library_index)
 · data-quality report (v_clip_quality)
