@@ -99,3 +99,30 @@ def test_cli_end_to_end(tmp_path, esc50_dir, capsys):
     assert main(["--lake", str(lake), "ingest-dataset", "--source", "esc50", "--path", str(esc50_dir)]) == 0
     assert main(["--lake", str(lake), "report"]) == 0
     assert "esc50" in capsys.readouterr().out
+
+
+def test_clips_record_the_original_format_bit_depth_and_noise_floor(cfg, tmp_path):
+    import soundfile as sf
+
+    lib = tmp_path / "Formats"
+    lib.mkdir()
+    x = tone(440, 1, 44_100)
+    sf.write(str(lib / "a.wav"), x, 44_100, subtype="PCM_24")
+    sf.write(str(lib / "b.flac"), tone(550, 1, 44_100), 44_100, subtype="PCM_16")
+    sf.write(str(lib / "c.wav"), tone(660, 1, 44_100), 44_100, subtype="FLOAT")
+    lossy = [f for f in ("MP3", "OGG") if f in sf.available_formats()]
+    for i, fmt in enumerate(lossy):
+        sf.write(str(lib / f"d{i}.{fmt.lower()}"), tone(770 + 50 * i, 1, 44_100), 44_100, format=fmt)
+    (lib / "broken.wav").write_bytes(b"not audio")
+    run_library_flow([lib], cfg)
+    rows = dict(
+        (r[0].rsplit("/", 1)[1], r[1:])
+        for r in warehouse.query(cfg, "SELECT source_key, orig_format, orig_bit_depth, noise_floor_dbfs FROM clips")
+    )
+    assert rows["a.wav"][:2] == ("WAV", 24)
+    assert rows["b.flac"][:2] == ("FLAC", 16)
+    assert rows["c.wav"][:2] == ("WAV", 32)
+    for i, fmt in enumerate(lossy):
+        assert rows[f"d{i}.{fmt.lower()}"][:2] == (fmt, None)  # lossy: no bit depth
+    assert rows["a.wav"][2] is not None and rows["a.wav"][2] < 0
+    assert rows["broken.wav"] == (None, None, None)  # decode errors leave them empty

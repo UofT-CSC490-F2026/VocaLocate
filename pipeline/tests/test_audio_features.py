@@ -69,3 +69,14 @@ def test_summary_vector_is_mean_and_std_per_band():
     v = summary_vector(mel)
     assert v.shape == (256,)
     np.testing.assert_allclose(v[:128], mel.mean(axis=1), rtol=1e-6)
+
+
+def test_noise_floor_is_measured_on_the_original_signal_before_normalisation():
+    # A quiet tone with a second of near-silence (-80 dBFS hiss) before it: the floor is the hiss, not the tone.
+    rng = np.random.default_rng(0)
+    hiss = (1e-4 * rng.standard_normal(16_000)).astype(np.float32)
+    x = np.concatenate([hiss, tone(440, 1, 16_000, amp=0.05)])
+    res = clean_array(x, 16_000, CFG)
+    assert res.status == "ok"
+    assert abs(res.noise_floor_dbfs - dbfs(rms(hiss))) < 3
+    assert res.noise_floor_dbfs < -70 < res.rms_dbfs

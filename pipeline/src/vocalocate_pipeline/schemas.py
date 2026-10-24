@@ -62,6 +62,10 @@ CLIPS = _schema(
     ("orig_sample_rate", pa.int32(), True),
     ("orig_channels", pa.int32(), True),
     ("orig_duration_sec", pa.float32(), True),
+    ("orig_format", pa.string(), True),  # soundfile's format: WAV, FLAC, MP3, OGG, AIFF, ...
+    ("orig_bit_depth", pa.int32(), True),  # from the subtype; null for lossy formats (MP3, Vorbis, Opus)
+    # Background noise of the original recording: 10th percentile of 50 ms frame RMS (audio.noise_floor_dbfs).
+    ("noise_floor_dbfs", pa.float32(), True),
     ("duration_sec", pa.float32(), True),
     ("peak_dbfs", pa.float32(), True),
     ("rms_dbfs", pa.float32(), True),
