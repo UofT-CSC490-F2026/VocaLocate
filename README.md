@@ -75,6 +75,102 @@ IDs) lives in `IngestBuilder` in [`ingest/__init__.py`](pipeline/vocalocate_pipe
 | `team.py` | Our own recordings (`recordings.csv`) | Voice + text + target queries for tuning the fusion weight |
 | `sfx_meta.py` | Any set with a `metadata.csv` | The generic path; VIS and VimSketch convert to its rows |
 
+## File guide
+
+One line per file. Paths are relative to the folder in each heading.
+
+### `pipeline/vocalocate_pipeline/` (the pipeline code)
+
+| File | What it does |
+| --- | --- |
+| `cli.py` | The `vocalocate-pipeline` command: `ingest-dataset`, `index-library`, `load-warehouse`, `report`, `sync`, `remote` |
+| `config.py` | Every tunable setting (sample rate, thresholds, FFT size, split seed) and the config fingerprint stored with each result |
+| `flows.py` | The main pipeline: `run_dataset_flow` and `run_library_flow` run ingest, clean, transform and load, skipping clips already done |
+| `flow_functions/audio.py` | Cleans one clip: decode, mono, 32 kHz, trim silence, loudness; rejects or flags bad clips; SHA-256 file hashing |
+| `flow_functions/features.py` | Log-mel spectrogram and 256-value summary vector, matching the QVIM baseline |
+| `flow_functions/splits.py` | Assigns train/val/test by a seeded hash of each reference sound; benchmarks always go to test |
+| `ingest/__init__.py` | Shared ingest code (`RawFile`, `IngestBuilder`, `read_table`) and the source registry |
+| `ingest/<dataset>.py` | One reader per dataset (see the table above) |
+| `schemas.py` | Columns, types and allowed values of all 17 lake tables; every write is checked against them |
+| `lake.py` | Where each table and file goes in bronze/silver/gold, and crash-safe Parquet writes |
+| `warehouse.py` | Rebuilds the DuckDB warehouse from the lake and defines its 16 SQL views |
+| `sync.py` | Copies lake files between a local folder and S3, never overwriting a newer file |
+| `remote.py` | What the AWS tasks run: pull the lake from S3, run a flow, push back only this run's outputs |
+
+### `pipeline/` (everything around the code)
+
+| File | What it does |
+| --- | --- |
+| `pyproject.toml` | Package metadata, dependencies and the `vocalocate-pipeline` command |
+| `Dockerfile`, `.dockerignore` | The container image the AWS Fargate tasks run |
+| `configs/default.toml` | Default settings for local runs |
+| `configs/dev.toml`, `configs/prod.toml` | Settings for the AWS environments; only the lake path and worker count differ |
+| `docs/diagrams/*.dot`, `*.png` | Graphviz sources and images: pipeline architecture, AWS deployment, library flow |
+| `tests/conftest.py` | Builds small fake datasets laid out like the real ones, so tests run offline |
+| `tests/test_audio_features.py` | Cleaning rules (resample, trim, silence, clipping, truncation) and log-mel features |
+| `tests/test_core.py` | Config loading, environment configs matching, fingerprint, schema checks |
+| `tests/test_ingest.py` | ESC-50, VimSketch and QVIM ingesters read their layouts correctly |
+| `tests/test_vocal_imitation_set.py`, `test_captdure.py`, `test_sfx_meta.py` | The VIS, CAPTDURE and generic metadata ingesters and their flows |
+| `tests/test_splits.py` | Splits are deterministic, grouped by sound, and benchmarks stay in test |
+| `tests/test_flows.py` | Whole dataset and library flows: caching, duplicates, pairs, team triples, held-out sets |
+| `tests/test_part_one_views.py` | The warehouse views that return each A2 Part One schema |
+| `tests/test_sync.py`, `test_sync_s3.py` | S3 sync and the remote flow, against local folders and a local S3 server |
+| `README.md` | Pipeline details: layers, tables, views, commands |
+
+### `infra/` (Terraform)
+
+| File | What it does |
+| --- | --- |
+| `bootstrap/main.tf` | Once per account: Terraform state bucket, GitHub and Modal OIDC providers, monthly budget alert |
+| `backup/main.tf` | Prod's backup buckets in us-east-2, in their own state so destroying prod leaves them intact |
+| `envs/dev/main.tf`, `envs/prod/main.tf` | Each environment: one call to `vocalocate_stack` with its sizes and safety settings |
+| `envs/*/variables.tf`, `outputs.tf`, `versions.tf` | Inputs, printed outputs (bucket names, role ARNs), provider and backend versions |
+| `envs/*/terraform.tfvars.example` | Template for the values you fill in before `terraform apply` |
+| `modules/vocalocate_stack/` | Everything one environment needs; wires the modules below together. `tests/stack.tftest.hcl` checks it offline |
+| `modules/bucket/` | A private, encrypted, TLS-only S3 bucket; every bucket in the project uses it |
+| `modules/network/` | A small VPC: two public subnets, outbound-only security group, S3 gateway endpoint |
+| `modules/data_lake/` | The raw, lake and models buckets, and replication to the backups (prod) |
+| `modules/pipeline_compute/` | ECR repository, ECS cluster, Fargate task definition, task roles, logs |
+| `modules/orchestration/` | Step Functions state machine (Ingest, LoadWarehouse, Report, Catalog), upload trigger, schedules |
+| `modules/warehouse_catalog/` | Glue crawler and catalog over the lake tables, and an Athena workgroup |
+| `modules/monitoring/` | SNS email alerts and CloudWatch alarms on failed runs |
+| `modules/access/` | IAM roles GitHub Actions and Modal assume with OIDC tokens; no stored keys |
+| `disaster-recovery.md` | The Part 5 runbook: destroy prod, rebuild it, restore its data, verify |
+| `README.md` | Deploying and running the pipeline on AWS |
+
+### `demo/` (models and the search app)
+
+| File | What it does |
+| --- | --- |
+| `src/vocalocate_demo/cli.py` | The `vocalocate-demo` command: `run`, `train`, `benchmark`, `recipe`, `app`, ... |
+| `src/vocalocate_demo/data.py` | Reads training pairs, candidate sounds and cached features from the pipeline's warehouse |
+| `src/vocalocate_demo/model.py` | The dual encoder: one network for imitations, one for sound effects |
+| `src/vocalocate_demo/efficientat/` | The MobileNetV3 audio model used by the QVIM baseline (vendored, MIT licence) |
+| `src/vocalocate_demo/train.py` | Contrastive baseline training, then fine-tuning with mined negatives |
+| `src/vocalocate_demo/mining.py` | Picks hard-but-wrong sounds to train on: retrieval-driven, metadata-guided or random |
+| `src/vocalocate_demo/recipe.py`, `augment.py` | The QVIM 2025 winning recipe and its audio augmentations |
+| `src/vocalocate_demo/text.py` | The frozen CLAP model that scores text hints against sounds |
+| `src/vocalocate_demo/fusion.py` | Blends voice and text scores with the weight α, tuned on validation |
+| `src/vocalocate_demo/evaluate.py` | Retrieval metrics: Recall@K, MRR, nDCG |
+| `src/vocalocate_demo/experiment.py`, `demo_flow.py` | The end-to-end experiment and the one-command demo |
+| `src/vocalocate_demo/synth.py` | A synthetic sound set with imitations, so the demo runs offline |
+| `src/vocalocate_demo/search.py`, `app.py`, `ui/` | Indexes your folders and serves the local search web app |
+| `src/vocalocate_demo/report.py`, `summarize.py` | Write results as markdown and average them over seeds |
+| `modal/recipe_app.py` | Runs every training in its own Modal GPU container, reading from and writing to S3 |
+| `configs/demo.toml`, `configs/vimsketch.toml` | Settings for the synthetic demo and the VimSketch replication |
+| `tests/` | Mining, fusion, metrics, the recipe, the app and the full demo end to end |
+| `docs/` | App screenshots and a walkthrough video |
+| `README.md` | Experiments, how to run them, and results |
+
+### `.github/workflows/` (CI)
+
+| File | What it does |
+| --- | --- |
+| `pipeline-tests.yml` | Runs the pipeline tests on every push that touches `pipeline/` |
+| `demo-tests.yml` | Runs the demo tests (with CPU PyTorch) when `demo/` or `pipeline/` changes |
+| `infra.yml` | `terraform fmt`, `validate` and module tests on `infra/` changes; `plan` against dev on main |
+| `pipeline-image.yml` | Builds the pipeline image; when run by hand, pushes it to an environment's ECR |
+
 ## Find things fast
 
 | I want to... | Look at |
