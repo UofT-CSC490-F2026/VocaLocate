@@ -24,3 +24,4 @@ crash.log
 # Local IDE files
 .env
 .vscode/
+.DS_Store
