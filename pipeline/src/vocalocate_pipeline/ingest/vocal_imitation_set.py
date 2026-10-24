@@ -35,6 +35,8 @@ from pathlib import Path
 
 from . import IngestResult
 from .sfx_meta import ingest_rows
+from .vimsketch import SOURCE as VIMSKETCH
+from .vimsketch import sound_metadata, vis_class_sound
 
 SOURCE = "vis"
 VERSION = "1.1"
@@ -130,3 +132,42 @@ def ingest(root: Path) -> IngestResult:
         if not (root / required).exists():
             raise FileNotFoundError(f"Vocal Imitation Set metadata not found at {root / required}")
     return ingest_rows(build_rows(root), root, source=SOURCE, version=VERSION, licence=LICENCE)
+
+
+# --------------------------------------------------------------------------- extras for a VimSketch lake
+
+EXTRAS_SOURCE = "vis_extras"
+
+
+def build_extra_rows(root: Path) -> list[dict]:
+    """Only the un-imitated non-reference recordings, as library clips named for a VimSketch lake.
+
+    VimSketch already holds each class's imitated reference and its imitations; what it lacks is
+    the ~9 other recordings per class (2,633 in all). Category and tags are the VimSketch
+    ingester's for the class, so a class's extras sit in the same category as its reference, and
+    each extra takes the group key of that reference so it lands in the same split.
+    """
+    classes = _read_table(root / "original_recordings_classes.txt", "\t")
+    licences = root / "original_recordings_license.csv"
+    freesound = {r["filename"]: r.get("freesound_id", "") for r in _read_table(licences, ",")} if licences.exists() else {}
+    index = {p.name: p for p in root.rglob("*.wav")}
+    rows = []
+    for c in classes:
+        if _true(c.get("is_reference", "")):
+            continue
+        name, cls = c["filename"], c.get("classname", "")
+        path = _find(root, ["original_recordings/non_reference", "original_recordings/reference"], name, index)
+        sound = vis_class_sound(cls)
+        category, tags, description = sound_metadata(sound)
+        rows.append({"file": str(path or root / "original_recordings/non_reference" / name), "role": "library",
+                     "sound_id": f"{cls}/{name}", "imitates": "", "category": category, "tags": ";".join(tags),
+                     "recording_id": f"freesound:{freesound[name]}" if freesound.get(name) else name,
+                     "group_id": f"{VIMSKETCH}:{sound}", "description": description, "imitator_id": "",
+                     "text_hint": "", "hint_type": ""})
+    return rows
+
+
+def ingest_extras(root: Path) -> IngestResult:
+    if not (root / "original_recordings_classes.txt").exists():
+        raise FileNotFoundError(f"Vocal Imitation Set metadata not found at {root / 'original_recordings_classes.txt'}")
+    return ingest_rows(build_extra_rows(root), root, source=EXTRAS_SOURCE, version=VERSION, licence=LICENCE)
