@@ -106,9 +106,8 @@ VIEWS = {
     # Vocal_Imitation: every clean imitation. noise_level_db is the original recording's noise floor (dBFS).
     "v_vocal_imitation": """
         SELECT c.clip_id AS imitation_id, c.clean_path AS imitation_path, c.duration_sec,
-               im.vocalization_type, im.device_type, c.noise_floor_dbfs AS noise_level_db, c.source, c.imitator_id
+               c.noise_floor_dbfs AS noise_level_db, c.source, c.imitator_id
         FROM clips c
-        LEFT JOIN imitation_metadata im ON im.source = c.source AND im.clip_id = c.clip_id
         WHERE c.status = 'ok' AND c.role IN ('imitation', 'unpaired_imitation')
     """,
     # Retrieval_Query: recorded queries (an imitation with a text hint) and, for every other paired
@@ -169,29 +168,18 @@ VIEWS = {
                CASE source WHEN 'qvim_dev' THEN 'Development' ELSE 'Evaluation' END AS benchmark_split
         FROM pairs WHERE source IN ('qvim_dev', 'qvim_eval')
     """,
-    # Relevance_Judgement.
-    "v_relevance_judgement": """
-        SELECT query_id, candidate_clip_id AS candidate_sound_id, relevance, rater_id FROM relevance_judgements
-    """,
     # Imitator profiles.
     "v_imitator_profile": """
         SELECT imitator_id, role, years_experience, first_language, music_training, consent_scope, source
         FROM imitators
     """,
-    # Mined negatives with the metadata of the target and the negative, for analysis, and the best
-    # human relevance rating of the negative for that imitation (NULL if never judged): a judged
-    # relevant "negative" is a false negative.
+    # Mined negatives with the metadata of the target and the negative, for analysis.
     "v_hard_negatives": """
         SELECT h.*, pm.category AS positive_category, nm.category AS negative_category,
-               nm.recording_id AS negative_recording_id, j.judged_relevance
+               nm.recording_id AS negative_recording_id
         FROM hard_negatives h
         LEFT JOIN sfx_metadata pm ON pm.clip_id = h.positive_clip_id
         LEFT JOIN sfx_metadata nm ON nm.clip_id = h.negative_clip_id
-        LEFT JOIN (
-            SELECT q.imitation_id, r.candidate_clip_id, max(r.relevance) AS judged_relevance
-            FROM relevance_judgements r JOIN v_retrieval_query q ON q.query_id = r.query_id
-            GROUP BY q.imitation_id, r.candidate_clip_id
-        ) j ON j.imitation_id = h.imitation_clip_id AND j.candidate_clip_id = h.negative_clip_id
     """,
     # Data-quality summary per source.
     "v_clip_quality": """

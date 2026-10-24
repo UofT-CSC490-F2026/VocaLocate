@@ -57,12 +57,8 @@ class IngestResult:
     metadata: list[dict] = field(default_factory=list)
     # Free-text captions for SFX, keyed by source_key (captdure only, for now).
     captions: list[dict] = field(default_factory=list)
-    # Vocalization and device type per imitation, keyed by source_key (team recordings only, for now).
-    imitation_metadata: list[dict] = field(default_factory=list)
     # Imitator profiles (team imitators.csv; participant surveys of the Vocal Imitation Set and VocalSketch).
     imitators: list[dict] = field(default_factory=list)
-    # Human relevance judgements: query_id, candidate_clip_id, relevance, rater_id (team only, for now).
-    judgements: list[dict] = field(default_factory=list)
     # Splits the dataset itself assigns, keyed by source_key (team recordings only: val or test).
     splits: dict[str, str] = field(default_factory=dict)
     missing: list[str] = field(default_factory=list)

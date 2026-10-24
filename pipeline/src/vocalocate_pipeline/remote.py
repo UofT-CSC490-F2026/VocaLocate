@@ -31,9 +31,8 @@ log = logging.getLogger(__name__)
 
 TABLE_PREFIXES = ["bronze/tables", "silver/tables", "gold/tables", "state", "runs"]
 WAREHOUSE_PREFIX = "warehouse"
-# Tables an ingest never writes: library state is per library, runs are per run, and search
-# sessions come from the app.
-_NOT_PER_SOURCE = ("library_files", "library_roots", "pipeline_runs", "search_sessions")
+# Tables an ingest never writes: library state is per library and runs are per run.
+_NOT_PER_SOURCE = ("library_files", "library_roots", "pipeline_runs")
 
 
 def _source_prefixes(source: str) -> list[str]:
