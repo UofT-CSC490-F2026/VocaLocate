@@ -66,12 +66,8 @@ class IngestResult:
     metadata: list[dict] = field(default_factory=list)
     # Free-text captions for SFX, keyed by source_key (captdure only, for now).
     captions: list[dict] = field(default_factory=list)
-    # Vocalization and device type per imitation, keyed by source_key (team recordings only, for now).
-    imitation_metadata: list[dict] = field(default_factory=list)
     # Imitator profiles (team imitators.csv; participant surveys of the Vocal Imitation Set and VocalSketch).
     imitators: list[dict] = field(default_factory=list)
-    # Human relevance judgements: query_id, candidate_clip_id, relevance, rater_id (team only, for now).
-    judgements: list[dict] = field(default_factory=list)
     # Splits the dataset itself assigns, keyed by source_key (team recordings only: val or test).
     splits: dict[str, str] = field(default_factory=dict)
     # The reference each imitation imitates, by source key, for groups with several references
@@ -119,9 +115,7 @@ class IngestBuilder:
         self.queries: list[dict] = []
         self.metadata: list[dict] = []
         self.captions: list[dict] = []
-        self.imitation_metadata: list[dict] = []
         self.imitators: list[dict] = []
-        self.judgements: list[dict] = []
         self.splits: dict[str, str] = {}
         self.targets: dict[str, str] = {}
         self.split_groups: dict[str, str] = {}
@@ -187,12 +181,10 @@ class IngestBuilder:
              "recording_id": recording_id}
         )
 
-    def add_query(
-        self, key: str, text_hint: str, hint_type: str | None, target_group_key: str, query_id: str | None = None
-    ) -> None:
+    def add_query(self, key: str, text_hint: str, hint_type: str | None, target_group_key: str) -> None:
         """A text hint recorded with an imitation: a voice, text and target triple (the queries table)."""
         self.queries.append(
-            {"query_id": query_id or short_id(key, text_hint), "source_key": key, "text_hint": text_hint,
+            {"query_id": short_id(key, text_hint), "source_key": key, "text_hint": text_hint,
              "hint_type": hint_type, "target_group_key": target_group_key}
         )
 
@@ -201,12 +193,6 @@ class IngestBuilder:
         self.captions.append(
             {"caption_id": short_id(key, annotator_id, caption), "source_key": key, "caption": caption,
              "language": language, "annotator_id": annotator_id}
-        )
-
-    def add_imitation_metadata(self, key: str, vocalization_type: str | None, device_type: str | None) -> None:
-        """How an imitation was recorded (the imitation_metadata table)."""
-        self.imitation_metadata.append(
-            {"source_key": key, "vocalization_type": vocalization_type, "device_type": device_type}
         )
 
     def set_split(self, key: str, split: str) -> None:
@@ -224,8 +210,8 @@ class IngestBuilder:
     def result(self) -> IngestResult:
         return IngestResult(
             files=self.files, queries=self.queries, metadata=self.metadata, captions=self.captions,
-            imitation_metadata=self.imitation_metadata, imitators=self.imitators, judgements=self.judgements,
-            splits=self.splits, targets=self.targets, split_groups=self.split_groups, missing=self.missing,
+            imitators=self.imitators, splits=self.splits, targets=self.targets, split_groups=self.split_groups,
+            missing=self.missing,
         )
 
 

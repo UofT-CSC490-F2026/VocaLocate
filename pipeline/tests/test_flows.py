@@ -217,58 +217,25 @@ def _csv(path, header, rows):
         w.writerows(rows)
 
 
-def test_team_metadata_imitators_and_judgements(cfg, esc50_dir, tmp_path):
-    from vocalocate_pipeline.flow_functions.audio import sha256_file
-
+def test_team_imitators(cfg, esc50_dir, tmp_path):
     run_dataset_flow("esc50", esc50_dir, cfg)
-    header = ("file", "imitator_id", "target_group_key", "text_hint", "hint_type", "split", "query_id",
-              "vocalization_type", "device_type")
-    team = _team(tmp_path, [("t/a.wav", "tanay", "esc50:200", "short", "length", "val", "q-rooster", "hum",
-                             "Headset mic"),
-                            ("t/b.wav", "carmen", "esc50:400", "", "", "", "", "", "")], header=header)
+    team = _team(tmp_path, [("t/a.wav", "tanay", "esc50:200", "short", "length", "val"),
+                            ("t/b.wav", "carmen", "esc50:400", "", "", "")])
     _csv(team / "imitators.csv", ["imitator_id", "role", "years_experience", "first_language", "music_training",
                                   "consent_scope"],
          [["tanay", "student", "2", "English", "yes", "course project"], ["carmen", "", "", "", "", ""]])
-    rooster = esc50_dir / "audio" / "2-200-A-1.wav"
-    _csv(team / "judgements.csv", ["query_id", "candidate_file", "candidate_clip_id", "relevance", "rater_id"],
-         [["q-rooster", str(rooster), "", "3", "carmen"], ["q-rooster", "", "abc", "0", "carmen"]])
     run_dataset_flow("team", team, cfg)
 
-    assert warehouse.query(cfg, "SELECT vocalization_type, device_type FROM imitation_metadata") == [
-        ("hum", "headset_mic")]
     assert warehouse.query(cfg, "SELECT * FROM imitators ORDER BY imitator_id") == [
         ("carmen", "team", None, None, None, None, None),
         ("tanay", "team", "student", 2, "English", True, "course project")]
-    assert warehouse.query(cfg, "SELECT * FROM relevance_judgements ORDER BY relevance") == [
-        ("q-rooster", "abc", 0, "carmen", "team"), ("q-rooster", sha256_file(rooster), 3, "carmen", "team")]
-    assert _one(cfg, "SELECT query_id FROM queries") == "q-rooster"
-
-
-def test_relevance_outside_0_to_3_is_rejected(cfg, tmp_path):
-    import pytest
-
-    from vocalocate_pipeline.schemas import SchemaError, to_table
-
-    row = {"query_id": "q", "candidate_clip_id": "c", "relevance": 3, "rater_id": None, "source": "team"}
-    to_table("relevance_judgements", [row])
-    with pytest.raises(SchemaError, match="0..3"):
-        to_table("relevance_judgements", [{**row, "relevance": 4}])
-    team = _team(tmp_path, [("t/a.wav", "tanay", "esc50:200", "", "", "")])
-    _csv(team / "judgements.csv", ["query_id", "candidate_clip_id", "relevance", "rater_id"], [["q", "c", "-1", "r"]])
-    with pytest.raises(SchemaError):
-        run_dataset_flow("team", team, cfg)
-    _csv(team / "judgements.csv", ["query_id", "candidate_clip_id", "relevance", "rater_id"], [["q", "c", "high", "r"]])
-    with pytest.raises(SchemaError, match="integer"):
-        run_dataset_flow("team", team, cfg)
 
 
 def test_warehouse_has_every_table_even_when_empty(cfg):
     from vocalocate_pipeline.schemas import TABLES
 
     warehouse.load(cfg)
-    for name in ("imitation_metadata", "imitators", "relevance_judgements", "search_sessions", "library_roots"):
+    for name in ("imitators", "library_roots"):
         assert name in TABLES and _one(cfg, f"SELECT count(*) FROM {name}") == 0
-    cols = [r[0] for r in warehouse.query(cfg, "SELECT column_name FROM information_schema.columns "
-                                               "WHERE table_name = 'search_sessions' ORDER BY ordinal_position")]
-    assert cols == ["session_id", "imitator_id", "search_mode", "query_id", "library_size", "results_shown",
-                    "previewed_sound_ids", "chosen_sound_id", "time_to_choice_sec", "started_at"]
+    for name in ("imitation_metadata", "relevance_judgements", "search_sessions"):
+        assert name not in TABLES
