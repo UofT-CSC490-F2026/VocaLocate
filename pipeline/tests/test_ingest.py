@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import pytest
 
 from conftest import tone, write
-from vocalocate_pipeline.audio import sha256_file
+from vocalocate_pipeline.flow_functions.audio import sha256_file
 from vocalocate_pipeline.ingest import ingest
 from vocalocate_pipeline.schemas import to_table
 

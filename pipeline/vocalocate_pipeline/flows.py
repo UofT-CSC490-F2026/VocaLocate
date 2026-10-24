@@ -21,13 +21,13 @@ from pathlib import Path
 import numpy as np
 
 from . import warehouse
-from .audio import AUDIO_EXTENSIONS, clean_file, sha256_file, write_wav
+from .flow_functions.audio import AUDIO_EXTENSIONS, clean_file, sha256_file, write_wav
 from .config import PipelineConfig
-from .features import FEATURE_VERSION, log_mel, summary_vector
+from .flow_functions.features import FEATURE_VERSION, log_mel, summary_vector
 from .ingest import ingest
 from .lake import Lake
 from .schemas import to_table
-from .splits import HELD_OUT_SOURCES, assign_splits
+from .flow_functions.splits import HELD_OUT_SOURCES, assign_splits
 
 log = logging.getLogger(__name__)
 

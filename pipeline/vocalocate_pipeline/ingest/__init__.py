@@ -20,7 +20,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ..audio import sha256_file
+from ..flow_functions.audio import sha256_file
 
 
 @dataclass

@@ -18,7 +18,7 @@ Team recordings are never used for training. Part Two splits the target sounds
 before recording into a validation group (to tune the fusion weight) and a test
 group: `split` is val or test, and every recording of a target gets the target's
 split. A target with no split in the CSV gets a seeded 50/50 hash of its group key
-(splits.held_out_split).
+(flow_functions.splits.held_out_split).
 
 `vocalization_type` is free text (hum, whistle, beatbox, ...); `device_type` is
 computer mic, headset mic, studio mic or other. Both go to imitation_metadata.
@@ -33,7 +33,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..audio import sha256_file
+from ..flow_functions.audio import sha256_file
 from ..schemas import SchemaError
 from . import IngestBuilder, IngestResult, read_table, require
 

@@ -5,7 +5,7 @@ import csv
 from conftest import tone, write
 
 from vocalocate_pipeline import warehouse
-from vocalocate_pipeline.audio import sha256_file
+from vocalocate_pipeline.flow_functions.audio import sha256_file
 from vocalocate_pipeline.flows import run_dataset_flow, run_library_flow
 
 PART_ONE = {

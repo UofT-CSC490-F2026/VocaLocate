@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import hashlib
 
-from .config import SplitConfig
+from ..config import SplitConfig
 
 # Sources whose every clip is held out for evaluation.
 BENCHMARK_SOURCES = {"qvim_dev", "qvim_eval", "captdure"}

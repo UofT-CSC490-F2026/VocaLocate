@@ -169,7 +169,7 @@ def _team(tmp_path, rows, header=("file", "imitator_id", "target_group_key", "te
 
 
 def test_team_split_comes_from_the_csv_or_a_val_test_hash_never_train(cfg, esc50_dir, tmp_path):
-    from vocalocate_pipeline.splits import held_out_split
+    from vocalocate_pipeline.flow_functions.splits import held_out_split
 
     run_dataset_flow("esc50", esc50_dir, cfg)
     rows = [("t/a.wav", "tanay", "esc50:200", "short", "length", "val"),
@@ -218,7 +218,7 @@ def _csv(path, header, rows):
 
 
 def test_team_metadata_imitators_and_judgements(cfg, esc50_dir, tmp_path):
-    from vocalocate_pipeline.audio import sha256_file
+    from vocalocate_pipeline.flow_functions.audio import sha256_file
 
     run_dataset_flow("esc50", esc50_dir, cfg)
     header = ("file", "imitator_id", "target_group_key", "text_hint", "hint_type", "split", "query_id",

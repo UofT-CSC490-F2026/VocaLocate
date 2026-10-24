@@ -26,9 +26,10 @@ VocaLocate/
 │   │   ├── cli.py                  the vocalocate-pipeline command and its sub-commands
 │   │   ├── config.py               every tunable setting, and the config fingerprint
 │   │   ├── ingest/                 1. Ingest: one small reader per dataset (see below)
-│   │   ├── audio.py                2. Clean: mono, 32 kHz, trim, loudness; reject or flag bad clips
-│   │   ├── features.py             3. Transform: log-mel features, as the QVIM baseline computes them
-│   │   ├── splits.py                  train/val/test by a seeded hash of each reference sound
+│   │   ├── flow_functions/         the per-clip steps the flows run:
+│   │   │   ├── audio.py              2. Clean: mono, 32 kHz, trim, loudness; reject or flag bad clips
+│   │   │   ├── features.py           3. Transform: log-mel features, as the QVIM baseline computes them
+│   │   │   └── splits.py                train/val/test by a seeded hash of each reference sound
 │   │   ├── flows.py                the two flows (dataset, library) that run stages 1-4 with caching
 │   │   ├── schemas.py              the columns and types of every lake table
 │   │   ├── lake.py                 4. Load: where each file goes in bronze/silver/gold
@@ -79,6 +80,7 @@ IDs) lives in `IngestBuilder` in [`ingest/__init__.py`](pipeline/vocalocate_pipe
 | I want to... | Look at |
 | --- | --- |
 | Change a cleaning threshold or feature setting | `pipeline/configs/*.toml` and `pipeline/vocalocate_pipeline/config.py` |
+| Change how a clip is cleaned, featurised or split | `pipeline/vocalocate_pipeline/flow_functions/` |
 | Add a dataset | A new module in `pipeline/vocalocate_pipeline/ingest/`, registered in `ingest/__init__.py` |
 | See or change a table's columns | `pipeline/vocalocate_pipeline/schemas.py` |
 | Add a SQL view | `VIEWS` in `pipeline/vocalocate_pipeline/warehouse.py` |
@@ -110,11 +112,11 @@ experiments in [`demo/README.md`](demo/README.md).
 
 ```
 datasets / team recordings / editor folders
-   │  1. ingest     ingest/*.py      → bronze: raw_files manifest (raw audio never modified)
-   │  2. clean      audio.py         → silver: clips table + clean 32 kHz mono WAV
-   │  3. transform  features.py,     → gold:   log-mel features, splits
-   │                splits.py           (pairs and queries in silver)
-   ▼  4. load       warehouse.py     → warehouse/vocalocate.duckdb with SQL views
+   │  1. ingest     ingest/*.py                  → bronze: raw_files manifest (raw audio never modified)
+   │  2. clean      flow_functions/audio.py      → silver: clips table + clean 32 kHz mono WAV
+   │  3. transform  flow_functions/features.py,  → gold:   log-mel features, splits
+   │                flow_functions/splits.py        (pairs and queries in silver)
+   ▼  4. load       warehouse.py                 → warehouse/vocalocate.duckdb with SQL views
 training (v_training_pairs) · fusion tuning (v_retrieval_query) · search app (v_library_index)
 · data-quality report (v_clip_quality)
 ```

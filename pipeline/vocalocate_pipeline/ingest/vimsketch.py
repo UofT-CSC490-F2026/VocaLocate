@@ -39,7 +39,7 @@ import os
 import re
 from pathlib import Path
 
-from ..audio import AUDIO_EXTENSIONS
+from ..flow_functions.audio import AUDIO_EXTENSIONS
 from . import IngestResult, read_table
 from .sfx_meta import ingest_rows
 from .vocal_imitation_set import survey_imitators
