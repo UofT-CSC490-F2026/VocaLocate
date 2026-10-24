@@ -31,6 +31,8 @@ log = logging.getLogger(__name__)
 
 TABLE_PREFIXES = ["bronze/tables", "silver/tables", "gold/tables", "state", "runs"]
 WAREHOUSE_PREFIX = "warehouse"
+# Tables an ingest never writes: library state is per library, runs are per run.
+_NOT_PER_SOURCE = ("library_files", "library_roots", "pipeline_runs")
 
 
 def _source_prefixes(source: str) -> list[str]:
@@ -43,7 +45,7 @@ def _source_outputs(source: str, cfg: PipelineConfig) -> list[str]:
     tables = [
         lake.table_path(name, source).relative_to(lake.root).as_posix()
         for name in TABLE_LAYER
-        if name not in ("library_files", "pipeline_runs")
+        if name not in _NOT_PER_SOURCE
     ]
     return tables + _source_prefixes(source) + ["runs"]
 

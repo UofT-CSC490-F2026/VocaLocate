@@ -18,6 +18,9 @@ ROLES = {"reference", "imitation", "library", "unpaired_imitation"}
 STATUSES = {"ok", "rejected", "duplicate"}
 SPLITS = {"train", "val", "test"}
 LIBRARY_STATUSES = {"active", "deleted"}
+# pending and indexing are for the app (a root added but not indexed yet, a run in progress);
+# the library flow writes completed or failed at the end of each run.
+INDEX_STATUSES = {"pending", "indexing", "completed", "failed"}
 TOWERS = {"sfx", "imitation", "clap_audio"}
 MINING_STRATEGIES = {"retrieval", "metadata", "random"}
 MINING_SELECTIONS = {"band", "fallback", "random"}
@@ -173,6 +176,18 @@ LIBRARY_FILES = _schema(
     ("status", pa.string(), False),
     ("first_seen", pa.timestamp("us", tz="UTC"), False),
     ("last_seen", pa.timestamp("us", tz="UTC"), False),
+    ("root_id", pa.string(), True),  # the library_roots folder the file was found under
+    ("rel_path", pa.string(), True),  # path relative to that folder
+)
+
+# State: one row per folder a library indexes (the SFX_Folder wish-list schema).
+LIBRARY_ROOTS = _schema(
+    ("root_id", pa.string(), False),  # first 32 hex digits of the SHA-256 of root_path
+    ("library", pa.string(), False),
+    ("root_path", pa.string(), False),  # absolute
+    ("index_status", pa.string(), False),
+    ("last_indexed_at", pa.timestamp("us", tz="UTC"), True),  # last completed index
+    ("last_run_id", pa.string(), False),
 )
 
 # One row per pipeline run, for lineage and monitoring.
@@ -205,6 +220,7 @@ TABLES: dict[str, pa.Schema] = {
     "embeddings": EMBEDDINGS,
     "hard_negatives": HARD_NEGATIVES,
     "library_files": LIBRARY_FILES,
+    "library_roots": LIBRARY_ROOTS,
     "pipeline_runs": PIPELINE_RUNS,
 }
 
@@ -213,6 +229,7 @@ _ENUMS: dict[str, dict[str, set[str]]] = {
     "clips": {"role": ROLES, "status": STATUSES},
     "splits": {"split": SPLITS},
     "library_files": {"status": LIBRARY_STATUSES},
+    "library_roots": {"index_status": INDEX_STATUSES},
     "embeddings": {"tower": TOWERS},
     "hard_negatives": {"strategy": MINING_STRATEGIES, "selection": MINING_SELECTIONS},
 }

@@ -126,3 +126,34 @@ def test_clips_record_the_original_format_bit_depth_and_noise_floor(cfg, tmp_pat
         assert rows[f"d{i}.{fmt.lower()}"][:2] == (fmt, None)  # lossy: no bit depth
     assert rows["a.wav"][2] is not None and rows["a.wav"][2] < 0
     assert rows["broken.wav"] == (None, None, None)  # decode errors leave them empty
+
+
+def test_library_roots_record_each_folder_and_files_keep_their_relative_path(cfg, tmp_path, monkeypatch):
+    from vocalocate_pipeline import flows
+
+    a, b = tmp_path / "SFX_A", tmp_path / "SFX_B"
+    write(a / "proj" / "door.wav", tone(300, 1, 48_000), 48_000)
+    write(b / "hit.wav", tone(600, 1, 48_000), 48_000)
+    run_library_flow([a, b], cfg, library="studio")
+    roots = warehouse.query(cfg, "SELECT root_id, root_path, index_status, epoch_us(last_indexed_at), last_run_id "
+                                 "FROM library_roots ORDER BY root_path")
+    assert [(r[1], r[2]) for r in roots] == [(str(a.resolve()), "completed"), (str(b.resolve()), "completed")]
+    assert roots[0][0] == flows.root_id(a) and len(roots[0][0]) == 32 and roots[0][3] is not None
+    files = warehouse.query(cfg, "SELECT root_id, rel_path, project_id FROM library_files ORDER BY path")
+    assert files == [(flows.root_id(a), "proj/door.wav", "proj"), (flows.root_id(b), "hit.wav", None)]
+
+    # A failed run marks its roots failed but keeps the last completed index time.
+    first = roots[0][3]
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("disk full")
+
+    monkeypatch.setattr(flows, "clean_and_transform", boom)
+    try:
+        run_library_flow([a], cfg, library="studio")
+    except RuntimeError:
+        pass
+    warehouse.load(cfg)
+    rows = warehouse.query(
+        cfg, "SELECT root_path, index_status, epoch_us(last_indexed_at) FROM library_roots ORDER BY root_path")
+    assert rows == [(str(a.resolve()), "failed", first), (str(b.resolve()), "completed", roots[1][3])]
