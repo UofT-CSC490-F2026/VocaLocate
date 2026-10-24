@@ -7,6 +7,7 @@ files that are new or changed.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import multiprocessing
 import os
@@ -26,7 +27,7 @@ from .features import FEATURE_VERSION, log_mel, summary_vector
 from .ingest import ingest
 from .lake import Lake
 from .schemas import to_table
-from .splits import assign_splits
+from .splits import HELD_OUT_SOURCES, assign_splits
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +37,9 @@ _METRIC_FIELDS = (
     "orig_sample_rate",
     "orig_channels",
     "orig_duration_sec",
+    "orig_format",
+    "orig_bit_depth",
+    "noise_floor_dbfs",
     "duration_sec",
     "peak_dbfs",
     "rms_dbfs",
@@ -91,6 +95,9 @@ def process_clip(uri: str, clip_id: str, source: str, cfg: PipelineConfig) -> di
         "orig_sample_rate": res.orig_sample_rate,
         "orig_channels": res.orig_channels,
         "orig_duration_sec": res.orig_duration_sec,
+        "orig_format": res.orig_format,
+        "orig_bit_depth": res.orig_bit_depth,
+        "noise_floor_dbfs": res.noise_floor_dbfs,
         "duration_sec": res.duration_sec,
         "peak_dbfs": res.peak_dbfs,
         "rms_dbfs": res.rms_dbfs,
@@ -266,6 +273,8 @@ def run_dataset_flow(source: str, root: Path, cfg: PipelineConfig, load: bool = 
     summary = RunSummary(run_id=_new_run_id("dataset"), flow="dataset", source=source)
     try:
         result = ingest(source, root)
+        # Tables that do not depend on the audio are checked first, so a bad CSV fails before any work.
+        imitators = to_table("imitators", [{**r, "source": source} for r in result.imitators])
         summary.n_missing = len(result.missing)
         if result.missing:
             log.warning("%s: %d files listed in metadata are missing", source, len(result.missing))
@@ -277,21 +286,34 @@ def run_dataset_flow(source: str, root: Path, cfg: PipelineConfig, load: bool = 
         lake.write("clips", source, to_table("clips", clip_rows))
         lake.write("features", source, to_table("features", feature_rows))
         lake.write("pairs", source, to_table("pairs", build_pairs(clip_rows)))
-        lake.write("splits", source, to_table("splits", assign_splits(clip_rows, cfg.splits)))
+        split_rows = assign_splits(clip_rows, cfg.splits, result.splits)
+        lake.write("splits", source, to_table("splits", split_rows))
 
         clip_by_key = {c["source_key"]: c for c in clip_rows if c["status"] == "ok"}
-        queries = [
-            {
-                "query_id": q["query_id"],
-                "source": source,
-                "imitation_clip_id": clip_by_key[q["source_key"]]["clip_id"],
-                "text_hint": q["text_hint"],
-                "hint_type": q["hint_type"],
-                "target_group_key": q["target_group_key"],
-            }
-            for q in result.queries
-            if q["source_key"] in clip_by_key
-        ]
+        refs: dict[str, set[str]] = {}
+        for c in clip_by_key.values():
+            if c["role"] == "reference" and c["group_key"]:
+                refs.setdefault(c["group_key"], set()).add(c["clip_id"])
+        # A held-out source's query carries its imitation's split (val or test), whatever its target's is.
+        own_split = {r["clip_id"]: r["split"] for r in split_rows} if source in HELD_OUT_SOURCES else {}
+        queries = []
+        for q in result.queries:
+            if q["source_key"] not in clip_by_key:
+                continue
+            imitation = clip_by_key[q["source_key"]]["clip_id"]
+            targets = refs.get(q["target_group_key"], set())
+            queries.append(
+                {
+                    "query_id": q["query_id"],
+                    "source": source,
+                    "imitation_clip_id": imitation,
+                    "text_hint": q["text_hint"],
+                    "hint_type": q["hint_type"],
+                    "target_group_key": q["target_group_key"],
+                    "target_clip_id": next(iter(targets)) if len(targets) == 1 else None,
+                    "split": own_split.get(imitation),
+                }
+            )
         lake.write("queries", source, to_table("queries", queries))
         metadata = [
             {
@@ -310,6 +332,7 @@ def run_dataset_flow(source: str, root: Path, cfg: PipelineConfig, load: bool = 
             if c["source_key"] in clip_by_key
         ]
         lake.write("captions", source, to_table("captions", captions))
+        lake.write("imitators", source, imitators)
     except Exception as exc:
         _record_run(lake, summary, cfg, started, "failed", f"{type(exc).__name__}: {exc}")
         raise
@@ -332,6 +355,31 @@ def _scan(roots: list[Path]) -> dict[str, tuple[Path, Path, os.stat_result]]:
             if path.suffix.lower() in AUDIO_EXTENSIONS and path.is_file():
                 found[str(path)] = (root, path, path.stat())
     return found
+
+
+def root_id(root: Path) -> str:
+    """Stable ID of a library folder: the first 32 hex digits of the SHA-256 of its absolute path."""
+    return hashlib.sha256(str(Path(root).resolve()).encode()).hexdigest()[:32]
+
+
+def _write_roots(lake: Lake, library: str, roots: list[Path], status: str, run_id: str) -> None:
+    """Record this run's outcome for each root. A failed run keeps the root's last completed index time."""
+    prev_table = lake.read("library_roots", library)
+    rows = {r["root_id"]: r for r in prev_table.to_pylist()} if prev_table is not None else {}
+    now = _now()
+    for root in roots:
+        rid = root_id(root)
+        old = rows.get(rid)
+        rows[rid] = {
+            "root_id": rid,
+            "library": library,
+            "root_path": str(Path(root).resolve()),
+            "index_status": status,
+            "last_indexed_at": now if status == "completed" else (old["last_indexed_at"] if old else None),
+            "last_run_id": run_id,
+        }
+    table = to_table("library_roots", sorted(rows.values(), key=lambda r: r["root_path"]))
+    lake.write("library_roots", library, table)
 
 
 def run_library_flow(roots: list[Path], cfg: PipelineConfig, library: str = "default", load: bool = True) -> RunSummary:
@@ -376,6 +424,8 @@ def run_library_flow(roots: list[Path], cfg: PipelineConfig, library: str = "def
                     "status": "active",
                     "first_seen": old["first_seen"] if old is not None else started,
                     "last_seen": started,
+                    "root_id": root_id(root),
+                    "rel_path": rel.as_posix(),
                 }
             )
             raw_rows.append(
@@ -412,7 +462,12 @@ def run_library_flow(roots: list[Path], cfg: PipelineConfig, library: str = "def
         lake.write("clips", source, to_table("clips", clip_rows))
         lake.write("features", source, to_table("features", feature_rows))
         lake.write("library_files", library, to_table("library_files", state))
+        _write_roots(lake, library, roots, "completed", summary.run_id)
     except Exception as exc:
+        try:
+            _write_roots(lake, library, roots, "failed", summary.run_id)
+        except Exception:  # never hide the error that failed the run
+            log.exception("could not record the failed index of %s", library)
         _record_run(lake, summary, cfg, started, "failed", f"{type(exc).__name__}: {exc}")
         raise
     _record_run(lake, summary, cfg, started, "succeeded")

@@ -58,8 +58,13 @@ holds the data (`aws s3 ls s3://vocalocate-backup-lake-$ACCOUNT/ --region us-eas
 ## 2. Restore the services (services, configuration, access controls)
 
 ```bash
-terraform apply -var image_tag=$SHA
+terraform apply -var image_tag=$(git rev-parse HEAD)   # see below
 ```
+
+The `pipeline-image` workflow can only build the head of a branch, so if `main` has moved since
+prod was deployed, rebuild with the current `main` commit (as above) rather than `$SHA`, and push
+that commit's image. Check first that nothing under `pipeline/` changed in between
+(`git diff --stat $SHA HEAD -- pipeline`), so the restored environment runs the same code.
 
 Show: the plan only adds (the same resources as before), and the outputs. Point out:
 
@@ -71,7 +76,10 @@ Show: the plan only adds (the same resources as before), and the outputs. Point 
   ARN is unchanged, so nothing in GitHub or Modal needs updating. Bucket policies again deny
   non-TLS access and the public access block is on.
 - Then push the image again: GitHub → Actions → **pipeline-image** → Run workflow, branch `main`,
-  environment `prod`. Wait for the green `push` job.
+  environment **`prod`** (the field defaults to `dev`). Wait for the green `push` job and check the
+  tag arrived: `aws ecr describe-images --repository-name vocalocate-prod-pipeline --query
+  'imageDetails[].imageTags'`.
+- The SNS alert topic was recreated: confirm the new subscription email, or prod alerts stop.
 
 ## 3. Restore the data (databases and data)
 
@@ -101,7 +109,9 @@ tables in Glue. Show:
 - the report in the ECS task's log (CloudWatch log group `/vocalocate/prod/pipeline`), with the same
   counts as before the disaster;
 - the Glue tables (`aws glue get-tables --database-name vocalocate_prod_lake --query
-  'TableList[].Name'`), and optionally one Athena query in workgroup `vocalocate-prod`.
+  'TableList[].Name'`), and optionally one Athena query in workgroup `vocalocate-prod`. The
+  Catalog step only starts the crawler, so wait until `aws glue get-crawler --name
+  vocalocate-prod-lake --query Crawler.State` is `READY` before listing the tables.
 
 Optionally, upload one file to `raw/` to show the upload trigger and replication working again
 on the rebuilt environment.

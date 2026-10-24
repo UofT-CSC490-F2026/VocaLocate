@@ -3,10 +3,19 @@
 Layout:
     recordings.csv with columns
         file, imitator_id, target_group_key, text_hint, hint_type
-    and the audio files it lists (paths relative to the CSV).
+    and optionally split; plus the audio files it lists (paths relative to the CSV).
+    imitators.csv (optional) with columns
+        imitator_id, role, years_experience, first_language, music_training, consent_scope
 `target_group_key` names the reference sound being imitated in another
 source, e.g. "esc50:100032" or "vimsketch:<reference name>". Rows with a text
-hint become voice, text and target triples in the queries table.
+hint become voice, text and target triples in the queries table (the query ID
+is a hash of the file and the hint).
+
+Team recordings are never used for training. Part Two splits the target sounds
+before recording into a validation group (to tune the fusion weight) and a test
+group: `split` is val or test, and every recording of a target gets the target's
+split. A target with no split in the CSV gets a seeded 50/50 hash of its group key
+(splits.held_out_split).
 """
 
 from __future__ import annotations
@@ -22,39 +31,114 @@ VERSION = "live"
 LICENCE = "team-internal"
 
 
+_SPLITS = {"val": "val", "validation": "val", "test": "test"}
+
+
+def _clean(value: str | None) -> str | None:
+    value = (value or "").strip()
+    return value or None
+
+
+def _split(row: dict) -> str | None:
+    value = _clean(row.get("split"))
+    if value is None:
+        return None
+    if value.lower() not in _SPLITS:
+        raise ValueError(f"{row['file']}: split must be val or test (team recordings are never trained on), "
+                         f"got {value!r}")
+    return _SPLITS[value.lower()]
+
+
+def _bool(value: str | None) -> bool | None:
+    value = (_clean(value) or "").lower()
+    if not value:
+        return None
+    if value in {"true", "yes", "y", "1", "t"}:
+        return True
+    if value in {"false", "no", "n", "0", "f"}:
+        return False
+    raise ValueError(f"not a yes/no value: {value!r}")
+
+
+def _int(value: str | None) -> int | None:
+    value = _clean(value)
+    return int(value) if value is not None else None
+
+
+def _read(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    with open(path, newline="", encoding="utf-8") as f:
+        return list(csv.DictReader(f))
+
+
+def read_imitators(root: Path) -> list[dict]:
+    return [
+        {
+            "imitator_id": row["imitator_id"].strip(),
+            "role": _clean(row.get("role")),
+            "years_experience": _int(row.get("years_experience")),
+            "first_language": _clean(row.get("first_language")),
+            "music_training": _bool(row.get("music_training")),
+            "consent_scope": _clean(row.get("consent_scope")),
+        }
+        for row in _read(root / "imitators.csv")
+    ]
+
+
+def target_splits(rows: list[dict]) -> dict[str, str]:
+    """The split of each target named in the CSV. Two different splits for one target is an error."""
+    out: dict[str, str] = {}
+    for row in rows:
+        split, target = _split(row), row["target_group_key"].strip()
+        if split is not None and out.setdefault(target, split) != split:
+            raise ValueError(f"target {target!r} is in both {out[target]!r} and {split!r}")
+    return out
+
+
 def ingest(root: Path) -> IngestResult:
     meta = root / "recordings.csv"
     if not meta.exists():
         raise FileNotFoundError(f"Team recordings manifest not found at {meta}")
-    files, queries, missing = [], [], []
     with open(meta, newline="", encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            path = root / row["file"]
-            if not path.exists():
-                missing.append(row["file"])
-                continue
-            target = row["target_group_key"].strip()
-            files.append(
-                RawFile(
-                    source=SOURCE,
-                    source_version=VERSION,
-                    source_key=row["file"],
-                    path=path,
-                    role="imitation",
-                    group_key=target,
-                    imitator_id=row["imitator_id"].strip(),
-                    licence=LICENCE,
-                )
+        rows = list(csv.DictReader(f))
+    split_of = target_splits(rows)
+    files, queries, splits, missing = [], [], {}, []
+    for row in rows:
+        path = root / row["file"]
+        if not path.exists():
+            missing.append(row["file"])
+            continue
+        target = row["target_group_key"].strip()
+        files.append(
+            RawFile(
+                source=SOURCE,
+                source_version=VERSION,
+                source_key=row["file"],
+                path=path,
+                role="imitation",
+                group_key=target,
+                imitator_id=row["imitator_id"].strip(),
+                licence=LICENCE,
             )
-            hint = (row.get("text_hint") or "").strip()
-            if hint:
-                queries.append(
-                    {
-                        "query_id": hashlib.sha256(f"{row['file']}|{hint}".encode()).hexdigest()[:32],
-                        "source_key": row["file"],
-                        "text_hint": hint,
-                        "hint_type": (row.get("hint_type") or "").strip() or None,
-                        "target_group_key": target,
-                    }
-                )
-    return IngestResult(files=files, queries=queries, missing=missing)
+        )
+        if target in split_of:
+            splits[row["file"]] = split_of[target]
+        hint = (row.get("text_hint") or "").strip()
+        if hint:
+            queries.append(
+                {
+                    "query_id": hashlib.sha256(f"{row['file']}|{hint}".encode()).hexdigest()[:32],
+                    "source_key": row["file"],
+                    "text_hint": hint,
+                    "hint_type": (row.get("hint_type") or "").strip() or None,
+                    "target_group_key": target,
+                }
+            )
+    return IngestResult(
+        files=files,
+        queries=queries,
+        imitators=read_imitators(root),
+        splits=splits,
+        missing=missing,
+    )

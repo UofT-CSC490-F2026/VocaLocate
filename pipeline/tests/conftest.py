@@ -111,6 +111,8 @@ def vimsketch_release(tmp_path) -> Path:
         for i, row in enumerate(rows):
             sub = "included" if row[3] == "True" else "excluded"
             write(vs / folder / sub / row[1], tone(600 + 40 * i, 1, 44_100), 44_100)
+    _survey(vs / "participant_survey.csv", [("p1", "20", "3.0", "4.0"), ("p3", "20", "1.0", "0.0")])
+    _survey(vs / "participant_survey_set2.csv", [("p4", "40", "10.0", "0.0")], index=True)
     return root
 
 
@@ -199,7 +201,26 @@ def vis_dir(tmp_path) -> Path:
             folder = "included" if inc == "True" else "excluded"
             write(root / "vocal_imitations" / folder / name, tone(250 + 60 * i, 1.2, 16_000), 16_000)
             w.writerow([i, name, i, ref, inc, "False", "False", pid, desc])
+    _survey(root / "participant_survey.csv", [("p1", "19", "2.0", "0.0"), ("p3", "30", "72.0", "5.0"),
+                                              ("listener", "25", "1.0", "1.0")], index=True)
     return root
+
+
+SURVEY_COLUMNS = ["participant_id", "age", "gender", "hearing_problems", "speech_problems",
+                  "years_actively_using_music_tech", "frequency_using_music_tech", "years_actively_making_music",
+                  "frequency_making_music", "years_actively_singing", "frequency_singing"]
+
+
+def _survey(path: Path, rows: list[tuple[str, str, str, str]], index: bool = False) -> None:
+    """A participant survey as released: (participant_id, age, years using music tech, years making music).
+
+    The Vocal Imitation Set's copy has an unnamed index column first.
+    """
+    with open(_mk(path), "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow([""] * index + SURVEY_COLUMNS)
+        for i, (pid, age, tech, music) in enumerate(rows):
+            w.writerow([i] * index + [pid, age, "f", "False", "False", tech, "Never", music, "Never", "0.0", "Never"])
 
 
 @pytest.fixture

@@ -4,6 +4,20 @@ IDs line up with the A2 Part One wish-list schemas: `clip_id` plays the role
 of sound_id / imitation_id (it is the SHA-256 of the raw file, so the same
 file always gets the same ID), `imitator_id` links to imitator profiles and
 `query_id` links text hints to imitations.
+
+Where each Part One schema lives (the warehouse has a view per schema with
+exactly its column names, see warehouse.py):
+
+    SFX_Folder            library_roots                          v_sfx_folder
+    SFX_File              clips + library_files + sfx_metadata   v_sfx_file
+    SFX_Metadata          sfx_metadata                           v_sfx_candidates
+    Vocal_Imitation       clips                                  v_vocal_imitation
+    Retrieval_Query       queries (+ generated from metadata)    v_retrieval_query
+    QVIM_Benchmark_Data   pairs of qvim_dev / qvim_eval          v_qvim_benchmark
+    Imitator profiles     imitators                              v_imitator_profile
+
+Columns added after the first release are nullable, so Parquet files written
+before them still load (the warehouse reads with union_by_name).
 """
 
 from __future__ import annotations
@@ -18,6 +32,9 @@ ROLES = {"reference", "imitation", "library", "unpaired_imitation"}
 STATUSES = {"ok", "rejected", "duplicate"}
 SPLITS = {"train", "val", "test"}
 LIBRARY_STATUSES = {"active", "deleted"}
+# pending and indexing are for the app (a root added but not indexed yet, a run in progress);
+# the library flow writes completed or failed at the end of each run.
+INDEX_STATUSES = {"pending", "indexing", "completed", "failed"}
 TOWERS = {"sfx", "imitation", "clap_audio"}
 MINING_STRATEGIES = {"retrieval", "metadata", "random"}
 MINING_SELECTIONS = {"band", "fallback", "random"}
@@ -62,6 +79,10 @@ CLIPS = _schema(
     ("orig_sample_rate", pa.int32(), True),
     ("orig_channels", pa.int32(), True),
     ("orig_duration_sec", pa.float32(), True),
+    ("orig_format", pa.string(), True),  # soundfile's format: WAV, FLAC, MP3, OGG, AIFF, ...
+    ("orig_bit_depth", pa.int32(), True),  # from the subtype; null for lossy formats (MP3, Vorbis, Opus)
+    # Background noise of the original recording: 10th percentile of 50 ms frame RMS (audio.noise_floor_dbfs).
+    ("noise_floor_dbfs", pa.float32(), True),
     ("duration_sec", pa.float32(), True),
     ("peak_dbfs", pa.float32(), True),
     ("rms_dbfs", pa.float32(), True),
@@ -80,7 +101,7 @@ PAIRS = _schema(
     ("group_key", pa.string(), False),
 )
 
-# Silver: text hints recorded with an imitation (voice, text and target triples).
+# Silver: text hints recorded with an imitation (voice, text and target triples; the Retrieval_Query schema).
 QUERIES = _schema(
     ("query_id", pa.string(), False),
     ("source", pa.string(), False),
@@ -88,6 +109,11 @@ QUERIES = _schema(
     ("text_hint", pa.string(), False),
     ("hint_type", pa.string(), True),
     ("target_group_key", pa.string(), False),
+    # The target when the group has exactly one clean reference in the query's own source.
+    ("target_clip_id", pa.string(), True),
+    # Set only when the query has a split of its own (team recordings: val or test); otherwise
+    # the query follows its target's split (see v_retrieval_query).
+    ("split", pa.string(), True),
 )
 
 # Silver: free-text captions written for an SFX clip (e.g. CAPTDURE). Each caption is a
@@ -111,6 +137,17 @@ SFX_METADATA = _schema(
     ("tags", pa.list_(pa.string()), True),
     # Clips cut from the same original recording share this ID (e.g. a Freesound ID).
     ("recording_id", pa.string(), True),
+)
+
+# Silver: imitator profiles, joined to clips by imitator_id.
+IMITATORS = _schema(
+    ("imitator_id", pa.string(), False),
+    ("source", pa.string(), False),
+    ("role", pa.string(), True),  # e.g. "sound designer", "student", "crowd worker"
+    ("years_experience", pa.int32(), True),
+    ("first_language", pa.string(), True),
+    ("music_training", pa.bool_(), True),
+    ("consent_scope", pa.string(), True),  # what the recordings may be used for
 )
 
 # Gold: cached log-mel features and a fixed-size summary vector per clean clip.
@@ -169,6 +206,18 @@ LIBRARY_FILES = _schema(
     ("status", pa.string(), False),
     ("first_seen", pa.timestamp("us", tz="UTC"), False),
     ("last_seen", pa.timestamp("us", tz="UTC"), False),
+    ("root_id", pa.string(), True),  # the library_roots folder the file was found under
+    ("rel_path", pa.string(), True),  # path relative to that folder
+)
+
+# State: one row per folder a library indexes (the SFX_Folder wish-list schema).
+LIBRARY_ROOTS = _schema(
+    ("root_id", pa.string(), False),  # first 32 hex digits of the SHA-256 of root_path
+    ("library", pa.string(), False),
+    ("root_path", pa.string(), False),  # absolute
+    ("index_status", pa.string(), False),
+    ("last_indexed_at", pa.timestamp("us", tz="UTC"), True),  # last completed index
+    ("last_run_id", pa.string(), False),
 )
 
 # One row per pipeline run, for lineage and monitoring.
@@ -196,11 +245,13 @@ TABLES: dict[str, pa.Schema] = {
     "queries": QUERIES,
     "sfx_metadata": SFX_METADATA,
     "captions": CAPTIONS,
+    "imitators": IMITATORS,
     "features": FEATURES,
     "splits": SPLITS_TABLE,
     "embeddings": EMBEDDINGS,
     "hard_negatives": HARD_NEGATIVES,
     "library_files": LIBRARY_FILES,
+    "library_roots": LIBRARY_ROOTS,
     "pipeline_runs": PIPELINE_RUNS,
 }
 
@@ -208,7 +259,9 @@ _ENUMS: dict[str, dict[str, set[str]]] = {
     "raw_files": {"role": ROLES},
     "clips": {"role": ROLES, "status": STATUSES},
     "splits": {"split": SPLITS},
+    "queries": {"split": SPLITS},
     "library_files": {"status": LIBRARY_STATUSES},
+    "library_roots": {"index_status": INDEX_STATUSES},
     "embeddings": {"tower": TOWERS},
     "hard_negatives": {"strategy": MINING_STRATEGIES, "selection": MINING_SELECTIONS},
 }
@@ -222,7 +275,8 @@ def to_table(name: str, rows: Iterable[dict]) -> pa.Table:
     """Build a table from row dicts and check it against the schema.
 
     Types are enforced by pyarrow; we also check required columns for nulls and
-    enum columns for unknown values, which pyarrow does not do.
+    enum columns for unknown values, which pyarrow does not do. A null in a nullable
+    enum column is fine.
     """
     schema = TABLES[name]
     rows = list(rows)
@@ -231,7 +285,7 @@ def to_table(name: str, rows: Iterable[dict]) -> pa.Table:
         if not f.nullable and table.column(f.name).null_count:
             raise SchemaError(f"{name}.{f.name} has {table.column(f.name).null_count} null values")
     for col, allowed in _ENUMS.get(name, {}).items():
-        bad = set(table.column(col).to_pylist()) - allowed
+        bad = set(table.column(col).to_pylist()) - allowed - {None}
         if bad:
             raise SchemaError(f"{name}.{col} has unknown values {sorted(bad)}")
     return table

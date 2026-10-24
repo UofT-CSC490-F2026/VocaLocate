@@ -11,11 +11,13 @@ locals {
     "silver/tables/queries",
     "silver/tables/sfx_metadata",
     "silver/tables/captions",
+    "silver/tables/imitators",
     "gold/tables/features",
     "gold/tables/splits",
     "gold/tables/embeddings",
     "gold/tables/hard_negatives",
     "state/library_files",
+    "state/library_roots",
     "runs",
   ]
   database = replace("${var.name_prefix}_lake", "-", "_")

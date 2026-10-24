@@ -26,6 +26,11 @@ negatives. When the VocalSketch release is unpacked next to VimSketch (or inside
 passed in), they are added as ``unpaired_imitation`` clips of their sound: same group and split,
 never a training pair. VimSketch already holds VocalSketch's included imitations, so those are
 not read again.
+
+VocalSketch's participant surveys (participant_survey.csv, participant_survey_set2.csv) fill the
+imitator profiles of those excluded takes' imitators, as for the Vocal Imitation Set
+(vocal_imitation_set.survey_imitators). VimSketch itself names no imitators: its file names drop
+the participant IDs, so its own imitations have no imitator_id.
 """
 
 from __future__ import annotations
@@ -38,6 +43,9 @@ from pathlib import Path
 from ..audio import AUDIO_EXTENSIONS
 from . import IngestResult
 from .sfx_meta import ingest_rows
+from .vocal_imitation_set import survey_imitators
+
+VOCALSKETCH_SURVEYS = ("participant_survey.csv", "participant_survey_set2.csv")
 
 SOURCE = "vimsketch"
 VERSION = "1.0"
@@ -168,4 +176,11 @@ def build_rows(root: Path) -> list[dict]:
 
 
 def ingest(root: Path) -> IngestResult:
-    return ingest_rows(build_rows(Path(root)), Path(root), source=SOURCE, version=VERSION, licence=LICENCE)
+    rows = build_rows(Path(root))
+    result = ingest_rows(rows, Path(root), source=SOURCE, version=VERSION, licence=LICENCE)
+    _, vs = find_dirs(Path(root))
+    ids = {r["imitator_id"] for r in rows if r["imitator_id"]}
+    survey = [r for name in VOCALSKETCH_SURVEYS if vs and (vs / name).exists() for r in _read_csv(vs / name)]
+    result.imitators = survey_imitators(
+        survey, lambda pid: f"vocalsketch:{pid}" if f"vocalsketch:{pid}" in ids else None)
+    return result

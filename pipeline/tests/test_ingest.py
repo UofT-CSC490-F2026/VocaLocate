@@ -132,3 +132,12 @@ def test_qvim_dev_accepts_the_zenodo_release_layout(qvim_dir, tmp_path):
     result = ingest("qvim_dev", release)
     assert sorted(f.role for f in result.files) == ["imitation", "imitation", "reference"]
     assert not result.missing
+
+
+def test_vimsketch_reads_vocalsketch_surveys_for_the_excluded_takes_imitators(vimsketch_release):
+    result = ingest("vimsketch", vimsketch_release)
+    profiles = {r["imitator_id"]: r for r in result.imitators}
+    # p3 recorded only an included take, which VimSketch already holds without its imitator.
+    assert set(profiles) == {"vocalsketch:p1", "vocalsketch:p4"}
+    assert profiles["vocalsketch:p1"]["years_experience"] == 3 and profiles["vocalsketch:p1"]["music_training"]
+    assert profiles["vocalsketch:p4"]["music_training"] is False

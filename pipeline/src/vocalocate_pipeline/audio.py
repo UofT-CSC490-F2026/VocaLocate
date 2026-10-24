@@ -17,6 +17,11 @@ AUDIO_EXTENSIONS = {".wav", ".flac", ".aiff", ".aif", ".ogg", ".mp3"}
 
 _EPS = 1e-12
 
+# Bit depth of each soundfile subtype. Lossy and compressed subtypes (MP3, VORBIS, OPUS, ...) have none.
+_BIT_DEPTH = {"PCM_S8": 8, "PCM_U8": 8, "PCM_16": 16, "PCM_24": 24, "PCM_32": 32, "FLOAT": 32, "DOUBLE": 64}
+NOISE_FRAME_SEC = 0.05
+NOISE_PERCENTILE = 10.0
+
 
 def sha256_file(path: Path, chunk_size: int = 1 << 20) -> str:
     h = hashlib.sha256()
@@ -32,6 +37,22 @@ def dbfs(value: float) -> float:
 
 def rms(x: np.ndarray) -> float:
     return float(np.sqrt(np.mean(np.square(x, dtype=np.float64)))) if x.size else 0.0
+
+
+def noise_floor_dbfs(x: np.ndarray, sr: int) -> float:
+    """Background-noise estimate: the 10th percentile of 50 ms frame RMS, in dBFS.
+
+    Measured on the decoded mono signal before trimming and normalisation, so it describes the
+    recording as made. The quietest tenth of the frames is usually the pauses around the sound,
+    which a 10th percentile picks up without being thrown off by one dropout. A clip shorter than
+    one frame uses its overall RMS.
+    """
+    n = max(1, int(sr * NOISE_FRAME_SEC))
+    if x.shape[0] < n:
+        return dbfs(rms(x))
+    frames = x[: x.shape[0] // n * n].reshape(-1, n)
+    frame_rms = np.sqrt(np.mean(np.square(frames, dtype=np.float64), axis=1))
+    return dbfs(float(np.percentile(frame_rms, NOISE_PERCENTILE)))
 
 
 def resample(x: np.ndarray, sr_in: int, sr_out: int) -> np.ndarray:
@@ -58,6 +79,9 @@ class CleanResult:
     orig_sample_rate: int | None = None
     orig_channels: int | None = None
     orig_duration_sec: float | None = None
+    orig_format: str | None = None  # soundfile's container format, e.g. WAV, FLAC, MP3
+    orig_bit_depth: int | None = None  # None for lossy formats
+    noise_floor_dbfs: float | None = None
     duration_sec: float | None = None
     peak_dbfs: float | None = None
     rms_dbfs: float | None = None
@@ -69,10 +93,14 @@ class CleanResult:
 def clean_file(path: Path, cfg: AudioConfig) -> CleanResult:
     """Decode a file and return a 32 kHz mono, trimmed, loudness-normalised clip."""
     try:
-        data, sr = sf.read(str(path), dtype="float32", always_2d=True)
+        with sf.SoundFile(str(path)) as f:
+            fmt, subtype, sr = f.format, f.subtype, f.samplerate
+            data = f.read(dtype="float32", always_2d=True)
     except Exception as exc:  # soundfile raises several error types for bad files
         return CleanResult(status="rejected", reject_reason=f"decode_error: {type(exc).__name__}")
-    return clean_array(data, sr, cfg)
+    result = clean_array(data, sr, cfg)
+    result.orig_format, result.orig_bit_depth = fmt, _BIT_DEPTH.get(subtype)
+    return result
 
 
 def clean_array(data: np.ndarray, sr: int, cfg: AudioConfig) -> CleanResult:
@@ -93,6 +121,7 @@ def clean_array(data: np.ndarray, sr: int, cfg: AudioConfig) -> CleanResult:
     result.clipped = clipped_ratio >= cfg.clipped_ratio_flag
 
     x = data.mean(axis=1).astype(np.float32)
+    result.noise_floor_dbfs = noise_floor_dbfs(x, sr)
     if dbfs(float(np.max(np.abs(x)))) < cfg.silence_peak_dbfs:
         result.status, result.reject_reason = "rejected", "silent"
         return result
