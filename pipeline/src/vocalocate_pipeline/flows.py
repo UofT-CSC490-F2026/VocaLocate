@@ -27,7 +27,7 @@ from .features import FEATURE_VERSION, log_mel, summary_vector
 from .ingest import ingest
 from .lake import Lake
 from .schemas import to_table
-from .splits import assign_splits
+from .splits import HELD_OUT_SOURCES, assign_splits
 
 log = logging.getLogger(__name__)
 
@@ -284,21 +284,34 @@ def run_dataset_flow(source: str, root: Path, cfg: PipelineConfig, load: bool = 
         lake.write("clips", source, to_table("clips", clip_rows))
         lake.write("features", source, to_table("features", feature_rows))
         lake.write("pairs", source, to_table("pairs", build_pairs(clip_rows)))
-        lake.write("splits", source, to_table("splits", assign_splits(clip_rows, cfg.splits)))
+        split_rows = assign_splits(clip_rows, cfg.splits, result.splits)
+        lake.write("splits", source, to_table("splits", split_rows))
 
         clip_by_key = {c["source_key"]: c for c in clip_rows if c["status"] == "ok"}
-        queries = [
-            {
-                "query_id": q["query_id"],
-                "source": source,
-                "imitation_clip_id": clip_by_key[q["source_key"]]["clip_id"],
-                "text_hint": q["text_hint"],
-                "hint_type": q["hint_type"],
-                "target_group_key": q["target_group_key"],
-            }
-            for q in result.queries
-            if q["source_key"] in clip_by_key
-        ]
+        refs: dict[str, set[str]] = {}
+        for c in clip_by_key.values():
+            if c["role"] == "reference" and c["group_key"]:
+                refs.setdefault(c["group_key"], set()).add(c["clip_id"])
+        # A held-out source's query carries its imitation's split (val or test), whatever its target's is.
+        own_split = {r["clip_id"]: r["split"] for r in split_rows} if source in HELD_OUT_SOURCES else {}
+        queries = []
+        for q in result.queries:
+            if q["source_key"] not in clip_by_key:
+                continue
+            imitation = clip_by_key[q["source_key"]]["clip_id"]
+            targets = refs.get(q["target_group_key"], set())
+            queries.append(
+                {
+                    "query_id": q["query_id"],
+                    "source": source,
+                    "imitation_clip_id": imitation,
+                    "text_hint": q["text_hint"],
+                    "hint_type": q["hint_type"],
+                    "target_group_key": q["target_group_key"],
+                    "target_clip_id": next(iter(targets)) if len(targets) == 1 else None,
+                    "split": own_split.get(imitation),
+                }
+            )
         lake.write("queries", source, to_table("queries", queries))
         metadata = [
             {

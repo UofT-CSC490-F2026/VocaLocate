@@ -157,3 +157,56 @@ def test_library_roots_record_each_folder_and_files_keep_their_relative_path(cfg
     rows = warehouse.query(
         cfg, "SELECT root_path, index_status, epoch_us(last_indexed_at) FROM library_roots ORDER BY root_path")
     assert rows == [(str(a.resolve()), "failed", first), (str(b.resolve()), "completed", roots[1][3])]
+
+
+def _team(tmp_path, rows, header=("file", "imitator_id", "target_group_key", "text_hint", "hint_type", "split")):
+    team = tmp_path / "team"
+    for i, row in enumerate(rows):
+        write(team / row[0], tone(400 + 37 * i, 1, 48_000), 48_000)
+    with open(team / "recordings.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(header)
+        w.writerows(rows)
+    return team
+
+
+def test_team_split_comes_from_the_csv_or_a_val_test_hash_never_train(cfg, esc50_dir, tmp_path):
+    from vocalocate_pipeline.splits import held_out_split
+
+    run_dataset_flow("esc50", esc50_dir, cfg)
+    rows = [("t/a.wav", "tanay", "esc50:200", "short", "length", "val"),
+            ("t/b.wav", "tanay", "esc50:200", "", "", ""),  # same target: inherits val
+            ("t/c.wav", "carmen", "esc50:400", "low", "pitch", "test")]
+    rows += [(f"t/h{i}.wav", "carmen", f"esc50:9{i}", "hint", "", "") for i in range(12)]  # no split given
+    run_dataset_flow("team", _team(tmp_path, rows), cfg)
+    got = dict(warehouse.query(cfg, "SELECT source_key, split FROM splits WHERE source = 'team'"))
+    assert got["t/a.wav"] == got["t/b.wav"] == "val" and got["t/c.wav"] == "test"
+    hashed = {k: v for k, v in got.items() if "/h" in k}
+    assert set(hashed.values()) == {"val", "test"}  # both halves are used, never train
+    assert all(v == held_out_split(f"esc50:9{k[3:-4]}", cfg.splits) for k, v in hashed.items())
+    strategies = dict(warehouse.query(cfg, "SELECT source_key, strategy FROM splits WHERE source = 'team'"))
+    assert strategies["t/a.wav"] == "team" and strategies["t/h0.wav"].startswith("team_hash")
+    # The query carries the team split even though its target (an ESC-50 clip) has its own split.
+    assert dict(warehouse.query(cfg, "SELECT text_hint, split FROM queries WHERE text_hint <> 'hint'")) == {
+        "short": "val", "low": "test"}
+    assert _one(cfg, "SELECT count(*) FROM queries WHERE split IS NULL") == 0
+
+
+def test_team_split_must_be_val_or_test_and_one_per_target(tmp_path):
+    import pytest
+
+    from vocalocate_pipeline.ingest import ingest
+
+    with pytest.raises(ValueError, match="never trained"):
+        ingest("team", _team(tmp_path / "x", [("a.wav", "t", "esc50:1", "", "", "train")]))
+    with pytest.raises(ValueError, match="both"):
+        ingest("team", _team(tmp_path / "y", [("a.wav", "t", "esc50:1", "", "", "val"),
+                                             ("b.wav", "t", "esc50:1", "", "", "test")]))
+
+
+def test_queries_link_to_their_target_clip_in_the_same_source(cfg, sfx_meta_dir):
+    run_dataset_flow("sfx_meta", sfx_meta_dir, cfg)
+    # The group holds a reference and another take; the target is the reference.
+    rows = warehouse.query(cfg, """SELECT c.source_key, q.split FROM queries q
+                                   JOIN clips c ON c.clip_id = q.target_clip_id""")
+    assert rows == [("sfx/bell_A.wav", None)]  # no split of its own: it follows its target's

@@ -87,7 +87,7 @@ PAIRS = _schema(
     ("group_key", pa.string(), False),
 )
 
-# Silver: text hints recorded with an imitation (voice, text and target triples).
+# Silver: text hints recorded with an imitation (voice, text and target triples; the Retrieval_Query schema).
 QUERIES = _schema(
     ("query_id", pa.string(), False),
     ("source", pa.string(), False),
@@ -95,6 +95,11 @@ QUERIES = _schema(
     ("text_hint", pa.string(), False),
     ("hint_type", pa.string(), True),
     ("target_group_key", pa.string(), False),
+    # The target when the group has exactly one clean reference in the query's own source.
+    ("target_clip_id", pa.string(), True),
+    # Set only when the query has a split of its own (team recordings: val or test); otherwise
+    # the query follows its target's split (see v_retrieval_query).
+    ("split", pa.string(), True),
 )
 
 # Silver: free-text captions written for an SFX clip (e.g. CAPTDURE). Each caption is a
@@ -228,6 +233,7 @@ _ENUMS: dict[str, dict[str, set[str]]] = {
     "raw_files": {"role": ROLES},
     "clips": {"role": ROLES, "status": STATUSES},
     "splits": {"split": SPLITS},
+    "queries": {"split": SPLITS},
     "library_files": {"status": LIBRARY_STATUSES},
     "library_roots": {"index_status": INDEX_STATUSES},
     "embeddings": {"tower": TOWERS},
@@ -243,7 +249,7 @@ def to_table(name: str, rows: Iterable[dict]) -> pa.Table:
     """Build a table from row dicts and check it against the schema.
 
     Types are enforced by pyarrow; we also check required columns for nulls and
-    enum columns for unknown values, which pyarrow does not do.
+    enum columns for unknown values, which pyarrow does not do. A null in a nullable enum column is fine.
     """
     schema = TABLES[name]
     rows = list(rows)
@@ -252,7 +258,7 @@ def to_table(name: str, rows: Iterable[dict]) -> pa.Table:
         if not f.nullable and table.column(f.name).null_count:
             raise SchemaError(f"{name}.{f.name} has {table.column(f.name).null_count} null values")
     for col, allowed in _ENUMS.get(name, {}).items():
-        bad = set(table.column(col).to_pylist()) - allowed
+        bad = set(table.column(col).to_pylist()) - allowed - {None}
         if bad:
             raise SchemaError(f"{name}.{col} has unknown values {sorted(bad)}")
     return table

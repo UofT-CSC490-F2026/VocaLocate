@@ -57,6 +57,8 @@ class IngestResult:
     metadata: list[dict] = field(default_factory=list)
     # Free-text captions for SFX, keyed by source_key (captdure only, for now).
     captions: list[dict] = field(default_factory=list)
+    # Splits the dataset itself assigns, keyed by source_key (team recordings only: val or test).
+    splits: dict[str, str] = field(default_factory=dict)
     missing: list[str] = field(default_factory=list)
 
 
