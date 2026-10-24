@@ -111,7 +111,10 @@ VIEWS = {
         WHERE c.status = 'ok' AND c.role IN ('imitation', 'unpaired_imitation')
     """,
     # Retrieval_Query: recorded queries (an imitation with a text hint) and, for every other paired
-    # imitation, a query generated from the target's metadata: its category and tags as the text.
+    # imitation, a query generated from the target's metadata. text_descriptor is a list of strings:
+    # a recorded hint split on commas, each part trimmed and empty parts dropped ("dog bark, loud,
+    # metallic" gives ['dog bark', 'loud', 'metallic']); for a generated query, the target's category
+    # then its tags, duplicates removed (first one kept). NULL when nothing is left.
     # A target outside the query's source (team recordings) is the one clean SFX its group key names:
     # the group's reference if it has exactly one, else its only clip. A query's split is its own
     # (team: val or test), else its imitation's or target's, which are the same for a pair.
@@ -135,7 +138,8 @@ VIEWS = {
             WHERE i.status = 'ok' AND i.role = 'imitation'
         ),
         queries_all AS (
-            SELECT q.query_id, q.imitation_clip_id AS imitation_id, q.text_hint AS text_descriptor,
+            SELECT q.query_id, q.imitation_clip_id AS imitation_id,
+                   regexp_extract_all(q.text_hint, '[^,\\s](?:[^,]*[^,\\s])?') AS text_descriptor,
                    coalesce(q.target_clip_id, t.clip_id) AS target_sound_id,
                    CASE WHEN q.target_clip_id IS NOT NULL THEN q.source ELSE t.source END AS target_source,
                    q.split, q.hint_type, 'recorded' AS query_type
@@ -143,10 +147,7 @@ VIEWS = {
             LEFT JOIN targets t ON t.group_key = q.target_group_key
             UNION ALL
             SELECT md5('meta:' || g.imitation_clip_id || g.reference_clip_id), g.imitation_clip_id,
-                   nullif(concat_ws(', ',
-                                    CASE WHEN list_contains(m.tags, coalesce(m.category, r.label)) THEN NULL
-                                         ELSE coalesce(m.category, r.label) END,
-                                    nullif(array_to_string(m.tags, ', '), '')), ''),
+                   list_concat([coalesce(m.category, r.label)], m.tags),
                    g.reference_clip_id, g.reference_source, si.split, CAST(NULL AS VARCHAR), 'metadata'
             FROM generated g
             JOIN clips r ON r.source = g.reference_source AND r.clip_id = g.reference_clip_id
@@ -155,10 +156,25 @@ VIEWS = {
             WHERE g.source NOT IN ('qvim_dev', 'qvim_eval')
               AND NOT EXISTS (SELECT 1 FROM queries q
                               WHERE q.source = g.source AND q.imitation_clip_id = g.imitation_clip_id)
+        ),
+        -- Generated queries: drop NULL, blank and repeated terms, keeping each term's first position.
+        meta_terms AS (
+            SELECT query_id, unnest(text_descriptor) AS term, generate_subscripts(text_descriptor, 1) AS i
+            FROM queries_all WHERE query_type = 'metadata'
+        ),
+        meta_descriptors AS (
+            SELECT query_id, array_agg(term ORDER BY i) AS text_descriptor
+            FROM (SELECT query_id, term, min(i) AS i FROM meta_terms
+                  WHERE term IS NOT NULL AND trim(term) <> '' GROUP BY query_id, term)
+            GROUP BY query_id
         )
-        SELECT a.query_id, a.imitation_id, a.text_descriptor, a.target_sound_id,
-               coalesce(a.split, s.split) AS split, a.hint_type, a.query_type
+        SELECT a.query_id, a.imitation_id,
+               CAST(CASE WHEN a.query_type = 'metadata' THEN d.text_descriptor
+                         WHEN len(a.text_descriptor) > 0 THEN a.text_descriptor END AS VARCHAR[])
+                   AS text_descriptor,
+               a.target_sound_id, coalesce(a.split, s.split) AS split, a.hint_type, a.query_type
         FROM queries_all a
+        LEFT JOIN meta_descriptors d ON d.query_id = a.query_id
         LEFT JOIN splits s ON s.source = a.target_source AND s.clip_id = a.target_sound_id
     """,
     # QVIM_Benchmark_Data: the challenge's DEV and EVAL query/target pairs.

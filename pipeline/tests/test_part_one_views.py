@@ -33,6 +33,9 @@ def test_every_part_one_view_starts_with_the_part_one_columns_in_order(cfg):
         assert warehouse.query(cfg, f"SELECT count(*) FROM {view}") == [(0,)]
     assert _columns(cfg, "v_retrieval_query") == PART_ONE["v_retrieval_query"] + ["hint_type", "query_type"]
     assert "judged_relevance" not in _columns(cfg, "v_hard_negatives")
+    (dtype,) = warehouse.query(cfg, "SELECT data_type FROM information_schema.columns "
+                                    "WHERE table_name = 'v_retrieval_query' AND column_name = 'text_descriptor'")[0]
+    assert dtype == "VARCHAR[]"
 
 
 def test_sfx_folder_and_file_views_cover_library_and_dataset_sounds(cfg, tmp_path, esc50_dir):
@@ -71,9 +74,9 @@ def test_retrieval_queries_are_recorded_or_generated_from_metadata(cfg, sfx_meta
         JOIN splits s ON s.clip_id = q.target_sound_id
         ORDER BY ALL""")
     assert rows == [
-        ("metadata", "bell, metallic, low", None, "sfx/gong_A.wav", True, 32),
-        ("metadata", "bell, metallic, ringing", None, "sfx/bell_A.wav", True, 32),
-        ("recorded", "metallic", "quality", "sfx/bell_A.wav", True, 32),
+        ("metadata", ["bell", "metallic", "low"], None, "sfx/gong_A.wav", True, 32),
+        ("metadata", ["bell", "metallic", "ringing"], None, "sfx/bell_A.wav", True, 32),
+        ("recorded", ["metallic"], "quality", "sfx/bell_A.wav", True, 32),
     ]
     # Generated IDs are stable across warehouse rebuilds.
     ids = warehouse.query(cfg, "SELECT query_id FROM v_retrieval_query ORDER BY 1")
@@ -89,14 +92,39 @@ def test_team_queries_resolve_targets_in_other_sources_and_keep_their_split(cfg,
     with open(team / "recordings.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["file", "imitator_id", "target_group_key", "text_hint", "hint_type", "split"])
-        w.writerow(["a.wav", "tanay", "esc50:200", "loud", "loudness", "val"])
+        w.writerow(["a.wav", "tanay", "esc50:200", "dog bark, loud,  metallic", "loudness", "val"])
         w.writerow(["b.wav", "tanay", "esc50:400", "", "", "test"])  # voice only: a metadata query
     run_dataset_flow("team", team, cfg)
     rows = warehouse.query(cfg, """
         SELECT q.query_type, q.text_descriptor, c.source_key, q.split
         FROM v_retrieval_query q JOIN clips c ON c.clip_id = q.target_sound_id ORDER BY ALL""")
-    assert rows == [("metadata", "cow", "audio/4-400-A-3.wav", "test"),
-                    ("recorded", "loud", "audio/2-200-A-1.wav", "val")]
+    assert rows == [("metadata", ["cow"], "audio/4-400-A-3.wav", "test"),
+                    ("recorded", ["dog bark", "loud", "metallic"], "audio/2-200-A-1.wav", "val")]
+    # The raw hint stays as typed in queries.text_hint.
+    assert warehouse.query(cfg, "SELECT text_hint FROM queries") == [("dog bark, loud,  metallic",)]
+
+
+def test_text_descriptor_drops_empty_parts_and_repeated_terms(cfg, tmp_path):
+    root = tmp_path / "sfx_meta"
+    rows = [  # file, role, sound_id, imitates, category, tags, text_hint
+        ("sfx/bell.wav", "reference", "bell", "", "bell", "metallic; bell;ringing;metallic", ""),
+        ("sfx/buzz.wav", "reference", "buzz", "", "", "", ""),
+        ("imitations/a/bell_0.wav", "imitation", "", "bell", "", "", ""),
+        ("imitations/a/buzz_0.wav", "imitation", "", "buzz", "", "", " , ,"),
+    ]
+    root.mkdir()
+    with open(root / "metadata.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["file", "role", "sound_id", "imitates", "category", "tags", "imitator_id", "text_hint"])
+        for i, (name, role, sid, imit, cat, tags, hint) in enumerate(rows):
+            write(root / name, tone(300 + 97 * i, 1.5, 16_000), 16_000)
+            w.writerow([name, role, sid, imit, cat, tags, "a" if role == "imitation" else "", hint])
+    run_dataset_flow("sfx_meta", root, cfg)
+    rows = warehouse.query(cfg, """
+        SELECT c.source_key, q.query_type, q.text_descriptor
+        FROM v_retrieval_query q JOIN clips c ON c.clip_id = q.target_sound_id ORDER BY ALL""")
+    assert rows == [("sfx/bell.wav", "metadata", ["bell", "metallic", "ringing"]),
+                    ("sfx/buzz.wav", "recorded", None)]
 
 
 def test_qvim_benchmark_view_names_the_challenge_splits(cfg, qvim_dir, tmp_path):

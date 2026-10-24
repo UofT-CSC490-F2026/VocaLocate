@@ -50,7 +50,7 @@ provides is NULL.
 | SFX_Folder | `v_sfx_folder` | `library_roots`: `root_id` (hash of the absolute path), status `pending` / `indexing` / `completed` / `failed`, last completed index |
 | SFX_File | `v_sfx_file` | ok reference and library `clips` (original `orig_format`, `orig_bit_depth`, sample rate, channels, duration), `library_files.rel_path` and `root_id`, `sfx_metadata` |
 | Vocal_Imitation | `v_vocal_imitation` | ok imitation `clips`; `noise_level_db` is `noise_floor_dbfs`, the 10th percentile of 50 ms frame RMS of the original recording |
-| Retrieval_Query | `v_retrieval_query` | recorded `queries` (`query_type` `recorded`) plus one query per other paired or team imitation, its text the target's category and tags (`metadata`); QVIM sets excluded |
+| Retrieval_Query | `v_retrieval_query` | recorded `queries` (`query_type` `recorded`) plus one query per other paired or team imitation, its text the target's category and tags (`metadata`); QVIM sets excluded. `text_descriptor` is a list of strings, see below |
 | QVIM_Benchmark_Data | `v_qvim_benchmark` | `pairs` of `qvim_dev` (Development) and `qvim_eval` (Evaluation) |
 | Relevance_Judgement | not stored | no dataset we use has human relevance ratings |
 | Imitator profiles | `v_imitator_profile` | `imitators` |
@@ -58,6 +58,15 @@ provides is NULL.
 
 Vocal_Imitation's `vocalization_type` and `device_type` are left out: no dataset
 we use records them.
+
+`text_descriptor` (`VARCHAR[]`) is the text as the backend uses it, a list of
+terms. For a recorded query it is the hint split on commas, each part trimmed and
+empty parts dropped: `"dog bark, loud,  metallic"` gives `['dog bark', 'loud',
+'metallic']`, and a sentence with no commas stays one element. For a generated
+query it is the target's category followed by its tags, repeats removed (the first
+one kept): category `bell` and tags `metallic; bell; ringing` give `['bell',
+'metallic', 'ringing']`. It is NULL when nothing is left. The raw hint, as typed,
+stays in `queries.text_hint` (and `v_triples.text_hint`).
 
 Columns added since the first release (`orig_format`, `orig_bit_depth`,
 `noise_floor_dbfs`, `queries.target_clip_id` and `split`,
