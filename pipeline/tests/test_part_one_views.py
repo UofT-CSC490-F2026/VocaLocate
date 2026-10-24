@@ -12,11 +12,9 @@ PART_ONE = {
     "v_sfx_folder": ["folder_id", "folder_path", "index_status", "last_indexed_at"],
     "v_sfx_file": ["folder_id", "sound_id", "file_path", "audio_format", "sample_rate", "bit_depth", "channel",
                    "duration_sec", "category", "description", "tags"],
-    "v_vocal_imitation": ["imitation_id", "imitation_path", "duration_sec", "vocalization_type", "device_type",
-                          "noise_level_db"],
+    "v_vocal_imitation": ["imitation_id", "imitation_path", "duration_sec", "noise_level_db"],
     "v_retrieval_query": ["query_id", "imitation_id", "text_descriptor", "target_sound_id", "split"],
     "v_qvim_benchmark": ["benchmark_query_id", "imitation_id", "target_sound_id", "benchmark_split"],
-    "v_relevance_judgement": ["query_id", "candidate_sound_id", "relevance", "rater_id"],
     "v_imitator_profile": ["imitator_id", "role", "years_experience", "first_language", "music_training",
                            "consent_scope"],
 }
@@ -34,7 +32,10 @@ def test_every_part_one_view_starts_with_the_part_one_columns_in_order(cfg):
         assert _columns(cfg, view)[: len(cols)] == cols, view
         assert warehouse.query(cfg, f"SELECT count(*) FROM {view}") == [(0,)]
     assert _columns(cfg, "v_retrieval_query") == PART_ONE["v_retrieval_query"] + ["hint_type", "query_type"]
-    assert "judged_relevance" in _columns(cfg, "v_hard_negatives")
+    assert "judged_relevance" not in _columns(cfg, "v_hard_negatives")
+    (dtype,) = warehouse.query(cfg, "SELECT data_type FROM information_schema.columns "
+                                    "WHERE table_name = 'v_retrieval_query' AND column_name = 'text_descriptor'")[0]
+    assert dtype == "VARCHAR[]"
 
 
 def test_sfx_folder_and_file_views_cover_library_and_dataset_sounds(cfg, tmp_path, esc50_dir):
@@ -51,18 +52,17 @@ def test_sfx_folder_and_file_views_cover_library_and_dataset_sounds(cfg, tmp_pat
     assert len(rows) == 5  # four clean ESC-50 clips and the library file
 
 
-def test_vocal_imitation_view_has_team_recording_metadata(cfg, tmp_path):
+def test_vocal_imitation_view_lists_clean_imitations(cfg, tmp_path):
     team = tmp_path / "team"
     write(team / "a.wav", tone(300, 1, 48_000), 48_000)
     with open(team / "recordings.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["file", "imitator_id", "target_group_key", "text_hint", "hint_type", "vocalization_type",
-                    "device_type"])
-        w.writerow(["a.wav", "tanay", "esc50:200", "", "", "whistle", "studio mic"])
+        w.writerow(["file", "imitator_id", "target_group_key", "text_hint", "hint_type"])
+        w.writerow(["a.wav", "tanay", "esc50:200", "", ""])
     run_dataset_flow("team", team, cfg)
-    rows = warehouse.query(cfg, "SELECT imitation_id, vocalization_type, device_type, noise_level_db IS NOT NULL, "
-                                "imitator_id FROM v_vocal_imitation")
-    assert rows == [(sha256_file(team / "a.wav"), "whistle", "studio_mic", True, "tanay")]
+    rows = warehouse.query(cfg, "SELECT imitation_id, noise_level_db IS NOT NULL, source, imitator_id "
+                                "FROM v_vocal_imitation")
+    assert rows == [(sha256_file(team / "a.wav"), True, "team", "tanay")]
 
 
 def test_retrieval_queries_are_recorded_or_generated_from_metadata(cfg, sfx_meta_dir):
@@ -74,9 +74,9 @@ def test_retrieval_queries_are_recorded_or_generated_from_metadata(cfg, sfx_meta
         JOIN splits s ON s.clip_id = q.target_sound_id
         ORDER BY ALL""")
     assert rows == [
-        ("metadata", "bell, metallic, low", None, "sfx/gong_A.wav", True, 32),
-        ("metadata", "bell, metallic, ringing", None, "sfx/bell_A.wav", True, 32),
-        ("recorded", "metallic", "quality", "sfx/bell_A.wav", True, 32),
+        ("metadata", ["bell", "metallic", "low"], None, "sfx/gong_A.wav", True, 32),
+        ("metadata", ["bell", "metallic", "ringing"], None, "sfx/bell_A.wav", True, 32),
+        ("recorded", ["metallic"], "quality", "sfx/bell_A.wav", True, 32),
     ]
     # Generated IDs are stable across warehouse rebuilds.
     ids = warehouse.query(cfg, "SELECT query_id FROM v_retrieval_query ORDER BY 1")
@@ -92,14 +92,39 @@ def test_team_queries_resolve_targets_in_other_sources_and_keep_their_split(cfg,
     with open(team / "recordings.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
         w.writerow(["file", "imitator_id", "target_group_key", "text_hint", "hint_type", "split"])
-        w.writerow(["a.wav", "tanay", "esc50:200", "loud", "loudness", "val"])
+        w.writerow(["a.wav", "tanay", "esc50:200", "dog bark, loud,  metallic", "loudness", "val"])
         w.writerow(["b.wav", "tanay", "esc50:400", "", "", "test"])  # voice only: a metadata query
     run_dataset_flow("team", team, cfg)
     rows = warehouse.query(cfg, """
         SELECT q.query_type, q.text_descriptor, c.source_key, q.split
         FROM v_retrieval_query q JOIN clips c ON c.clip_id = q.target_sound_id ORDER BY ALL""")
-    assert rows == [("metadata", "cow", "audio/4-400-A-3.wav", "test"),
-                    ("recorded", "loud", "audio/2-200-A-1.wav", "val")]
+    assert rows == [("metadata", ["cow"], "audio/4-400-A-3.wav", "test"),
+                    ("recorded", ["dog bark", "loud", "metallic"], "audio/2-200-A-1.wav", "val")]
+    # The raw hint stays as typed in queries.text_hint.
+    assert warehouse.query(cfg, "SELECT text_hint FROM queries") == [("dog bark, loud,  metallic",)]
+
+
+def test_text_descriptor_drops_empty_parts_and_repeated_terms(cfg, tmp_path):
+    root = tmp_path / "sfx_meta"
+    rows = [  # file, role, sound_id, imitates, category, tags, text_hint
+        ("sfx/bell.wav", "reference", "bell", "", "bell", "metallic; bell;ringing;metallic", ""),
+        ("sfx/buzz.wav", "reference", "buzz", "", "", "", ""),
+        ("imitations/a/bell_0.wav", "imitation", "", "bell", "", "", ""),
+        ("imitations/a/buzz_0.wav", "imitation", "", "buzz", "", "", " , ,"),
+    ]
+    root.mkdir()
+    with open(root / "metadata.csv", "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["file", "role", "sound_id", "imitates", "category", "tags", "imitator_id", "text_hint"])
+        for i, (name, role, sid, imit, cat, tags, hint) in enumerate(rows):
+            write(root / name, tone(300 + 97 * i, 1.5, 16_000), 16_000)
+            w.writerow([name, role, sid, imit, cat, tags, "a" if role == "imitation" else "", hint])
+    run_dataset_flow("sfx_meta", root, cfg)
+    rows = warehouse.query(cfg, """
+        SELECT c.source_key, q.query_type, q.text_descriptor
+        FROM v_retrieval_query q JOIN clips c ON c.clip_id = q.target_sound_id ORDER BY ALL""")
+    assert rows == [("sfx/bell.wav", "metadata", ["bell", "metallic", "ringing"]),
+                    ("sfx/buzz.wav", "recorded", None)]
 
 
 def test_qvim_benchmark_view_names_the_challenge_splits(cfg, qvim_dir, tmp_path):
@@ -120,26 +145,3 @@ def test_qvim_benchmark_view_names_the_challenge_splits(cfg, qvim_dir, tmp_path)
     rows = warehouse.query(cfg, "SELECT benchmark_split, benchmark_query_id = imitation_id, count(*) "
                                 "FROM v_qvim_benchmark GROUP BY ALL ORDER BY ALL")
     assert rows == [("Development", True, 2), ("Evaluation", True, 1)]
-
-
-def test_hard_negatives_show_human_judgements(cfg, sfx_meta_dir):
-    from vocalocate_pipeline.lake import Lake
-    from vocalocate_pipeline.schemas import to_table
-
-    run_dataset_flow("sfx_meta", sfx_meta_dir, cfg)
-    (query_id, imitation, positive), = warehouse.query(
-        cfg, "SELECT query_id, imitation_id, target_sound_id FROM v_retrieval_query WHERE query_type = 'recorded'")
-    take_b, buzz = (warehouse.query(cfg, f"SELECT clip_id FROM clips WHERE source_key = 'sfx/{n}.wav'")[0][0]
-                    for n in ("bell_B", "buzz"))
-    neg = {"strategy": "metadata", "model_version": "m", "imitation_clip_id": imitation, "positive_clip_id": positive,
-           "negative_rank": 1, "positive_score": 0.9, "negative_score": 0.8, "selection": "band", "relation": None,
-           "run_id": "r"}
-    lake = Lake(cfg.lake_root)
-    lake.write("hard_negatives", "test", to_table("hard_negatives", [
-        {**neg, "negative_clip_id": take_b}, {**neg, "negative_clip_id": buzz}]))
-    judgement = {"query_id": query_id, "candidate_clip_id": take_b, "rater_id": "r1", "source": "team"}
-    lake.write("relevance_judgements", "team", to_table("relevance_judgements", [
-        {**judgement, "relevance": 2}, {**judgement, "relevance": 3, "rater_id": "r2"}]))
-    warehouse.load(cfg)
-    rows = warehouse.query(cfg, "SELECT negative_clip_id, judged_relevance FROM v_hard_negatives ORDER BY 2")
-    assert sorted(rows, key=str) == sorted([(take_b, 3), (buzz, None)], key=str)

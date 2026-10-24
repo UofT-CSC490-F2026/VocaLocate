@@ -11,12 +11,10 @@ exactly its column names, see warehouse.py):
     SFX_Folder            library_roots                          v_sfx_folder
     SFX_File              clips + library_files + sfx_metadata   v_sfx_file
     SFX_Metadata          sfx_metadata                           v_sfx_candidates
-    Vocal_Imitation       clips + imitation_metadata             v_vocal_imitation
+    Vocal_Imitation       clips                                  v_vocal_imitation
     Retrieval_Query       queries (+ generated from metadata)    v_retrieval_query
     QVIM_Benchmark_Data   pairs of qvim_dev / qvim_eval          v_qvim_benchmark
-    Relevance_Judgement   relevance_judgements                   v_relevance_judgement
     Imitator profiles     imitators                              v_imitator_profile
-    Search session logs   search_sessions (written by the app)
 
 Columns added after the first release are nullable, so Parquet files written
 before them still load (the warehouse reads with union_by_name).
@@ -40,8 +38,6 @@ INDEX_STATUSES = {"pending", "indexing", "completed", "failed"}
 TOWERS = {"sfx", "imitation", "clap_audio"}
 MINING_STRATEGIES = {"retrieval", "metadata", "random"}
 MINING_SELECTIONS = {"band", "fallback", "random"}
-DEVICE_TYPES = {"computer_mic", "headset_mic", "studio_mic", "other"}
-SEARCH_MODES = {"keyword", "reference_audio", "voice", "voice_plus_text"}
 
 
 def _schema(*cols: tuple[str, pa.DataType, bool]) -> pa.Schema:
@@ -143,15 +139,6 @@ SFX_METADATA = _schema(
     ("recording_id", pa.string(), True),
 )
 
-# Silver: optional recording metadata per imitation (the Vocal_Imitation wish-list schema's
-# vocalization_type and device_type; team recordings only, no public dataset records them).
-IMITATION_METADATA = _schema(
-    ("clip_id", pa.string(), False),
-    ("source", pa.string(), False),
-    ("vocalization_type", pa.string(), True),  # free text, e.g. "hum", "whistle", "beatbox"
-    ("device_type", pa.string(), True),  # computer_mic, headset_mic, studio_mic or other
-)
-
 # Silver: imitator profiles, joined to clips by imitator_id.
 IMITATORS = _schema(
     ("imitator_id", pa.string(), False),
@@ -161,30 +148,6 @@ IMITATORS = _schema(
     ("first_language", pa.string(), True),
     ("music_training", pa.bool_(), True),
     ("consent_scope", pa.string(), True),  # what the recordings may be used for
-)
-
-# Silver: human relevance ratings of a candidate SFX for a query (the Relevance_Judgement schema).
-RELEVANCE_JUDGEMENTS = _schema(
-    ("query_id", pa.string(), False),
-    ("candidate_clip_id", pa.string(), False),
-    ("relevance", pa.int32(), False),  # 0 (not relevant) to 3 (the sound wanted)
-    ("rater_id", pa.string(), True),
-    ("source", pa.string(), False),
-)
-
-# Search session logs from the app (milestone 4). Defined now so the warehouse always has the
-# table; the pipeline itself never writes it.
-SEARCH_SESSIONS = _schema(
-    ("session_id", pa.string(), False),
-    ("imitator_id", pa.string(), True),
-    ("search_mode", pa.string(), False),  # keyword, reference_audio, voice or voice_plus_text
-    ("query_id", pa.string(), True),
-    ("library_size", pa.int64(), False),
-    ("results_shown", pa.list_(pa.string()), False),  # clip_ids, in ranked order
-    ("previewed_sound_ids", pa.list_(pa.string()), False),
-    ("chosen_sound_id", pa.string(), True),
-    ("time_to_choice_sec", pa.float32(), True),  # null when nothing was chosen
-    ("started_at", pa.timestamp("us", tz="UTC"), False),
 )
 
 # Gold: cached log-mel features and a fixed-size summary vector per clean clip.
@@ -282,10 +245,7 @@ TABLES: dict[str, pa.Schema] = {
     "queries": QUERIES,
     "sfx_metadata": SFX_METADATA,
     "captions": CAPTIONS,
-    "imitation_metadata": IMITATION_METADATA,
     "imitators": IMITATORS,
-    "relevance_judgements": RELEVANCE_JUDGEMENTS,
-    "search_sessions": SEARCH_SESSIONS,
     "features": FEATURES,
     "splits": SPLITS_TABLE,
     "embeddings": EMBEDDINGS,
@@ -304,13 +264,6 @@ _ENUMS: dict[str, dict[str, set[str]]] = {
     "library_roots": {"index_status": INDEX_STATUSES},
     "embeddings": {"tower": TOWERS},
     "hard_negatives": {"strategy": MINING_STRATEGIES, "selection": MINING_SELECTIONS},
-    "imitation_metadata": {"device_type": DEVICE_TYPES},
-    "search_sessions": {"search_mode": SEARCH_MODES},
-}
-
-# Inclusive (min, max) bounds for integer columns.
-_RANGES: dict[str, dict[str, tuple[int, int]]] = {
-    "relevance_judgements": {"relevance": (0, 3)},
 }
 
 
@@ -322,8 +275,8 @@ def to_table(name: str, rows: Iterable[dict]) -> pa.Table:
     """Build a table from row dicts and check it against the schema.
 
     Types are enforced by pyarrow; we also check required columns for nulls and
-    enum columns for unknown values and range columns for out-of-range values, which pyarrow does
-    not do. A null in a nullable enum or range column is fine.
+    enum columns for unknown values, which pyarrow does not do. A null in a nullable
+    enum column is fine.
     """
     schema = TABLES[name]
     rows = list(rows)
@@ -335,8 +288,4 @@ def to_table(name: str, rows: Iterable[dict]) -> pa.Table:
         bad = set(table.column(col).to_pylist()) - allowed - {None}
         if bad:
             raise SchemaError(f"{name}.{col} has unknown values {sorted(bad)}")
-    for col, (lo, hi) in _RANGES.get(name, {}).items():
-        bad = {v for v in table.column(col).to_pylist() if v is not None and not lo <= v <= hi}
-        if bad:
-            raise SchemaError(f"{name}.{col} has values outside {lo}..{hi}: {sorted(bad)}")
     return table
