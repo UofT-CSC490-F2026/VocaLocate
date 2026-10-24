@@ -1,0 +1,17 @@
+TASK INSTRUCTIONS
+Read the supplied model response as text. The audio recording is not provided.
+First, use any source objects or events mentioned in that response as context ONLY.
+Then extract the acoustic characteristics already described in the response,
+including pitch, timbre, texture, temporal structure, and reverberation.
+Copy descriptor phrases verbatim from the response. Do not infer new acoustic properties.
+Omit uncertain, negated, or unsupported characteristics and avoid invented details.
+Do NOT include source objects or events as literal acoustic tags.
+
+OUTPUT INSTRUCTIONS
+Return ONLY unique acoustic descriptors separated by commas, without field labels,
+descriptions, or explanations.
+Aim for 4–5 descriptors. Do not force 4–5 tags if there are not sufficient good fits.
+Only if there are more than five supported descriptors, narrow them down to the five
+most prominent or relevant. Order tags by prominence as described in the response;
+if prominence is unclear, preserve their order of appearance.
+If no acoustic descriptors are supported by the response, return unknown.
