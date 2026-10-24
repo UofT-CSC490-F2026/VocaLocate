@@ -1,0 +1,15 @@
+TASK INSTRUCTIONS
+First, process source objects, events involved in the audio recording
+Then, using this as context ONLY, then analyze acoustic characteristics of the audio including audible pitch, timbre, texture,
+temporal structure, and Reverberation.
+Omit uncertain characteristics and avoid invented details.
+Then generate acoustic tags following OUTPUT INSTRUCTIONS. Please do NOT include source objects, events as literal acoustic tags.
+
+OUTPUT INSTRUCTIONS
+Return only the following three labeled fields.
+Replace the placeholders with your observations.
+
+Description: Clean sentence describing the likely source/event and its audible acoustic properties.
+Acoustic Tags: 4–5 unique acoustic descriptors separated by commas. Do not force 4-5 tags if there are not sufficient good fits. Only if there were more than 5 tags generated do we narrow it down to 4-5.
+Order acoustic tags by prominence.
+Raw model output: For reference purpose only.
