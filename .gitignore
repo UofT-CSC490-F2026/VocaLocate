@@ -20,3 +20,8 @@ demo/demo_out/
 *.tfvars
 !*.tfvars.example
 crash.log
+
+# Local IDE files
+.env
+.vscode/
+.DS_Store
