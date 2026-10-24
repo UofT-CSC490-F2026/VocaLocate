@@ -21,8 +21,8 @@ in [`../infra`](../infra)).
 | State | `library_files` (one row per file seen) and `library_roots` (one row per indexed folder) per library | Parquet |
 | Warehouse | All tables plus views for training, triples, the library index, data quality and each A2 Part One schema | DuckDB |
 
-Table schemas are in [`src/vocalocate_pipeline/schemas.py`](src/vocalocate_pipeline/schemas.py),
-and the folder layout is in [`lake.py`](src/vocalocate_pipeline/lake.py).
+Table schemas are in [`vocalocate_pipeline/schemas.py`](vocalocate_pipeline/schemas.py),
+and the folder layout is in [`lake.py`](vocalocate_pipeline/lake.py).
 
 ## Two flows
 
