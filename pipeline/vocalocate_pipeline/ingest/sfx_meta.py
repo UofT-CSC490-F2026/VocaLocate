@@ -23,11 +23,9 @@ same-class recordings or our synthetic demo set. Layout:
 
 from __future__ import annotations
 
-import csv
-import hashlib
 from pathlib import Path
 
-from . import IngestResult, RawFile
+from . import IngestBuilder, IngestResult, read_table, require
 
 SOURCE = "sfx_meta"
 VERSION = "1.0"
@@ -41,12 +39,7 @@ def _clean(value: str | None) -> str | None:
 
 
 def ingest(root: Path) -> IngestResult:
-    meta = root / "metadata.csv"
-    if not meta.exists():
-        raise FileNotFoundError(f"SFX metadata manifest not found at {meta}")
-    with open(meta, newline="", encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-    return ingest_rows(rows, root)
+    return ingest_rows(read_table(require(root / "metadata.csv", "SFX metadata manifest")), root)
 
 
 def ingest_rows(
@@ -73,64 +66,28 @@ def ingest_rows(
             if other != sound_id:
                 raise ValueError(f"recording {recording!r} has two references: {other!r} and {sound_id!r}")
 
-    files, metadata, queries, missing = [], [], [], []
+    # A file may be listed more than once: the Vocal Imitation Set lists a multi-labelled
+    # recording once per class, each with its own sound ID and metadata.
+    b = IngestBuilder(root, source, version, licence, unique_keys=False)
     for row in rows:
-        path = root / row["file"]
-        if not path.exists():
-            missing.append(row["file"])
-            continue
         role = row["role"].strip()
         if role in IMITATION_ROLES:
             target = row["imitates"].strip()
             recording = recording_of.get(target)
             group = f"{source}:{recording}" if target in reference_of_recording.values() else None
-            files.append(
-                RawFile(
-                    source=source,
-                    source_version=version,
-                    source_key=row["file"],
-                    path=path,
-                    role=role,
-                    label=_clean(row.get("category")),
-                    group_key=group,
-                    imitator_id=_clean(row.get("imitator_id")),
-                    licence=licence,
-                )
+            present = b.add_file(
+                row["file"], role, label=_clean(row.get("category")), group_key=group,
+                imitator_id=_clean(row.get("imitator_id")),
             )
             hint = _clean(row.get("text_hint"))
-            if hint and group and role == "imitation":
-                queries.append(
-                    {
-                        "query_id": hashlib.sha256(f"{row['file']}|{hint}".encode()).hexdigest()[:32],
-                        "source_key": row["file"],
-                        "text_hint": hint,
-                        "hint_type": _clean(row.get("hint_type")),
-                        "target_group_key": group,
-                    }
-                )
+            if present and hint and group and role == "imitation":
+                b.add_query(row["file"], hint, _clean(row.get("hint_type")), group)
             continue
         sound_id = row["sound_id"].strip()
-        tags = [t.strip() for t in (row.get("tags") or "").split(";") if t.strip()]
-        files.append(
-            RawFile(
-                source=source,
-                source_version=version,
-                source_key=row["file"],
-                path=path,
-                role=role,
-                label=_clean(row.get("category")),
-                group_key=f"{source}:{recording_of[sound_id]}",
-                licence=licence,
-                extra={"sound_id": sound_id},
-            )
-        )
-        metadata.append(
-            {
-                "source_key": row["file"],
-                "category": _clean(row.get("category")),
-                "description": _clean(row.get("description")),
-                "tags": tags or None,
-                "recording_id": recording_of[sound_id],
-            }
-        )
-    return IngestResult(files=files, queries=queries, metadata=metadata, missing=missing)
+        recording = recording_of[sound_id]
+        if b.add_file(row["file"], role, label=_clean(row.get("category")), group_key=f"{source}:{recording}",
+                      extra={"sound_id": sound_id}):
+            tags = [t.strip() for t in (row.get("tags") or "").split(";") if t.strip()]
+            b.add_metadata(row["file"], _clean(row.get("category")), _clean(row.get("description")), tags or None,
+                           recording)
+    return b.result()

@@ -49,7 +49,7 @@ steps are moving data (`aws s3 sync`), which is not infrastructure.
 
 The flows from Part Three work on plain files (atomic renames, DuckDB, NumPy). Rather than rewrite
 them for S3, each Fargate task works on a local copy of the lake
-(`pipeline/src/vocalocate_pipeline/remote.py` and `sync.py`):
+(`pipeline/vocalocate_pipeline/remote.py` and `sync.py`):
 
 1. pull `s3://<raw>/<source>/` into `/lake/bronze/<source>/`;
 2. pull the lake's tables and this source's clean audio and features, so the content-hash cache still

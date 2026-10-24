@@ -29,9 +29,9 @@ import numpy as np
 import torch
 
 from vocalocate_pipeline import warehouse
-from vocalocate_pipeline.audio import clean_file
+from vocalocate_pipeline.flow_functions.audio import clean_file
 from vocalocate_pipeline.config import PipelineConfig
-from vocalocate_pipeline.features import log_mel
+from vocalocate_pipeline.flow_functions.features import log_mel
 from vocalocate_pipeline.flows import run_library_flow
 from vocalocate_pipeline.lake import Lake
 from vocalocate_pipeline.schemas import to_table

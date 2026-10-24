@@ -1,9 +1,9 @@
 import numpy as np
 
 from conftest import tone
-from vocalocate_pipeline.audio import clean_array, dbfs, rms
+from vocalocate_pipeline.flow_functions.audio import clean_array, dbfs, rms
 from vocalocate_pipeline.config import AudioConfig, FeatureConfig
-from vocalocate_pipeline.features import log_mel, mel_filterbank, summary_vector
+from vocalocate_pipeline.flow_functions.features import log_mel, mel_filterbank, summary_vector
 
 CFG = AudioConfig()
 

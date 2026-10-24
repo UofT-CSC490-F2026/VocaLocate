@@ -68,7 +68,7 @@ image = (
     .pip_install("torch==2.5.1", "numpy<2.3", "scipy", "soundfile", "pandas", "pyarrow", "duckdb", "boto3")
     # Only the packages' sources: a working checkout can hold gigabytes of untracked run output.
     .add_local_file(REPO / "pipeline" / "pyproject.toml", "/repo/pipeline/pyproject.toml", copy=True)
-    .add_local_dir(REPO / "pipeline" / "src", "/repo/pipeline/src", copy=True, ignore=_ignore)
+    .add_local_dir(REPO / "pipeline" / "vocalocate_pipeline", "/repo/pipeline/vocalocate_pipeline", copy=True, ignore=_ignore)
     .add_local_file(REPO / "demo" / "pyproject.toml", "/repo/demo/pyproject.toml", copy=True)
     .add_local_dir(REPO / "demo" / "src", "/repo/demo/src", copy=True, ignore=_ignore)
     .run_commands("pip install --no-deps -e /repo/pipeline -e /repo/demo")

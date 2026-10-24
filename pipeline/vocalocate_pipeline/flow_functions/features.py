@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .config import FeatureConfig
+from ..config import FeatureConfig
 
 FEATURE_VERSION = "logmel-qvim-v1"
 

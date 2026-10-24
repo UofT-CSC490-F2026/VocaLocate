@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import pytest
 
 from conftest import tone, write
-from vocalocate_pipeline.audio import sha256_file
+from vocalocate_pipeline.flow_functions.audio import sha256_file
 from vocalocate_pipeline.ingest import ingest
 from vocalocate_pipeline.schemas import to_table
 
@@ -17,7 +17,7 @@ def _by_key(result):
 def test_esc50_reads_metadata_and_reports_missing_files(esc50_dir):
     result = ingest("esc50", esc50_dir)
     files = _by_key(result)
-    assert len(files) == 5 and result.missing == ["5-500-A-4.wav"]
+    assert len(files) == 5 and result.missing == ["audio/5-500-A-4.wav"]
     take_a, take_b = files["audio/1-100-A-0.wav"], files["audio/1-100-B-0.wav"]
     # Takes cut from the same recording share a group.
     assert take_a.group_key == take_b.group_key == "esc50:100"

@@ -37,7 +37,7 @@ from urllib.parse import unquote, urlparse
 
 import numpy as np
 
-from vocalocate_pipeline.audio import AUDIO_EXTENSIONS
+from vocalocate_pipeline.flow_functions.audio import AUDIO_EXTENSIONS
 from vocalocate_pipeline.config import PipelineConfig
 
 from . import train as T

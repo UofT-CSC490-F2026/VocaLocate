@@ -39,12 +39,11 @@ first language or their consent terms.
 
 from __future__ import annotations
 
-import csv
 from collections import Counter
 from collections.abc import Callable
 from pathlib import Path
 
-from . import IngestResult
+from . import IngestResult, read_table, require
 from .sfx_meta import ingest_rows
 
 SOURCE = "vis"
@@ -54,11 +53,6 @@ DEPTHS = [f"category_d{i}" for i in range(1, 7)]
 SURVEY = "participant_survey.csv"
 # Both datasets were recorded by Amazon Mechanical Turk workers through the VocalSketch interface.
 CROWD_ROLE = "crowd worker (Amazon Mechanical Turk)"
-
-
-def _read_table(path: Path, delimiter: str) -> list[dict]:
-    with open(path, newline="", encoding="utf-8-sig", errors="replace") as f:
-        return [{(k or "").strip(): (v or "").strip() for k, v in row.items()} for row in csv.DictReader(f, delimiter=delimiter)]
 
 
 def _true(value: str) -> bool:
@@ -75,9 +69,9 @@ def _find(root: Path, folders: list[str], name: str, index: dict[str, Path]) -> 
 
 def build_rows(root: Path) -> list[dict]:
     """Convert the dataset's own metadata into sfx_meta rows (absolute file paths)."""
-    classes = _read_table(root / "original_recordings_classes.txt", "\t")
+    classes = read_table(root / "original_recordings_classes.txt", "\t")
     licences = root / "original_recordings_license.csv"
-    freesound = {r["filename"]: r.get("freesound_id", "") for r in _read_table(licences, ",")} if licences.exists() else {}
+    freesound = {r["filename"]: r.get("freesound_id", "") for r in read_table(licences, ",")} if licences.exists() else {}
     # Some releases nest files one level deeper; fall back to a filename index of the whole tree.
     index = {p.name: p for p in root.rglob("*.wav")}
 
@@ -111,7 +105,7 @@ def build_rows(root: Path) -> list[dict]:
         )
 
     class_of = {c["filename"]: c.get("classname", "") for c in classes if _true(c.get("is_reference", ""))}
-    for im in _read_table(root / "vocal_imitations.txt", "\t"):
+    for im in read_table(root / "vocal_imitations.txt", "\t"):
         if im.get("reference_filename") not in class_of:
             continue
         included = _true(im.get("included", ""))
@@ -221,12 +215,11 @@ def rounded_id_matcher(ids: set[str], survey_ids: list[str]) -> Callable[[str], 
 
 def ingest(root: Path) -> IngestResult:
     for required in ("original_recordings_classes.txt", "vocal_imitations.txt"):
-        if not (root / required).exists():
-            raise FileNotFoundError(f"Vocal Imitation Set metadata not found at {root / required}")
+        require(root / required, "Vocal Imitation Set metadata")
     rows = build_rows(root)
     result = ingest_rows(rows, root, source=SOURCE, version=VERSION, licence=LICENCE)
     if (root / SURVEY).exists():
-        survey = _read_table(root / SURVEY, ",")
+        survey = read_table(root / SURVEY, ",")
         ids = {r["imitator_id"] for r in rows if r["imitator_id"]}
         match = rounded_id_matcher(ids, [r.get("participant_id", "") for r in survey])
         result.imitators = survey_imitators(survey, match)

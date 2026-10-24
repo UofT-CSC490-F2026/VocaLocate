@@ -25,10 +25,9 @@ Japanese caption is kept alongside.
 from __future__ import annotations
 
 import csv
-import hashlib
 from pathlib import Path
 
-from . import IngestResult, RawFile
+from . import IngestBuilder, IngestResult, require
 
 SOURCE = "captdure"
 VERSION = "1.0"
@@ -55,50 +54,19 @@ def _column(row: dict, *names: str) -> str:
 
 
 def ingest(root: Path) -> IngestResult:
-    index = root / CAPTIONS
-    if not index.exists():
-        raise FileNotFoundError(f"CAPTDURE caption file not found at {index}")
-    audio_root = root / AUDIO_DIR
-
-    files, metadata, captions, missing, seen = [], [], [], [], set()
+    index = require(root / CAPTIONS, "CAPTDURE caption file")
+    b = IngestBuilder(root / AUDIO_DIR, SOURCE, VERSION, LICENCE)
     for row in _rows(index):
         wav = _column(row, "wavfile").lstrip("./")
         text = _column(row, "caption (en)")
         if not wav or not text:
             continue
-        path = audio_root / wav
-        if not path.exists():
-            if wav not in seen:
-                missing.append(wav)
-                seen.add(wav)
+        first = not b.has(wav)
+        cls = Path(wav).parent.name or Path(wav).stem.rsplit("_", 2)[0]
+        if not b.add_file(wav, "reference", label=cls, group_key=f"{SOURCE}:{Path(wav).stem}"):
             continue
-        if wav not in seen:
-            seen.add(wav)
-            cls = Path(wav).parent.name or Path(wav).stem.rsplit("_", 2)[0]
+        if first:
             recording = Path(wav).stem.rsplit("_", 1)[0]
-            files.append(
-                RawFile(
-                    source=SOURCE,
-                    source_version=VERSION,
-                    source_key=wav,
-                    path=path,
-                    role="reference",
-                    label=cls,
-                    group_key=f"{SOURCE}:{Path(wav).stem}",
-                    licence=LICENCE,
-                )
-            )
-            metadata.append(
-                {"source_key": wav, "category": cls, "description": None, "tags": [cls], "recording_id": recording}
-            )
-        worker = _column(row, "worker ID") or None
-        captions.append(
-            {
-                "caption_id": hashlib.sha256(f"{wav}|{worker}|{text}".encode()).hexdigest()[:32],
-                "source_key": wav,
-                "caption": text,
-                "language": "en",
-                "annotator_id": worker,
-            }
-        )
-    return IngestResult(files=files, metadata=metadata, captions=captions, missing=missing)
+            b.add_metadata(wav, cls, tags=[cls], recording_id=recording)
+        b.add_caption(wav, text, "en", _column(row, "worker ID") or None)
+    return b.result()

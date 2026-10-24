@@ -3,7 +3,7 @@
 # and the training code use; this is the managed, serverless view of the same files.
 
 locals {
-  # Mirrors TABLE_LAYER in pipeline/src/vocalocate_pipeline/lake.py.
+  # Mirrors TABLE_LAYER in pipeline/vocalocate_pipeline/lake.py.
   table_paths = [
     "bronze/tables/raw_files",
     "silver/tables/clips",

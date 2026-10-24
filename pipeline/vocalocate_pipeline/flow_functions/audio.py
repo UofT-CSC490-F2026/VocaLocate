@@ -11,7 +11,7 @@ import numpy as np
 import soundfile as sf
 from scipy.signal import resample_poly
 
-from .config import AudioConfig
+from ..config import AudioConfig
 
 AUDIO_EXTENSIONS = {".wav", ".flac", ".aiff", ".aif", ".ogg", ".mp3"}
 

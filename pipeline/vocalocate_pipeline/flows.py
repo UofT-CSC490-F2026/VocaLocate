@@ -12,7 +12,6 @@ import logging
 import multiprocessing
 import os
 import secrets
-from collections.abc import Iterable
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -21,13 +20,14 @@ from pathlib import Path
 import numpy as np
 
 from . import warehouse
-from .audio import AUDIO_EXTENSIONS, clean_file, sha256_file, write_wav
 from .config import PipelineConfig
-from .features import FEATURE_VERSION, log_mel, summary_vector
+from .flow_functions.audio import AUDIO_EXTENSIONS, clean_file, sha256_file, write_wav
+from .flow_functions.features import FEATURE_VERSION, log_mel, summary_vector
+from .flow_functions.pairs import build_pairs
+from .flow_functions.splits import HELD_OUT_SOURCES, assign_splits
 from .ingest import ingest
 from .lake import Lake
 from .schemas import to_table
-from .splits import HELD_OUT_SOURCES, assign_splits
 
 log = logging.getLogger(__name__)
 
@@ -219,27 +219,6 @@ def clean_and_transform(
         else:
             summary.n_duplicate += 1
     return clip_rows, feature_rows
-
-
-def build_pairs(clips: Iterable[dict]) -> list[dict]:
-    """Pair each clean imitation with the clean reference of the same group in the same source."""
-    clips = [c for c in clips if c["status"] == "ok" and c["group_key"]]
-    refs = {(c["source"], c["group_key"]): c["clip_id"] for c in clips if c["role"] == "reference"}
-    pairs = []
-    for c in clips:
-        if c["role"] != "imitation":
-            continue
-        ref = refs.get((c["source"], c["group_key"]))
-        if ref is not None:
-            pairs.append(
-                {
-                    "source": c["source"],
-                    "imitation_clip_id": c["clip_id"],
-                    "reference_clip_id": ref,
-                    "group_key": c["group_key"],
-                }
-            )
-    return pairs
 
 
 def _record_run(lake: Lake, summary: RunSummary, cfg: PipelineConfig, started: datetime, status: str, message=None):
