@@ -273,6 +273,9 @@ def run_dataset_flow(source: str, root: Path, cfg: PipelineConfig, load: bool = 
     summary = RunSummary(run_id=_new_run_id("dataset"), flow="dataset", source=source)
     try:
         result = ingest(source, root)
+        # Tables that do not depend on the audio are checked first, so a bad CSV fails before any work.
+        imitators = to_table("imitators", [{**r, "source": source} for r in result.imitators])
+        judgements = to_table("relevance_judgements", [{**j, "source": source} for j in result.judgements])
         summary.n_missing = len(result.missing)
         if result.missing:
             log.warning("%s: %d files listed in metadata are missing", source, len(result.missing))
@@ -330,6 +333,15 @@ def run_dataset_flow(source: str, root: Path, cfg: PipelineConfig, load: bool = 
             if c["source_key"] in clip_by_key
         ]
         lake.write("captions", source, to_table("captions", captions))
+        imitation_metadata = [
+            {"clip_id": clip_by_key[m["source_key"]]["clip_id"], "source": source,
+             **{k: v for k, v in m.items() if k != "source_key"}}
+            for m in result.imitation_metadata
+            if m["source_key"] in clip_by_key
+        ]
+        lake.write("imitation_metadata", source, to_table("imitation_metadata", imitation_metadata))
+        lake.write("imitators", source, imitators)
+        lake.write("relevance_judgements", source, judgements)
     except Exception as exc:
         _record_run(lake, summary, cfg, started, "failed", f"{type(exc).__name__}: {exc}")
         raise

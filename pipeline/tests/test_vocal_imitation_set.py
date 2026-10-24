@@ -33,3 +33,32 @@ def test_vis_keeps_rejected_imitations_as_unpaired_negatives(cfg, vis_dir):
     rows = warehouse.query(cfg, """SELECT u.category, u.split = s.split FROM v_unpaired_imitations u
                                    JOIN splits s ON s.clip_id = u.target_clip_id""")
     assert rows == [("Meow", True)]
+
+
+def test_vis_participant_survey_fills_imitator_profiles(vis_dir):
+    result = ingest("vis", vis_dir)
+    profiles = {r["imitator_id"]: r for r in result.imitators}
+    # p2 took no survey and the listener recorded no imitation in this set.
+    assert set(profiles) == {"p1", "p3"}
+    assert profiles["p1"] == {"imitator_id": "p1", "role": "crowd worker (Amazon Mechanical Turk)",
+                              "years_experience": 2, "first_language": None, "music_training": False,
+                              "consent_scope": None}
+    # 72 "years" of music technology at age 30 is not believable: left empty.
+    assert profiles["p3"]["years_experience"] is None and profiles["p3"]["music_training"] is True
+
+
+def test_rounded_participant_ids_are_matched_to_the_survey():
+    from vocalocate_pipeline.ingest.vocal_imitation_set import rounded_id_matcher
+
+    # vocal_imitations.txt stores IDs as floats rounded to six significant digits.
+    ids = {"5734240000000000.0", "4875300000000000.0"}
+    match = rounded_id_matcher(ids, ["5734238123456789", "4875301000000000", "4875302000000000", "1"])
+    assert match("5734238123456789") == "5734240000000000.0"
+    assert match("4875301000000000") is None  # two survey IDs round to the same value: ambiguous
+    assert match("1") is None
+
+
+def test_vis_flow_writes_imitators(cfg, vis_dir):
+    run_dataset_flow("vis", vis_dir, cfg)
+    rows = warehouse.query(cfg, "SELECT imitator_id, source, years_experience FROM imitators ORDER BY 1")
+    assert rows == [("p1", "vis", 2), ("p3", "vis", None)]

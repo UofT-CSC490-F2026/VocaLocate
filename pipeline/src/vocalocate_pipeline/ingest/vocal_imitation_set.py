@@ -11,6 +11,9 @@ github.com/interactiveaudiolab/VocalImitationSet (audio on Zenodo). Layout:
     vocal_imitations.txt                        tab-separated: imitation_filename, reference_filename,
                                                 included, participant_id,
                                                 participants_sound_recording_description, ...
+    participant_survey.csv                      optional: participant_id, age, gender,
+                                                years_actively_using_music_tech,
+                                                years_actively_making_music, ...
 
 This is the real-data source for the mining demos. It maps onto the SFX_Metadata schema:
 
@@ -26,11 +29,19 @@ Only `included` imitations form training pairs. Drafts, practice takes and imita
 rejected (`vocal_imitations/excluded/`) are kept as `unpaired_imitation` clips: they share their
 target's group and split but never pair with it, so training can use them as negatives for
 *other* sounds, the way the QVIM 2025 winner used VocalSketch's excluded imitations.
+
+The participant survey fills part of the imitator profile (see `survey_imitators`). In
+vocal_imitations.txt the participant IDs are rounded to six significant digits
+(e.g. 5734240000000000.0), so survey rows are matched to them by the rounded value.
+Nothing in the release records the microphone, the vocalization type, the participants'
+first language or their consent terms.
 """
 
 from __future__ import annotations
 
 import csv
+from collections import Counter
+from collections.abc import Callable
 from pathlib import Path
 
 from . import IngestResult
@@ -40,6 +51,9 @@ SOURCE = "vis"
 VERSION = "1.1"
 LICENCE = "CC BY 4.0 (dataset); per-recording Freesound licences in original_recordings_license.csv"
 DEPTHS = [f"category_d{i}" for i in range(1, 7)]
+SURVEY = "participant_survey.csv"
+# Both datasets were recorded by Amazon Mechanical Turk workers through the VocalSketch interface.
+CROWD_ROLE = "crowd worker (Amazon Mechanical Turk)"
 
 
 def _read_table(path: Path, delimiter: str) -> list[dict]:
@@ -125,8 +139,95 @@ def build_rows(root: Path) -> list[dict]:
     return rows
 
 
+def _years(value: str | None, age: str | None) -> int | None:
+    """Whole years from a survey answer; None when missing or longer than the participant has lived."""
+    try:
+        years = float(value or "")
+    except ValueError:
+        return None
+    try:
+        if years > float(age or ""):
+            return None  # e.g. 72 "years" at age 19: probably months, but we cannot tell
+    except ValueError:
+        pass
+    return int(years) if years >= 0 else None
+
+
+def survey_imitators(survey: list[dict], imitator_id: Callable[[str], str | None]) -> list[dict]:
+    """Imitator profiles from the rows of a VocalSketch-style participant_survey.csv.
+
+    `imitator_id` maps a survey participant_id to the imitator_id our clips use, or None to skip
+    the participant (e.g. one who only took part in a listening task). Only the profile fields the
+    survey answers are filled:
+
+    * role: the crowd-worker role both datasets were recorded with.
+    * years_experience: years_actively_using_music_tech (audio/music production technology).
+    * music_training: years_actively_making_music > 0. This is the nearest question the survey
+      asks ("how long have you been actively creating, practicing, or performing music"); it is
+      not formal training.
+    * first_language and consent_scope are not asked.
+    """
+    out, seen = [], set()
+    for row in survey:
+        iid = imitator_id(row.get("participant_id", ""))
+        if iid is None or iid in seen:
+            continue
+        seen.add(iid)
+        making = _years(row.get("years_actively_making_music"), row.get("age"))
+        out.append(
+            {
+                "imitator_id": iid,
+                "role": CROWD_ROLE,
+                "years_experience": _years(row.get("years_actively_using_music_tech"), row.get("age")),
+                "first_language": None,
+                "music_training": None if making is None else making > 0,
+                "consent_scope": None,
+            }
+        )
+    return out
+
+
+def rounded_id_matcher(ids: set[str], survey_ids: list[str]) -> Callable[[str], str | None]:
+    """Match full survey IDs to the imitator IDs of vocal_imitations.txt, which are rounded floats.
+
+    An exact match wins; otherwise the survey ID is rounded to six significant digits. A rounded
+    value shared by two survey IDs is ambiguous and matches nothing.
+    """
+
+    def value(x: str) -> float | None:
+        try:
+            return float(x)
+        except ValueError:
+            return None
+
+    def rounded(v: float) -> float:
+        return float(f"{v:.6g}")
+
+    by_value = {value(i): i for i in ids if value(i) is not None}
+    counts = Counter(rounded(v) for v in {value(p) for p in survey_ids} if v is not None)
+
+    def match(pid: str) -> str | None:
+        if pid in ids:
+            return pid
+        v = value(pid)
+        if v is None:
+            return None
+        if v in by_value:
+            return by_value[v]
+        return by_value.get(rounded(v)) if counts[rounded(v)] == 1 else None
+
+    return match
+
+
 def ingest(root: Path) -> IngestResult:
     for required in ("original_recordings_classes.txt", "vocal_imitations.txt"):
         if not (root / required).exists():
             raise FileNotFoundError(f"Vocal Imitation Set metadata not found at {root / required}")
-    return ingest_rows(build_rows(root), root, source=SOURCE, version=VERSION, licence=LICENCE)
+    rows = build_rows(root)
+    result = ingest_rows(rows, root, source=SOURCE, version=VERSION, licence=LICENCE)
+    if (root / SURVEY).exists():
+        survey = _read_table(root / SURVEY, ",")
+        ids = {r["imitator_id"] for r in rows if r["imitator_id"]}
+        match = rounded_id_matcher(ids, [r.get("participant_id", "") for r in survey])
+        result.imitators = survey_imitators(survey, match)
+    return result
