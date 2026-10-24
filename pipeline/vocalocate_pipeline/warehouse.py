@@ -211,6 +211,17 @@ VIEWS = {
         FROM clips WHERE status = 'ok'
         GROUP BY clip_id HAVING count(DISTINCT source) > 1
     """,
+    # One original recording (e.g. a Freesound upload) held by more than one source, as different
+    # cuts or files. More than one split means train and test share a recording.
+    "v_shared_recordings": """
+        SELECT m.recording_id, list(DISTINCT m.source ORDER BY m.source) AS sources,
+               count(DISTINCT m.clip_id) AS n_clips, list(DISTINCT s.split ORDER BY s.split) AS splits
+        FROM sfx_metadata m
+        JOIN clips c ON c.source = m.source AND c.clip_id = m.clip_id AND c.status = 'ok'
+        LEFT JOIN splits s ON s.source = m.source AND s.clip_id = m.clip_id
+        WHERE m.recording_id IS NOT NULL
+        GROUP BY m.recording_id HAVING count(DISTINCT m.source) > 1
+    """,
 }
 
 

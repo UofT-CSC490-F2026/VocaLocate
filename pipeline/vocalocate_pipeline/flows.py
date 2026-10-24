@@ -264,8 +264,8 @@ def run_dataset_flow(source: str, root: Path, cfg: PipelineConfig, load: bool = 
         clip_rows, feature_rows = clean_and_transform(lake, source, raw_rows, cfg, summary.run_id, summary)
         lake.write("clips", source, to_table("clips", clip_rows))
         lake.write("features", source, to_table("features", feature_rows))
-        lake.write("pairs", source, to_table("pairs", build_pairs(clip_rows)))
-        split_rows = assign_splits(clip_rows, cfg.splits, result.splits)
+        lake.write("pairs", source, to_table("pairs", build_pairs(clip_rows, result.targets)))
+        split_rows = assign_splits(clip_rows, cfg.splits, result.splits, result.split_groups)
         lake.write("splits", source, to_table("splits", split_rows))
 
         clip_by_key = {c["source_key"]: c for c in clip_rows if c["status"] == "ok"}

@@ -36,18 +36,24 @@ def held_out_split(group_key: str, cfg: SplitConfig) -> str:
     return "val" if int.from_bytes(digest[:8], "big") / 2**64 < 0.5 else "test"
 
 
-def assign_splits(clips: list[dict], cfg: SplitConfig, given: dict[str, str] | None = None) -> list[dict]:
+def assign_splits(
+    clips: list[dict], cfg: SplitConfig, given: dict[str, str] | None = None,
+    split_groups: dict[str, str] | None = None,
+) -> list[dict]:
     """Return split rows for clean clips. Clips without a group use their own ID as the group.
 
     `given` maps source keys of a held-out source to the split its dataset assigns (e.g. the
     team's recordings.csv); held-out clips without one get `held_out_split` of their group.
+    `split_groups` maps source keys to the group to hash by instead of the clip's own
+    (IngestResult.split_groups); the row records the group that was hashed.
     """
-    given = given or {}
+    given, split_groups = given or {}, split_groups or {}
     rows = []
     for clip in clips:
         if clip["status"] != "ok":
             continue
-        group = clip["group_key"] or f"{clip['source']}:clip:{clip['clip_id']}"
+        group = (split_groups.get(clip["source_key"]) or clip["group_key"]
+                 or f"{clip['source']}:clip:{clip['clip_id']}")
         if clip["source"] in BENCHMARK_SOURCES:
             split, strategy = "test", "benchmark"
         elif clip["source"] in HELD_OUT_SOURCES and clip["source_key"] in given:

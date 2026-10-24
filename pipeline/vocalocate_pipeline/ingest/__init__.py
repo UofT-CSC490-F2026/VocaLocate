@@ -70,6 +70,12 @@ class IngestResult:
     imitators: list[dict] = field(default_factory=list)
     # Splits the dataset itself assigns, keyed by source_key (team recordings only: val or test).
     splits: dict[str, str] = field(default_factory=dict)
+    # The reference each imitation imitates, by source key, for groups with several references
+    # (ESC-50-Voice: several takes of one recording, each imitated). Other imitations pair by group.
+    targets: dict[str, str] = field(default_factory=dict)
+    # The group to hash a file's split by, by source key, when it is not the file's own group key:
+    # a recording another source also holds takes that source's group, so both share a split.
+    split_groups: dict[str, str] = field(default_factory=dict)
     missing: list[str] = field(default_factory=list)
 
 
@@ -111,6 +117,8 @@ class IngestBuilder:
         self.captions: list[dict] = []
         self.imitators: list[dict] = []
         self.splits: dict[str, str] = {}
+        self.targets: dict[str, str] = {}
+        self.split_groups: dict[str, str] = {}
         self.missing: list[str] = []
         self._present: set[str] = set()
         self._missing: set[str] = set()
@@ -191,18 +199,28 @@ class IngestBuilder:
         """A split the dataset itself assigns to this file, instead of the group hash."""
         self.splits[key] = split
 
+    def set_target(self, key: str, reference_key: str) -> None:
+        """The exact reference this imitation imitates, when its group holds more than one."""
+        self.targets[key] = reference_key
+
+    def set_split_group(self, key: str, group_key: str) -> None:
+        """Hash this file's split by another group key (one shared with another source's copy of the recording)."""
+        self.split_groups[key] = group_key
+
     def result(self) -> IngestResult:
         return IngestResult(
             files=self.files, queries=self.queries, metadata=self.metadata, captions=self.captions,
-            imitators=self.imitators, splits=self.splits, missing=self.missing,
+            imitators=self.imitators, splits=self.splits, targets=self.targets, split_groups=self.split_groups,
+            missing=self.missing,
         )
 
 
 def _registry() -> dict[str, Callable[[Path], IngestResult]]:
-    from . import captdure, esc50, qvim_dev, qvim_eval, sfx_meta, team, vimsketch, vocal_imitation_set
+    from . import captdure, esc50, esc50_voice, qvim_dev, qvim_eval, sfx_meta, team, vimsketch, vocal_imitation_set
 
     return {
         "esc50": esc50.ingest,
+        "esc50_voice": esc50_voice.ingest,
         "vimsketch": vimsketch.ingest,
         "qvim_dev": qvim_dev.ingest,
         "qvim_eval": qvim_eval.ingest,
@@ -213,7 +231,7 @@ def _registry() -> dict[str, Callable[[Path], IngestResult]]:
     }
 
 
-SOURCES = ("esc50", "vimsketch", "qvim_dev", "qvim_eval", "team", "sfx_meta", "vis", "captdure")
+SOURCES = ("esc50", "esc50_voice", "vimsketch", "qvim_dev", "qvim_eval", "team", "sfx_meta", "vis", "captdure")
 
 
 def ingest(source: str, root: Path) -> IngestResult:

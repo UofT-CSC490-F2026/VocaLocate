@@ -27,7 +27,7 @@ and the folder layout is in [`lake.py`](vocalocate_pipeline/lake.py).
 ## Two flows
 
 * **Dataset flow** (`ingest-dataset`): VimSketch, the QVIM DEV set, ESC-50,
-  team recordings and `sfx_meta` (any SFX set with a category/tags/recording
+  ESC-50-Voice, team recordings and `sfx_meta` (any SFX set with a category/tags/recording
   metadata CSV). Run when a dataset is first downloaded, when its version
   changes, or when the cleaning/feature settings change.
 * **Library flow** (`index-library`): a user's SFX folders, processed
@@ -68,6 +68,12 @@ one kept): category `bell` and tags `metallic; bell; ringing` give `['bell',
 'metallic', 'ringing']`. It is NULL when nothing is left. The raw hint, as typed,
 stays in `queries.text_hint` (and `v_triples.text_hint`).
 
+`v_shared_recordings` lists original recordings (Freesound uploads) that more than one
+source holds as different files, with the splits they landed in. More than one split
+there means train and test share a recording. ESC-50-Voice hashes its splits by the
+Vocal Imitation Set's group for the same upload, so the 64 uploads the two share stay
+in one split.
+
 Columns added since the first release (`orig_format`, `orig_bit_depth`,
 `noise_floor_dbfs`, `queries.target_clip_id` and `split`,
 `library_files.root_id` and `rel_path`) are nullable: older Parquet files still
@@ -100,6 +106,8 @@ pip install -e '.[dev]'
 vocalocate-pipeline --lake lake --workers 4 -v ingest-dataset --source esc50 --path ESC-50
 vocalocate-pipeline --lake lake ingest-dataset --source vimsketch --path Vim_Sketch_Dataset
 vocalocate-pipeline --lake lake ingest-dataset --source qvim_dev --path qvim-dev
+# ESC-50-Voice (zenodo.org/records/11385662, research use only): unpack vocal_imitation.7z, with ESC-50 inside or next to it
+vocalocate-pipeline --lake lake ingest-dataset --source esc50_voice --path ESC-50-Voice
 vocalocate-pipeline --lake lake index-library --root ~/SFX --name my_library
 
 vocalocate-pipeline --lake lake report            # data-quality summary

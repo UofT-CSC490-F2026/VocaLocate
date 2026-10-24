@@ -69,6 +69,7 @@ IDs) lives in `IngestBuilder` in [`ingest/__init__.py`](pipeline/vocalocate_pipe
 | Module | Dataset | Used for |
 | --- | --- | --- |
 | `vocal_imitation_set.py` (`vis`) | Vocal Imitation Set v1.1 | Main training set: imitation and reference pairs, distractors, text hints |
+| `esc50_voice.py` | ESC-50-Voice (+ the ESC-50 clips it imitates) | Imitation pairs from 8 imitators for 1,240 ESC-50 clips; splits shared with VIS for the same Freesound upload |
 | `vimsketch.py` | VimSketch (+ VocalSketch excluded takes) | Broader training set; what the QVIM baseline trained on |
 | `qvim_dev.py`, `qvim_eval.py` | QVIM challenge DEV and EVAL | Held-out benchmark (always the test split) |
 | `captdure.py` | CAPTDURE | Captions to test the CLAP text branch (always the test split) |
@@ -112,7 +113,7 @@ One line per file. Paths are relative to the folder in each heading.
 | `tests/test_audio_features.py` | Cleaning rules (resample, trim, silence, clipping, truncation) and log-mel features |
 | `tests/test_core.py` | Config loading, environment configs matching, fingerprint, schema checks |
 | `tests/test_ingest.py` | ESC-50, VimSketch and QVIM ingesters read their layouts correctly |
-| `tests/test_vocal_imitation_set.py`, `test_captdure.py`, `test_sfx_meta.py` | The VIS, CAPTDURE and generic metadata ingesters and their flows |
+| `tests/test_vocal_imitation_set.py`, `test_captdure.py`, `test_sfx_meta.py`, `test_esc50_voice.py` | The VIS, CAPTDURE, generic metadata and ESC-50-Voice ingesters and their flows |
 | `tests/test_splits.py` | Splits are deterministic, grouped by sound, and benchmarks stay in test |
 | `tests/test_flows.py` | Whole dataset and library flows: caching, duplicates, pairs, team triples, held-out sets |
 | `tests/test_part_one_views.py` | The warehouse views that return each A2 Part One schema |
