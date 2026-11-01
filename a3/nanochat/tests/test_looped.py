@@ -5,6 +5,7 @@ python -m pytest tests/test_looped.py -v
 """
 
 import importlib.util
+import os
 import subprocess
 import sys
 
@@ -45,9 +46,15 @@ def test_layer_plan():
 def test_default_matches_original_gpt():
     """n_loops=1 must reproduce the pre-change model exactly (same params, same logits, same flops)."""
     # upstream karpathy/nanochat commit just before looping was added (the un-looped reference model)
-    src = subprocess.run(["git", "show", "92d63d4:nanochat/gpt.py"], capture_output=True, text=True, encoding="utf-8")
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    git = lambda *a: subprocess.run(["git", *a], cwd=root, capture_output=True, text=True, encoding="utf-8")
+    src = git("show", "92d63d4:./nanochat/gpt.py")
     if src.returncode != 0:
-        pytest.skip("reference commit 92d63d4 not available in this clone")
+        # nanochat vendored into another repo (no upstream history): use the commit that first added gpt.py
+        added = git("log", "--diff-filter=A", "--format=%H", "--", "nanochat/gpt.py").stdout.split()
+        src = git("show", f"{added[-1]}:./nanochat/gpt.py") if added else src
+    if src.returncode != 0:
+        pytest.skip("original gpt.py (upstream 92d63d4, or the commit that added it) not available in this clone")
     spec = importlib.util.spec_from_loader("gpt_orig", loader=None)
     orig = importlib.util.module_from_spec(spec)
     exec(compile(src.stdout, "gpt_orig.py", "exec"), orig.__dict__)
