@@ -57,11 +57,20 @@ budget fixed for controlled comparisons. These tiny runs do not measure quality.
 
 **Combined runs are separate experiments**, requiring `--experiment=combined`
 and at least two explicit ablations. Raw flags are `--n-loops=2`,
-`--mlp-activation=xiprelu`, `--diff-v2`, `--depth-attention`, and `--mgvr`:
+`--mlp-activation=xiprelu`, `--diff-v2`, `--depth-attention`, `--mgvr`, and `--xsa`:
 
 ```sh
 train --experiment=combined --mgvr --depth-attention --model-tag=handover-combined
+train --experiment=combined --diff-v2 --xsa --model-tag=handover-diff-v2-xsa
+train --experiment=combined --diff-v2 --n-loops=2 --n-prelude=1 --n-coda=1 \
+  --model-tag=handover-looped-l2-diff-v2
 ```
+
+Diff V2 + XSA applies the existing XSA projection to each final differential
+output head, using that head's own post-mixing value direction. XSA gates still
+start at zero, so the combined model starts identically to Diff V2 alone at the
+same seed. Either standalone flag keeps its existing behavior. With no custom
+tag, the depth-12 combination saves to `d12-diff-v2-xsa`.
 
 Checkpoints: `$NANOCHAT_BASE_DIR/base_checkpoints/<model-tag>/`. Use a new tag
 for each run and preserve the original architecture flags when resuming. For

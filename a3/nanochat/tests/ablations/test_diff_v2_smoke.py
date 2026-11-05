@@ -12,7 +12,8 @@ from test_xiprelu_smoke import LOCAL_TRAINER, local_data
 
 
 @pytest.mark.parametrize("activation", ["relu2", "xiprelu"])
-def test_compiled_diff_v2_training_and_resume(local_data, activation):
+@pytest.mark.parametrize("xsa", [False, True])
+def test_compiled_diff_v2_training_and_resume(local_data, activation, xsa):
     environment = dict(os.environ, NANOCHAT_BASE_DIR=str(local_data),
                        NANOCHAT_DTYPE="float32", PYTHONDONTWRITEBYTECODE="1",
                        PYTHONUTF8="1", WANDB_MODE="disabled", OMP_NUM_THREADS="1")
@@ -27,7 +28,9 @@ def test_compiled_diff_v2_training_and_resume(local_data, activation):
         "--core-metric-every=-1", "--sample-every=-1", "--warmup-steps=0",
         "--warmdown-ratio=0", "--weight-decay=0", "--run=dummy",
     ]
-    tag = "d2" + ("-xiprelu" if activation == "xiprelu" else "") + "-diff-v2"
+    if xsa:
+        command += ["--experiment=combined", "--xsa"]
+    tag = "d2" + ("-xiprelu" if activation == "xiprelu" else "") + "-diff-v2" + ("-xsa" if xsa else "")
     directory = local_data / "base_checkpoints" / tag
     previous = None
     for step, options in ((3, ["--num-iterations=3"]),
@@ -38,6 +41,9 @@ def test_compiled_diff_v2_training_and_resume(local_data, activation):
         meta = json.loads((directory / f"meta_{step:06d}.json").read_text())
         weights = torch.load(directory / f"model_{step:06d}.pt", weights_only=True)
         assert meta["model_config"]["diff_v2"] is True
+        assert meta["model_config"].get("xsa", False) is xsa
+        if xsa:
+            assert meta["user_config"]["experiment"] == "combined"
         assert meta["model_config"]["n_head"] == meta["model_config"]["n_kv_head"] == 4
         assert torch.isfinite(torch.tensor(meta["val_bpb"])) and meta["val_bpb"] > 0
         assert all(torch.isfinite(value).all() for value in weights.values())
@@ -48,6 +54,11 @@ def test_compiled_diff_v2_training_and_resume(local_data, activation):
             assert weights[f"transformer.h.{layer}.attn.c_q.weight"].shape == (64, 32)
             if previous is not None:
                 assert not torch.equal(weights[key], previous[key])
+            if xsa:
+                gate_key = f"transformer.h.{layer}.attn.xsa_alpha"
+                assert weights[gate_key].shape == (4,) and weights[gate_key].abs().sum() > 0
+                if previous is not None:
+                    assert not torch.equal(weights[gate_key], previous[gate_key])
         if activation == "xiprelu":
             assert meta["model_config"]["mlp_activation"] == "xiprelu"
             assert len(meta["activation_stats"]) == 4

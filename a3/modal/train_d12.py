@@ -1,9 +1,9 @@
 """
-A3 Part 2: d12 picochat ablations on Modal (one H100 per run).
+A3 Part 2: d12 picochat ablations on Modal (one H100 per run by default).
 
-Every run uses the same data, tokenizer, batch and token budget, and seed 42 unless SEEDS says otherwise; only the
-architecture changes, selected with nanochat's --experiment flag so that each
-ablation runs standalone against the baseline.
+Every run uses the same data, tokenizer and batch, and seed 42 unless SEEDS says otherwise.
+Architecture ablations use the same token budget; longer baseline controls match their total estimated FLOPs.
+Architectures are selected with nanochat's --experiment flag; combined presets explicitly enable multiple ablations.
 
 Setup (once):
     modal volume create vocalocate-a3
@@ -13,6 +13,12 @@ Smoke test (a few steps of every config, checks CUDA/FA3/CORE paths):
     modal run train_d12.py --smoke
 Full runs (detached, results land in the volume under /a3/results):
     modal run --detach train_d12.py
+One baseline model distributed across four H100s, at the same global token budget:
+    modal run --detach train_d12.py --only=d12-baseline --gpus=4
+Combined Diff V2 + XSA, smoke test then full run:
+    modal run train_d12.py --only=d12-diff-v2-xsa --gpus=4 --smoke --out=smoke_d12_diff_v2_xsa_results.json
+    modal run --detach train_d12.py --only=d12-diff-v2-xsa --gpus=4 --out=d12_diff_v2_xsa_results.json
+The --gpus option accepts 1 (default), 2, 4 or 8 H100s per selected model.
 """
 import json
 import os
@@ -67,6 +73,7 @@ CONFIGS = {
                           "--n-loops-max=3"],
     "d12-xiprelu": ["--experiment=xiprelu"],
     "d12-diff-v2": ["--experiment=diff-v2"],
+    "d12-diff-v2-xsa": ["--experiment=combined", "--diff-v2", "--xsa"],
     "d12-depth-attention": ["--experiment=depth-attention"],
     "d12-mgvr": ["--experiment=mgvr"],
     # same-compute candidates from the 2026 modded-nanogpt records: learnable XSA (#82) and MUDD on the last two
@@ -110,8 +117,20 @@ def _metrics(log):
     }
 
 
+def _training_command(tag: str, smoke: bool, gpus: int):
+    if gpus not in (1, 2, 4, 8):
+        raise ValueError("--gpus must be 1, 2, 4 or 8 (H100s per model)")
+    launcher = (["python"] if gpus == 1 else
+                ["torchrun", "--standalone", f"--nproc_per_node={gpus}"])
+    cmd = [*launcher, "-m", "scripts.base_train", *COMMON, *CONFIGS[tag],
+           f"--run={'smoke-' if smoke else ''}{tag}", f"--model-tag={'smoke-' if smoke else ''}{tag}"]
+    if smoke:
+        cmd += SMOKE  # later flags win in argparse
+    return cmd
+
+
 @app.function(gpu="H100!", volumes={"/vol": vol}, timeout=4 * 3600)
-def train(tag: str, smoke: bool = False):
+def train(tag: str, smoke: bool = False, gpus: int = 1):
     t0 = time.time()
     run_tag = f"smoke-{tag}" if smoke else tag
     env = dict(os.environ, NANOCHAT_BASE_DIR=BASE, PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1",
@@ -119,9 +138,7 @@ def train(tag: str, smoke: bool = False):
                NANOCHAT_SEED=str(SEEDS.get(tag, 42)))
     os.makedirs(f"{BASE}/wandb", exist_ok=True)
     os.makedirs(f"{BASE}/logs", exist_ok=True)
-    cmd = ["python", "-m", "scripts.base_train", *COMMON, *CONFIGS[tag], f"--run={run_tag}", f"--model-tag={run_tag}"]
-    if smoke:
-        cmd += SMOKE  # later flags win in argparse
+    cmd = _training_command(tag, smoke, gpus)
     log_path = f"{BASE}/logs/{run_tag}.log"
     lines = []
     with open(log_path, "w") as f:
@@ -134,7 +151,8 @@ def train(tag: str, smoke: bool = False):
             lines.append(line)
         p.wait()
     log = "".join(lines)
-    out = {"tag": run_tag, "returncode": p.returncode, "container_s": time.time() - t0, "cmd": cmd, **_metrics(log)}
+    out = {"tag": run_tag, "returncode": p.returncode, "container_s": time.time() - t0,
+           "gpu_count": gpus, "cmd": cmd, **_metrics(log)}
     if p.returncode != 0:
         out["error_tail"] = log[-3000:]
     os.makedirs(f"{BASE}/results", exist_ok=True)
@@ -198,12 +216,15 @@ def loop_sweep(tags: str = "d12-looped-rand13,d12-looped-l2", loops: str = "1,2,
 
 
 @app.function(volumes={"/vol": vol}, timeout=5 * 3600)
-def launch_all(smoke: bool = False, only: str = "", launch_id: str = ""):
+def launch_all(smoke: bool = False, only: str = "", launch_id: str = "", gpus: int = 1):
     """Spawns every run from inside Modal, so `modal run --detach` keeps them all alive (a detached app only
     keeps the last function the local client triggered) even if the laptop disconnects."""
     tags = [t for t in CONFIGS if not only or t in only.split(",")]
+    if gpus not in (1, 2, 4, 8):
+        raise ValueError("--gpus must be 1, 2, 4 or 8 (H100s per model)")
+    trainer = train if gpus == 1 else train.with_options(gpu=f"H100!:{gpus}")
     launch_id = launch_id or f"train-{time.time_ns()}"
-    calls = {t: _spawn_once(launch_id, t, train, t, smoke) for t in tags}
+    calls = {t: _spawn_once(launch_id, t, trainer, t, smoke, gpus) for t in tags}
     print("spawned:", {t: c.object_id for t, c in calls.items()}, flush=True)
     results = {}
     for t, c in calls.items():
@@ -215,8 +236,10 @@ def launch_all(smoke: bool = False, only: str = "", launch_id: str = ""):
 
 
 @app.local_entrypoint()
-def main(smoke: bool = False, only: str = "", out: str = ""):
-    results = launch_all.remote(smoke, only, f"train-{time.time_ns()}") # id fixed by the client, so a restarted launcher reattaches
+def main(smoke: bool = False, only: str = "", out: str = "", gpus: int = 1):
+    if gpus not in (1, 2, 4, 8):
+        raise ValueError("--gpus must be 1, 2, 4 or 8 (H100s per model)")
+    results = launch_all.remote(smoke, only, f"train-{time.time_ns()}", gpus) # id fixed by the client, so a restarted launcher reattaches
     for t, r in results.items():
         print(t, json.dumps({k: r.get(k) for k in ("returncode", "val_bpb", "core", "train_minutes", "tok_per_sec",
                                                    "mfu_pct", "peak_mem_mib", "fa3", "container_s", "error")}), flush=True)
