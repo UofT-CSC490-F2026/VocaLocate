@@ -1,6 +1,6 @@
 """Compare two Part 4 checkpoints on the same length- and distance-controlled passkey task."""
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 import os
 from pathlib import Path
@@ -67,8 +67,55 @@ class PasskeyTask:
         return PasskeyCase(tokens, candidates, correct)
 
 
+class CompetingPasskeyTask(PasskeyTask):
+    LOCKERS = (17, 42, 58, 93)
+
+    def __init__(self, tokenizer):
+        super().__init__(tokenizer)
+        self.record_prefixes = {
+            key: tokenizer.encode(f"\nFor locker {key}, the access code is") for key in self.LOCKERS
+        }
+        self.queries = {
+            key: tokenizer.encode(f"\nAs written above, the access code for locker {key} is")
+            for key in self.LOCKERS
+        }
+        assert {len(tokens) for tokens in self.record_prefixes.values()} == {len(self.needle)}
+        assert {len(tokens) for tokens in self.queries.values()} == {len(self.query)}
+
+    def case(self, length, distance, seed):
+        original = super().case(length, distance, seed)
+        rng = random.Random(seed + 381372)
+        target_key = rng.choice(self.LOCKERS)
+        other_keys = [key for key in self.LOCKERS if key != target_key]
+        other_codes = [code for index, code in enumerate(original.candidates) if index != original.correct]
+        rng.shuffle(other_codes)
+
+        # Randomize the target record's order while keeping its distance fixed.
+        earlier_count = rng.randrange(4)
+        earlier = rng.sample(range(distance + 32, length - 24, 32), earlier_count)
+        later = rng.sample(range(32, distance - 23, 32), 3 - earlier_count)
+        other_distances = earlier + later
+        rng.shuffle(other_distances)
+
+        tokens = original.tokens.copy()
+        target_position = length - 1 - distance
+        tokens[target_position - len(self.needle):target_position] = self.record_prefixes[target_key]
+        tokens[-len(self.query):] = self.queries[target_key]
+        for key, code, other_distance in zip(other_keys, other_codes, other_distances):
+            position = length - 1 - other_distance
+            start = position - len(self.needle)
+            stop = position + 1 + len(self.ending)
+            assert start > 0 and stop <= length - len(self.query)
+            assert not any(token in original.candidates for token in tokens[start:stop])
+            tokens[start:stop] = self.record_prefixes[key] + [code] + self.ending
+        assert len(tokens) == length
+        assert tokens[target_position] == original.candidates[original.correct]
+        assert all(tokens.count(code) == 1 for code in original.candidates)
+        return replace(original, tokens=tokens)
+
+
 @torch.inference_mode()
-def score(model, cases, device, batch_size):
+def score(model, cases, device, batch_size, *, predictions=None):
     correct = 0
     for start in range(0, len(cases), batch_size):
         batch = cases[start:start + batch_size]
@@ -76,7 +123,10 @@ def score(model, cases, device, batch_size):
         candidates = torch.tensor([case.candidates for case in batch], device=device)
         answers = torch.tensor([case.correct for case in batch], device=device)
         logits = model(ids)[:, -1, :].gather(1, candidates)
-        correct += (logits.argmax(dim=1) == answers).sum().item()
+        predicted = logits.argmax(dim=1)
+        correct += (predicted == answers).sum().item()
+        if predictions is not None:
+            predictions.extend(predicted.tolist())
     return correct
 
 
@@ -87,6 +137,8 @@ def main():
     parser.add_argument("--trials", type=int, default=64)
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--competing-records", action="store_true",
+                        help="use four locker records per prompt and save per-trial predictions")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if min(args.trials, args.batch_size) < 1:
@@ -94,19 +146,27 @@ def main():
 
     os.environ.setdefault("NANOCHAT_BASE_DIR", str(Path(__file__).resolve().parents[2]))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    task = PasskeyTask(get_tokenizer())
+    task_class = CompetingPasskeyTask if args.competing_records else PasskeyTask
+    task = task_class(get_tokenizer())
     results = []
     for step in args.steps:
         model, _, meta = build_model(args.checkpoint_dir, step, device, "eval", eval_sequence_len=2048)
         trained_length = meta["model_config"]["sequence_len"]
         for length, distance in CONDITIONS:
             cases = [task.case(length, distance, args.seed + i) for i in range(args.trials)]
-            correct = score(model, cases, device, args.batch_size)
+            predictions = [] if args.competing_records else None
+            correct = score(model, cases, device, args.batch_size, predictions=predictions)
             row = dict(step=step, trained_length=trained_length, input_tokens=length,
                        distance_tokens=distance, extrapolation=length > trained_length,
                        correct=correct, trials=args.trials, accuracy=correct / args.trials)
-            results.append(row)
             print(json.dumps(row), flush=True)
+            if predictions is not None:
+                row["case_results"] = [
+                    dict(seed=args.seed + index, candidate_token_ids=case.candidates,
+                         target_index=case.correct, predicted_index=prediction)
+                    for index, (case, prediction) in enumerate(zip(cases, predictions, strict=True))
+                ]
+            results.append(row)
         del model
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(dict(seed=args.seed, device=str(device), chance=0.25,

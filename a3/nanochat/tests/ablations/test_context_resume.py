@@ -24,14 +24,14 @@ def test_stop_and_resume_with_longer_context(local_data):
     checkpoint_dir = local_data / "base_checkpoints" / "d2"
 
     short = subprocess.run(command + ["--max-seq-len=16", "--stop-at-step=2"],
-                           cwd=cwd, env=env, capture_output=True, text=True, timeout=120)
+                           cwd=cwd, env=env, capture_output=True, text=True, encoding="utf-8", timeout=120)
     assert short.returncode == 0, short.stdout + short.stderr
     assert "lrm: 0.84" in short.stdout  # step 1 on the six-step schedule
     assert {p.name for p in checkpoint_dir.glob("meta_*.json")} == {"meta_000002.json"}
     assert (checkpoint_dir / "optim_000002_rank0.pt").is_file()
 
     long = subprocess.run(command + ["--max-seq-len=32", "--resume-from-step=2"],
-                          cwd=cwd, env=env, capture_output=True, text=True, timeout=120)
+                          cwd=cwd, env=env, capture_output=True, text=True, encoding="utf-8", timeout=120)
     assert long.returncode == 0, long.stdout + long.stderr
     assert "step 00002/00006" in long.stdout
     for step, length in ((2, 16), (6, 32)):
