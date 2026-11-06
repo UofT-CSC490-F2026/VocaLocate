@@ -1,0 +1,198 @@
+_wandb:
+    value:
+        cli_version: 0.31.0
+        e:
+            01a1b051-25da-7407-84ce-acdfdb0e70e2:
+                args:
+                    - --experiment=baseline
+                    - --depth=20
+                    - --num-iterations=9960
+                    - --total-batch-size=524288
+                    - --device-batch-size=16
+                    - --max-seq-len=2048
+                    - --eval-every=500
+                    - --core-metric-every=999999
+                    - --sample-every=-1
+                    - --save-every=500
+                    - --run=d20-baseline-8-H100
+                    - --model-tag=d20-baseline-8-H100
+                cpu:
+                    model: unknown
+                cpu_count: 93
+                cpu_count_logical: 93
+                cudaVersion: "13.3"
+                disk:
+                    /:
+                        total: "9223372036854771712"
+                        used: "818860032"
+                email: carmenjchau@gmail.com
+                executable: /usr/local/bin/python
+                gpu: NVIDIA H100 80GB HBM3
+                gpu_count: 8
+                gpu_nvidia:
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: "00000000:04:00.0"
+                      uuid: GPU-a22882c2-1879-a864-991d-8cf0259ee315
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: "00000000:05:00.0"
+                      uuid: GPU-1f5bc423-93ea-d127-2fc7-fe31ee314214
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: 00000000:0A:00.0
+                      uuid: GPU-726d593c-52ea-0785-cfc0-1cbfd23cfd0c
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: 00000000:0B:00.0
+                      uuid: GPU-136b2a0d-36a0-8ae0-6e97-3d20a9314727
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: 00000000:84:00.0
+                      uuid: GPU-50e4cf0d-0de1-35fd-fa19-6a28e65f7f6f
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: 00000000:85:00.0
+                      uuid: GPU-f993032c-3f40-f5d7-b512-8cb0f141303c
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: 00000000:8A:00.0
+                      uuid: GPU-9e002ec5-84ed-8494-3437-f4da76287a45
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: 00000000:8B:00.0
+                      uuid: GPU-943aa303-4997-66d4-507f-cdd8a06cd4a2
+                host: modal
+                memory:
+                    total: "1099511627776"
+                os: Linux-4.19.0-gvisor-x86_64-with-glibc2.41
+                program: -m scripts.base_train
+                python: CPython 3.12.16
+                root: /vol/a3/wandb
+                startedAt: "2026-11-06T10:04:30.541874Z"
+                writerId: 01a1b051-25da-7407-84ce-acdfdb0e70e2
+        m: []
+        python_version: 3.12.16
+        t:
+            "1":
+                - 1
+                - 49
+            "2":
+                - 1
+                - 49
+            "3":
+                - 2
+                - 13
+                - 16
+            "4": 3.12.16
+            "5": 0.31.0
+            "12": 0.31.0
+            "13": linux-x86_64
+aspect_ratio:
+    value: 64
+core_metric_every:
+    value: 999999
+core_metric_max_per_task:
+    value: 500
+depth:
+    value: 20
+depth_attention:
+    value: false
+depth_attention_stride:
+    value: null
+device_batch_size:
+    value: 16
+device_type:
+    value: ""
+diff_v2:
+    value: false
+embedding_lr:
+    value: 0.3
+eval_every:
+    value: 500
+eval_tokens:
+    value: 41943040
+experiment:
+    value: baseline
+final_lr_frac:
+    value: 0.05
+fp8:
+    value: false
+fp8_recipe:
+    value: tensorwise
+gpu_hourly_cost:
+    value: null
+head_dim:
+    value: 128
+log_every:
+    value: 100
+loop_embed:
+    value: false
+matrix_lr:
+    value: 0.02
+max_seq_len:
+    value: 2048
+mgvr:
+    value: false
+mlp_activation:
+    value: relu2
+model_tag:
+    value: d20-baseline-8-H100
+mudd:
+    value: false
+n_coda:
+    value: 0
+n_loops:
+    value: 1
+n_loops_max:
+    value: 0
+n_loops_min:
+    value: 0
+n_prelude:
+    value: 0
+num_iterations:
+    value: 9960
+resume_from_step:
+    value: -1
+run:
+    value: d20-baseline-8-H100
+sample_every:
+    value: -1
+save_every:
+    value: 500
+scalar_lr:
+    value: 0.5
+target_flops:
+    value: -1
+target_param_data_ratio:
+    value: 12
+total_batch_size:
+    value: 524288
+unembedding_lr:
+    value: 0.008
+warmdown_ratio:
+    value: 0.65
+warmup_steps:
+    value: 40
+weight_decay:
+    value: 0.28
+window_pattern:
+    value: SSSL
+xsa:
+    value: false
