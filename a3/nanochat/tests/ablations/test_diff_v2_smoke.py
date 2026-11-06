@@ -1,4 +1,4 @@
-"""Exercise the real trainer offline, reusing the existing xIPReLU smoke data."""
+"""Exercise the real trainer offline, reusing the shared smoke data."""
 import json
 import os
 from pathlib import Path
@@ -8,7 +8,7 @@ import sys
 import pytest
 import torch
 
-from test_xiprelu_smoke import LOCAL_TRAINER, local_data
+from smoke_helpers import LOCAL_TRAINER, local_data
 
 
 @pytest.mark.parametrize("activation", ["relu2", "xiprelu"])
@@ -21,7 +21,6 @@ def test_compiled_diff_v2_training_and_resume(local_data, activation, xsa):
         environment.pop(name, None)
     command = [
         sys.executable, "-c", LOCAL_TRAINER, "--diff-v2",
-        f"--mlp-activation={activation}",
         "--device-type=cpu", "--depth=2", "--aspect-ratio=16", "--head-dim=8",
         "--max-seq-len=16", "--window-pattern=L", "--device-batch-size=2",
         "--total-batch-size=32", "--eval-every=1", "--eval-tokens=32",
