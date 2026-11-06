@@ -1,0 +1,296 @@
+{
+  "tag": "d20-diff-v2",
+  "gpus": 8,
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "returncode": 0,
+  "resumed_from": 6500,
+  "container_s": 2413.8196370601654,
+  "cmd": [
+    "torchrun",
+    "--standalone",
+    "--nproc_per_node=8",
+    "-m",
+    "scripts.base_train",
+    "--",
+    "--experiment=diff-v2",
+    "--depth=20",
+    "--num-iterations=9960",
+    "--total-batch-size=524288",
+    "--device-batch-size=8",
+    "--max-seq-len=2048",
+    "--eval-every=500",
+    "--core-metric-every=999999",
+    "--sample-every=-1",
+    "--save-every=500",
+    "--run=d20-diff-v2",
+    "--model-tag=d20-diff-v2",
+    "--resume-from-step=6500"
+  ],
+  "val_bpb": 0.732456,
+  "min_val_bpb": 0.732456,
+  "core": 0.2573,
+  "train_minutes": 97.29,
+  "peak_mem_mib": 29717.4,
+  "flops_per_token": 3359608000.0,
+  "tok_per_sec": 955404.3687861272,
+  "mfu_pct": 40.56856936416185,
+  "fa3": true,
+  "val_curve": [
+    [
+      6500,
+      0.772359
+    ],
+    [
+      7000,
+      0.77092
+    ],
+    [
+      7500,
+      0.761259
+    ],
+    [
+      8000,
+      0.753465
+    ],
+    [
+      8500,
+      0.746866
+    ],
+    [
+      9000,
+      0.740973
+    ],
+    [
+      9500,
+      0.735894
+    ],
+    [
+      9960,
+      0.732456
+    ]
+  ],
+  "core_tasks": {
+    "hellaswag_zeroshot": {
+      "shots": 0,
+      "type": "multiple_choice",
+      "accuracy": 0.528,
+      "centered": 0.3707
+    },
+    "jeopardy": {
+      "shots": 10,
+      "type": "language_modeling",
+      "accuracy": 0.088,
+      "centered": 0.088
+    },
+    "bigbench_qa_wikidata": {
+      "shots": 10,
+      "type": "language_modeling",
+      "accuracy": 0.46,
+      "centered": 0.46
+    },
+    "arc_easy": {
+      "shots": 10,
+      "type": "multiple_choice",
+      "accuracy": 0.694,
+      "centered": 0.592
+    },
+    "arc_challenge": {
+      "shots": 10,
+      "type": "multiple_choice",
+      "accuracy": 0.39,
+      "centered": 0.1867
+    },
+    "copa": {
+      "shots": 0,
+      "type": "multiple_choice",
+      "accuracy": 0.7,
+      "centered": 0.4
+    },
+    "commonsense_qa": {
+      "shots": 10,
+      "type": "multiple_choice",
+      "accuracy": 0.262,
+      "centered": 0.0775
+    },
+    "piqa": {
+      "shots": 10,
+      "type": "multiple_choice",
+      "accuracy": 0.746,
+      "centered": 0.492
+    },
+    "openbook_qa": {
+      "shots": 0,
+      "type": "multiple_choice",
+      "accuracy": 0.382,
+      "centered": 0.176
+    },
+    "lambada_openai": {
+      "shots": 0,
+      "type": "language_modeling",
+      "accuracy": 0.444,
+      "centered": 0.444
+    },
+    "hellaswag": {
+      "shots": 10,
+      "type": "multiple_choice",
+      "accuracy": 0.54,
+      "centered": 0.3867
+    },
+    "winograd": {
+      "shots": 0,
+      "type": "schema",
+      "accuracy": 0.6703,
+      "centered": 0.3407
+    },
+    "winogrande": {
+      "shots": 0,
+      "type": "schema",
+      "accuracy": 0.548,
+      "centered": 0.096
+    },
+    "bigbench_dyck_languages": {
+      "shots": 10,
+      "type": "language_modeling",
+      "accuracy": 0.146,
+      "centered": 0.146
+    },
+    "agi_eval_lsat_ar": {
+      "shots": 3,
+      "type": "multiple_choice",
+      "accuracy": 0.213,
+      "centered": 0.0163
+    },
+    "bigbench_cs_algorithms": {
+      "shots": 10,
+      "type": "language_modeling",
+      "accuracy": 0.458,
+      "centered": 0.458
+    },
+    "bigbench_operators": {
+      "shots": 10,
+      "type": "language_modeling",
+      "accuracy": 0.1667,
+      "centered": 0.1667
+    },
+    "bigbench_repeat_copy_logic": {
+      "shots": 10,
+      "type": "language_modeling",
+      "accuracy": 0.0312,
+      "centered": 0.0312
+    },
+    "squad": {
+      "shots": 10,
+      "type": "language_modeling",
+      "accuracy": 0.388,
+      "centered": 0.388
+    },
+    "coqa": {
+      "shots": 0,
+      "type": "language_modeling",
+      "accuracy": 0.268,
+      "centered": 0.268
+    },
+    "boolq": {
+      "shots": 10,
+      "type": "multiple_choice",
+      "accuracy": 0.572,
+      "centered": -0.1263
+    },
+    "bigbench_language_identification": {
+      "shots": 10,
+      "type": "multiple_choice",
+      "accuracy": 0.276,
+      "centered": 0.2035
+    }
+  },
+  "val_curve_all_attempts": [
+    [
+      0,
+      3.168863
+    ],
+    [
+      500,
+      0.950692
+    ],
+    [
+      1000,
+      0.88774
+    ],
+    [
+      1500,
+      0.863596
+    ],
+    [
+      2000,
+      0.849172
+    ],
+    [
+      2500,
+      0.840183
+    ],
+    [
+      2500,
+      0.840183
+    ],
+    [
+      3000,
+      0.836307
+    ],
+    [
+      3500,
+      0.828955
+    ],
+    [
+      4000,
+      0.816618
+    ],
+    [
+      4500,
+      0.806033
+    ],
+    [
+      5000,
+      0.796839
+    ],
+    [
+      5500,
+      0.788211
+    ],
+    [
+      6000,
+      0.780364
+    ],
+    [
+      6500,
+      0.772359
+    ],
+    [
+      7000,
+      0.77092
+    ],
+    [
+      7500,
+      0.761259
+    ],
+    [
+      8000,
+      0.753465
+    ],
+    [
+      8500,
+      0.746866
+    ],
+    [
+      9000,
+      0.740973
+    ],
+    [
+      9500,
+      0.735894
+    ],
+    [
+      9960,
+      0.732456
+    ]
+  ]
+}
