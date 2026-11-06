@@ -114,6 +114,41 @@ class CompetingPasskeyTask(PasskeyTask):
         return replace(original, tokens=tokens)
 
 
+def prompt_check_cases(cases, unknown_token):
+    """Remove the stated answer, or substitute the next original candidate."""
+    removed, swapped = [], []
+    for case in cases:
+        code = case.candidates[case.correct]
+        if unknown_token in case.candidates or case.tokens.count(code) != 1:
+            raise ValueError("Prompt checks require one stated code and a separate unknown token")
+        position = case.tokens.index(code)
+        no_answer = case.tokens.copy()
+        no_answer[position] = unknown_token
+        replacement = (case.correct + 1) % len(case.candidates)
+        changed = case.tokens.copy()
+        changed[position] = case.candidates[replacement]
+        removed.append(replace(case, tokens=no_answer))
+        swapped.append(replace(case, tokens=changed, correct=replacement))
+    return removed, swapped
+
+
+def run_prompt_checks(model, tokenizer, task, device, trials, seed, batch_size):
+    unknown = tokenizer.encode(" unknown")
+    if len(unknown) != 1:
+        raise ValueError("The unknown replacement must be one token")
+    rows = []
+    for length, distance in CONDITIONS:
+        cases = [task.case(length, distance, seed + i) for i in range(trials)]
+        removed, swapped = prompt_check_cases(cases, unknown[0])
+        row = dict(input_tokens=length, distance_tokens=distance, trials=trials,
+                   original_correct=score(model, cases, device, batch_size),
+                   no_answer_correct=score(model, removed, device, batch_size),
+                   swapped_answer_correct=score(model, swapped, device, batch_size))
+        print(json.dumps(row), flush=True)
+        rows.append(row)
+    return rows
+
+
 @torch.inference_mode()
 def score(model, cases, device, batch_size, *, predictions=None):
     correct = 0
@@ -133,22 +168,38 @@ def score(model, cases, device, batch_size, *, predictions=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--checkpoint-dir", type=Path, required=True)
-    parser.add_argument("--steps", type=int, nargs=2, default=(1260, 2520))
+    parser.add_argument("--steps", type=int, nargs="+", default=(1260, 2520))
     parser.add_argument("--trials", type=int, default=64)
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--competing-records", action="store_true",
-                        help="use four locker records per prompt and save per-trial predictions")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--competing-records", action="store_true",
+                      help="use four locker records per prompt and save per-trial predictions")
+    mode.add_argument("--prompt-checks", action="store_true",
+                      help="repeat the saved removal/replacement checks; supply one --steps value")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if min(args.trials, args.batch_size) < 1:
         parser.error("--trials and --batch-size must be positive")
+    if args.prompt_checks and len(args.steps) != 1:
+        parser.error("--prompt-checks requires exactly one --steps value")
 
     os.environ.setdefault("NANOCHAT_BASE_DIR", str(Path(__file__).resolve().parents[2]))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     task_class = CompetingPasskeyTask if args.competing_records else PasskeyTask
-    task = task_class(get_tokenizer())
+    tokenizer = get_tokenizer()
+    task = task_class(tokenizer)
     results = []
+    if args.prompt_checks:
+        model, _, _ = build_model(args.checkpoint_dir, args.steps[0], device, "eval", eval_sequence_len=2048)
+        rows = run_prompt_checks(model, tokenizer, task, device, args.trials, args.seed, args.batch_size)
+        payload = dict(step=args.steps[0], seed=args.seed, device=str(device), chance=0.25,
+                       no_answer_intervention="Replace the sole candidate token in the prompt with the single token for ' unknown'. Keep the original target for scoring.",
+                       swapped_answer_intervention="Replace the sole candidate token with the next candidate, cycling through the unchanged option order. Score the replacement as the target.",
+                       results=rows)
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        return
     for step in args.steps:
         model, _, meta = build_model(args.checkpoint_dir, step, device, "eval", eval_sequence_len=2048)
         trained_length = meta["model_config"]["sequence_len"]

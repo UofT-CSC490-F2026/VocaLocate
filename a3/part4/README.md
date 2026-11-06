@@ -41,6 +41,42 @@ prompts. Input length and the distance from the target code to the final input
 token are controlled separately. Both checkpoints are evaluated with an input
 limit of 2048 tokens.
 
+To repeat the two input-edit checks using checkpoint B, from `a3/nanochat`:
+
+```sh
+python -m scripts.part4_eval --checkpoint-dir dev-ignore/part4 --steps 2520 --trials 128 --seed 42 --prompt-checks --output ../part4/results/passkey-leakage-audit.json
+```
+
+This repeats the original single-record prompts, then scores the versions with
+the code replaced by `unknown` or the next candidate. The candidate list stays
+fixed. Removing the code keeps the original expected answer; substituting a
+candidate makes that replacement the expected answer. No model is trained.
+
+## Rebuild statistics and figures
+
+From `a3/nanochat`, the saved per-trial predictions and training logs are enough
+to recalculate all nine paired confidence intervals and regenerate the report
+figures. Checkpoint weights and a GPU are not needed for this command:
+
+```sh
+python -m scripts.part4_analyze
+```
+
+The script first checks that paired trial seeds, candidate lists, and expected
+answers match, and that per-trial predictions reproduce each saved total. It
+writes `results/passkey-paired-summary.json` and three files in `figures/`:
+`training-validation-loss.png`, `four-record-accuracy.png`, and
+`paired-accuracy-difference.png`. The last figure shows all nine B-minus-A gains,
+their approximate 95% paired intervals, and a zero-difference reference line.
+Matplotlib, listed in the nanochat development dependencies, is required for
+plots. Use `--summary-only` to recalculate just the statistics without it.
+
+To write a separate copy without replacing the archived outputs:
+
+```sh
+python -m scripts.part4_analyze --output-dir dev-ignore/part4-rebuilt
+```
+
 ## Saved outputs
 
 - `results/passkey-results.json`: single-record accuracy for A and B.
@@ -60,11 +96,13 @@ For each condition, the confidence interval uses paired correctness differences
 `d_i = correct_B_i - correct_A_i`, with values -1, 0, or 1. The estimated gain is
 `100 * mean(d)`, and the interval is `100 * (mean(d) +/- 1.96 * stdev(d) / sqrt(n))`,
 using the sample standard deviation and `n = 128`.
+Each interval applies to one condition and describes variation across prompts
+for these two fixed checkpoints.
 
 ## Tests
 
 From `a3/nanochat`:
 
 ```sh
-python -m pytest tests/test_part4_eval.py tests/ablations/test_context_resume.py -q
+python -m pytest tests/test_part4_eval.py tests/test_part4_analyze.py tests/ablations/test_context_resume.py -q
 ```
