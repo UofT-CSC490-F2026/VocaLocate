@@ -294,17 +294,18 @@ class CausalSelfAttention(nn.Module):
             if cache_idx == kv_cache.n_layers - 1:
                 kv_cache.advance(T)
 
-        if self.xsa_alpha is not None:
-            # XSA: drop a per-head fraction of the output along the token's own (post-mixing) value direction
-            vn = F.normalize(v, dim=-1, eps=1e-4).repeat_interleave(self.n_head // self.n_kv_head, dim=2)
-            alpha = torch.tanh(self.xsa_alpha).to(y.dtype).view(1, 1, self.n_head, 1)
-            y = y - alpha * (y * vn).sum(-1, keepdim=True) * vn
-
         if self.diff_v2:
             # GQA groups are contiguous: adjacent partners always share the same K/V.
             # Apply after either backend/path so training, prefill and decoding agree.
             lam = torch.sigmoid(self.lambda_proj(x)).to(y).unsqueeze(-1)
             y = y[:, :, 0::2] - lam * y[:, :, 1::2]
+
+        if self.xsa_alpha is not None:
+            # XSA acts on the final output heads, after any differential pairs are reduced.
+            # Each pair shares K/V, so its output keeps the same token-local value direction.
+            vn = F.normalize(v, dim=-1, eps=1e-4).repeat_interleave(self.n_head // self.n_kv_head, dim=2)
+            alpha = torch.tanh(self.xsa_alpha).to(y.dtype).view(1, 1, self.n_head, 1)
+            y = y - alpha * (y * vn).sum(-1, keepdim=True) * vn
 
         # Re-assemble the heads and project back to residual stream
         y = y.contiguous().view(B, T, -1)

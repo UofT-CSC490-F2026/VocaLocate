@@ -56,6 +56,9 @@ def test_intentional_combinations_and_legacy_calls():
     args = options(experiment="combined", mgvr=True, depth_attention=True)
     select_experiment(args)
     assert args.mgvr and args.depth_attention
+    args = options(experiment="combined", diff_v2=True, xsa=True)
+    select_experiment(args)
+    assert args.diff_v2 and args.xsa and not args.mgvr and not args.depth_attention
     with pytest.raises(ValueError, match="at least two"):
         select_experiment(options(experiment="combined", mgvr=True))
     with pytest.raises(ValueError, match="n-loops >= 2"):
