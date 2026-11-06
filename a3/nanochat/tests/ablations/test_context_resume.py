@@ -5,7 +5,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-from test_xiprelu_smoke import LOCAL_TRAINER, local_data
+from smoke_helpers import LOCAL_TRAINER, local_data
 
 
 def test_stop_and_resume_with_longer_context(local_data):
