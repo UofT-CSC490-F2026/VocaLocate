@@ -1,0 +1,24 @@
+Downloaded to /vol/a3/eval_bundle.zip
+Evaluating: hellaswag_zeroshot (0-shot, type: multiple_choice)... accuracy: 0.3860 | centered: 0.1813 | time: 2.20s
+Evaluating: jeopardy (10-shot, type: language_modeling)... accuracy: 0.0180 | centered: 0.0180 | time: 1.73s
+Evaluating: bigbench_qa_wikidata (10-shot, type: language_modeling)... accuracy: 0.2620 | centered: 0.2620 | time: 1.66s
+Evaluating: arc_easy (10-shot, type: multiple_choice)... accuracy: 0.5960 | centered: 0.4613 | time: 2.06s
+Evaluating: arc_challenge (10-shot, type: multiple_choice)... accuracy: 0.2600 | centered: 0.0133 | time: 1.93s
+Evaluating: copa (0-shot, type: multiple_choice)... accuracy: 0.6000 | centered: 0.2000 | time: 0.35s
+Evaluating: commonsense_qa (10-shot, type: multiple_choice)... accuracy: 0.2880 | centered: 0.1100 | time: 1.85s
+Evaluating: piqa (10-shot, type: multiple_choice)... accuracy: 0.7040 | centered: 0.4080 | time: 2.01s
+Evaluating: openbook_qa (0-shot, type: multiple_choice)... accuracy: 0.3240 | centered: 0.0987 | time: 1.51s
+Evaluating: lambada_openai (0-shot, type: language_modeling)... accuracy: 0.3200 | centered: 0.3200 | time: 1.63s
+Evaluating: hellaswag (10-shot, type: multiple_choice)... accuracy: 0.3740 | centered: 0.1653 | time: 2.27s
+Evaluating: winograd (0-shot, type: schema)... accuracy: 0.6007 | centered: 0.2015 | time: 0.79s
+Evaluating: winogrande (0-shot, type: schema)... accuracy: 0.4980 | centered: -0.0040 | time: 1.33s
+Evaluating: bigbench_dyck_languages (10-shot, type: language_modeling)... accuracy: 0.0920 | centered: 0.0920 | time: 1.90s
+Evaluating: agi_eval_lsat_ar (3-shot, type: multiple_choice)... accuracy: 0.2391 | centered: 0.0489 | time: 0.98s
+Evaluating: bigbench_cs_algorithms (10-shot, type: language_modeling)... accuracy: 0.4520 | centered: 0.4520 | time: 1.64s
+Evaluating: bigbench_operators (10-shot, type: language_modeling)... accuracy: 0.1333 | centered: 0.1333 | time: 0.67s
+Evaluating: bigbench_repeat_copy_logic (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.12s
+Evaluating: squad (10-shot, type: language_modeling)... accuracy: 0.2080 | centered: 0.2080 | time: 2.12s
+Evaluating: coqa (0-shot, type: language_modeling)... accuracy: 0.2020 | centered: 0.2020 | time: 1.77s
+Evaluating: boolq (10-shot, type: multiple_choice)... accuracy: 0.5260 | centered: -0.2474 | time: 2.14s
+Evaluating: bigbench_language_identification (10-shot, type: multiple_choice)... accuracy: 0.2660 | centered: 0.1925 | time: 2.50s
+Step 02520 | CORE metric: 0.1599
