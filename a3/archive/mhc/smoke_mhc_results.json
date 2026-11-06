@@ -1,0 +1,35 @@
+{
+  "d12-mhc": {
+    "tag": "smoke-d12-mhc",
+    "returncode": 0,
+    "container_s": 357.8713524341583,
+    "cmd": [
+      "python",
+      "-m",
+      "scripts.base_train",
+      "--depth=12",
+      "--num-iterations=2520",
+      "--total-batch-size=524288",
+      "--device-batch-size=32",
+      "--core-metric-every=999999",
+      "--sample-every=-1",
+      "--save-every=-1",
+      "--experiment=mhc",
+      "--run=smoke-d12-mhc",
+      "--model-tag=smoke-d12-mhc",
+      "--num-iterations=30",
+      "--eval-every=15",
+      "--eval-tokens=1048576",
+      "--core-metric-max-per-task=20"
+    ],
+    "val_bpb": 1.740085,
+    "min_val_bpb": 1.740085,
+    "core": -0.0409,
+    "train_minutes": 0.47,
+    "peak_mem_mib": 39438.53,
+    "flops_per_token": 765004500.0,
+    "tok_per_sec": 353602.7,
+    "mfu_pct": 27.351999999999997,
+    "fa3": true
+  }
+}

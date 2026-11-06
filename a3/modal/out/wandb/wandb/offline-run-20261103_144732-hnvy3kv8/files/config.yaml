@@ -1,0 +1,148 @@
+_wandb:
+    value:
+        cli_version: 0.31.0
+        e:
+            01a1a295-a0d2-7a86-8348-1826c0bd55b2:
+                args:
+                    - --depth=12
+                    - --num-iterations=2520
+                    - --total-batch-size=524288
+                    - --device-batch-size=32
+                    - --core-metric-every=999999
+                    - --sample-every=-1
+                    - --save-every=-1
+                    - --experiment=looped
+                    - --depth=9
+                    - --aspect-ratio=85
+                    - --n-loops=2
+                    - --n-prelude=3
+                    - --n-coda=3
+                    - --run=d12-looped-u9
+                    - --model-tag=d12-looped-u9
+                cpu:
+                    model: unknown
+                cpu_count: 17
+                cpu_count_logical: 17
+                cudaVersion: "13.3"
+                disk:
+                    /:
+                        total: "9223372036854771712"
+                        used: "816447488"
+                executable: /usr/local/bin/python
+                gpu: NVIDIA H100 80GB HBM3
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: "00000000:05:00.0"
+                      uuid: GPU-c4dfce97-5bdf-d433-305e-221797d11b1a
+                host: modal
+                memory:
+                    total: "1099511627776"
+                os: Linux-4.19.0-gvisor-x86_64-with-glibc2.36
+                program: -m scripts.base_train
+                python: CPython 3.10.17
+                root: /vol/a3/wandb
+                startedAt: "2026-11-03T14:47:32.670825Z"
+                writerId: 01a1a1e1-3325-7ce5-929c-f1e58cc216c6
+        m: []
+        python_version: 3.10.17
+        t:
+            "1":
+                - 1
+                - 49
+            "2":
+                - 1
+                - 49
+            "3":
+                - 2
+                - 4
+                - 13
+                - 16
+                - 76
+            "4": 3.10.17
+            "5": 0.31.0
+            "12": 0.31.0
+            "13": linux-x86_64
+aspect_ratio:
+    value: 85
+core_metric_every:
+    value: 999999
+core_metric_max_per_task:
+    value: 500
+depth:
+    value: 9
+depth_attention:
+    value: false
+depth_attention_stride:
+    value: null
+device_batch_size:
+    value: 32
+device_type:
+    value: ""
+diff_v2:
+    value: false
+embedding_lr:
+    value: 0.3
+eval_every:
+    value: 250
+eval_tokens:
+    value: 41943040
+experiment:
+    value: looped
+final_lr_frac:
+    value: 0.05
+fp8:
+    value: false
+fp8_recipe:
+    value: tensorwise
+gpu_hourly_cost:
+    value: null
+head_dim:
+    value: 128
+matrix_lr:
+    value: 0.02
+max_seq_len:
+    value: 2048
+mgvr:
+    value: false
+mlp_activation:
+    value: relu2
+model_tag:
+    value: d12-looped-u9
+n_coda:
+    value: 3
+n_loops:
+    value: 2
+n_prelude:
+    value: 3
+num_iterations:
+    value: 2520
+resume_from_step:
+    value: -1
+run:
+    value: d12-looped-u9
+sample_every:
+    value: -1
+save_every:
+    value: -1
+scalar_lr:
+    value: 0.5
+target_flops:
+    value: -1
+target_param_data_ratio:
+    value: 12
+total_batch_size:
+    value: 524288
+unembedding_lr:
+    value: 0.008
+warmdown_ratio:
+    value: 0.65
+warmup_steps:
+    value: 40
+weight_decay:
+    value: 0.28
+window_pattern:
+    value: SSSL

@@ -1,0 +1,7 @@
+SYNCED d12-diff-v2-a100 id=pvan5usj state=finished bpb=None core=None tags=['a100', 'part3'] rc=0
+SYNCED d12-looped-l2-embed-a100 id=3xuer8pk state=finished bpb=None core=None tags=['a100', 'part3'] rc=0
+SYNCED d12-looped-l2-embed-rtx id=12iwgtl2 state=finished bpb=None core=None tags=['part3', 'rtx'] rc=0
+SYNCED d12-diff-v2-rtx id=kbdb9crs state=finished bpb=None core=None tags=['part3', 'rtx'] rc=0
+DONE 4 of 4; missing: []
+W&B now has 30 runs; unfinished: []
+["d12-baseline", "d12-baseline-long", "d12-baseline-long-repeat", "d12-baseline-s1", "d12-baseline-s2", "d12-depth-attention", "d12-diff-v2", "d12-diff-v2-a100", "d12-diff-v2-b200", "d12-diff-v2-l40s", "d12-diff-v2-rtx", "d12-looped-l2", "d12-looped-l2-embed", "d12-looped-l2-embed-a100", "d12-looped-l2-embed-b200", "d12-looped-l2-embed-rtx", "d12-looped-l2-embed-s1", "d12-looped-l2-embed-s2", "d12-looped-l2-s1", "d12-looped-l2-s2", "d12-looped-rand13", "d12-looped-u7", "d12-looped-u9", "d12-looped-u9-repeat", "d12-mgvr", "d12-mhc", "d12-mudd", "d12-ssa", "d12-xiprelu", "d12-xsa"]

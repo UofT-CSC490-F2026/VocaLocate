@@ -1,0 +1,23 @@
+✓ Initialized. View run at 
+https://modal.com/apps/tjsinghchawla/main/ap-KS0OnbmvmITgHi545PZh8l
+✓ Created objects.
+├── ✓ Uploaded 
+│   C:\Users\tjsin\vocalocate-gpu\.claude\worktrees\a3-d12-ablations\a3\modal\p
+│   eak_bench.py
+├── ✓ Created Function h100.
+├── ✓ Created Function h100_new_torch.
+├── ✓ Created Function rtx.
+├── ✓ Created Function a100.
+├── ✓ Created Function b300.
+└── ✓ Created Function l40s.
+/usr/local/lib/python3.10/site-packages/torch/_subclasses/functional_tensor.py:279: UserWarning: Failed to initialize NumPy: No module named 'numpy' (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:84.)
+  cpu = _conversion_method_template(device=torch.device("cpu"))
+/usr/local/lib/python3.10/site-packages/torch/_subclasses/functional_tensor.py:279: UserWarning: Failed to initialize NumPy: No module named 'numpy' (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:84.)
+  cpu = _conversion_method_template(device=torch.device("cpu"))
+PEAK {"gpu": "NVIDIA L40S, 350.00 W, 49140 MiB", "torch": "2.9.1+cu128", "cuda": "12.8", "tflops": {"bf16_2048": 213.6, "bf16_4096": 254.0, "bf16_8192": 231.3, "bf16_16384": 209.4, "fp32_2048": 44.3, "fp32_4096": 47.5, "fp32_8192": 41.0, "fp32_16384": 35.1}}
+PEAK {"gpu": "NVIDIA A100-SXM4-80GB, 400.00 W, 81920 MiB", "torch": "2.9.1+cu128", "cuda": "12.8", "tflops": {"bf16_2048": 123.3, "bf16_4096": 246.5, "bf16_8192": 271.4, "bf16_16384": 265.8, "fp32_2048": 17.1, "fp32_4096": 18.9, "fp32_8192": 19.2, "fp32_16384": 18.8}}
+a100 {"gpu": "NVIDIA A100-SXM4-80GB, 400.00 W, 81920 MiB", "torch": "2.9.1+cu128", "cuda": "12.8", "tflops": {"bf16_2048": 123.3, "bf16_4096": 246.5, "bf16_8192": 271.4, "bf16_16384": 265.8, "fp32_2048": 17.1, "fp32_4096": 18.9, "fp32_8192": 19.2, "fp32_16384": 18.8}}
+l40s {"gpu": "NVIDIA L40S, 350.00 W, 49140 MiB", "torch": "2.9.1+cu128", "cuda": "12.8", "tflops": {"bf16_2048": 213.6, "bf16_4096": 254.0, "bf16_8192": 231.3, "bf16_16384": 209.4, "fp32_2048": 44.3, "fp32_4096": 47.5, "fp32_8192": 41.0, "fp32_16384": 35.1}}
+Stopping app - local entrypoint completed.
+✓ App completed. View run at 
+https://modal.com/apps/tjsinghchawla/main/ap-KS0OnbmvmITgHi545PZh8l

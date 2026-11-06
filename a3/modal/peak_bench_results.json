@@ -1,0 +1,14 @@
+{
+  "h100": {
+    "error": "DeserializationError(\"Deserialization failed because the 'torch' module is not available in the local environment.\")"
+  },
+  "h100_new_torch": {
+    "error": "DeserializationError(\"Deserialization failed because the 'torch' module is not available in the local environment.\")"
+  },
+  "rtx": {
+    "error": "DeserializationError(\"Deserialization failed because the 'torch' module is not available in the local environment.\")"
+  },
+  "b300": {
+    "error": "DeserializationError(\"Deserialization failed because the 'torch' module is not available in the local environment.\")"
+  }
+}

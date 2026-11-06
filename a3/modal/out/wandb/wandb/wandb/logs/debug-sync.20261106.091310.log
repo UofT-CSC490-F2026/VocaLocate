@@ -1,0 +1,10 @@
+{"time":"2026-11-06T04:13:10.8459263-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261106_072009-ziyp0gjw\\run-ziyp0gjw.wandb"}
+{"time":"2026-11-06T04:13:10.8662488-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261106_072009-ziyp0gjw\\run-ziyp0gjw.wandb"}
+{"time":"2026-11-06T04:13:10.8668562-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261106_072009-ziyp0gjw\\run-ziyp0gjw.wandb"}
+{"time":"2026-11-06T04:13:11.5968252-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261106_072009-ziyp0gjw\\run-ziyp0gjw.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-06T04:13:11.7935213-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261106_072009-ziyp0gjw\\run-ziyp0gjw.wandb","status":"200 OK"}
+{"time":"2026-11-06T04:13:12.7648199-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261106_072009-ziyp0gjw\\run-ziyp0gjw.wandb"}
+{"time":"2026-11-06T04:13:12.7749608-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261106_072009-ziyp0gjw\\run-ziyp0gjw.wandb","total_files":4,"history_offset":0,"history_lines":39,"events_offset":1,"events_lines":441,"console_offset":0,"console_lines":2613,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-06T04:13:13.1627295-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261106_072009-ziyp0gjw\\run-ziyp0gjw.wandb","status":"200 OK"}
+{"time":"2026-11-06T04:13:13.163232-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261106_072009-ziyp0gjw\\run-ziyp0gjw.wandb"}
+{"time":"2026-11-06T04:13:13.163232-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261106_072009-ziyp0gjw\\run-ziyp0gjw.wandb"}

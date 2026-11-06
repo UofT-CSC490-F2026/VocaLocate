@@ -1,0 +1,280 @@
+✓ Initialized. View run at 
+https://modal.com/apps/tjsinghchawla/main/ap-lCYl76ggMk43BEFvMywlcJ
+Building image im-nqv3ROEp00XYF0wSg2iyO4
+
+=> Step 0: FROM base
+
+=> Step 1: RUN python -m pip install datasets filelock huggingface-hub==0.34.4 jinja2 kernels==0.11.7 numpy psutil pyarrow requests rustbpe tiktoken wandb
+Looking in indexes: http://pypi-mirror.modal.local:5555/simple
+Collecting datasets
+  Downloading http://pypi-mirror.modal.local:5555/simple/datasets/datasets-5.1.0-py3-none-any.whl.metadata (24 kB)
+Requirement already satisfied: filelock in /usr/local/lib/python3.10/site-packages (4.1.0)
+Collecting huggingface-hub==0.34.4
+  Downloading http://pypi-mirror.modal.local:5555/simple/huggingface-hub/huggingface_hub-0.34.4-py3-none-any.whl.metadata (14 kB)
+Requirement already satisfied: jinja2 in /usr/local/lib/python3.10/site-packages (3.1.6)
+Collecting kernels==0.11.7
+  Downloading http://pypi-mirror.modal.local:5555/simple/kernels/kernels-0.11.7-py3-none-any.whl.metadata (3.3 kB)
+Collecting numpy
+  Downloading http://pypi-mirror.modal.local:5555/simple/numpy/numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (62 kB)
+Collecting psutil
+  Downloading http://pypi-mirror.modal.local:5555/simple/psutil/psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl.metadata (22 kB)
+Collecting pyarrow
+  Downloading http://pypi-mirror.modal.local:5555/simple/pyarrow/pyarrow-25.0.1-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (3.0 kB)
+Collecting requests
+  Downloading http://pypi-mirror.modal.local:5555/simple/requests/requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+Collecting rustbpe
+  Downloading http://pypi-mirror.modal.local:5555/simple/rustbpe/rustbpe-0.1.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.7 kB)
+Collecting tiktoken
+  Downloading http://pypi-mirror.modal.local:5555/simple/tiktoken/tiktoken-0.14.0-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (6.7 kB)
+Collecting wandb
+  Downloading http://pypi-mirror.modal.local:5555/simple/wandb/wandb-0.31.0-py3-none-manylinux_2_28_x86_64.whl.metadata (12 kB)
+Requirement already satisfied: fsspec>=2023.5.0 in /usr/local/lib/python3.10/site-packages (from huggingface-hub==0.34.4) (2026.9.0)
+Collecting packaging>=20.9 (from huggingface-hub==0.34.4)
+  Downloading http://pypi-mirror.modal.local:5555/simple/packaging/packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+Collecting pyyaml>=5.1 (from huggingface-hub==0.34.4)
+  Downloading http://pypi-mirror.modal.local:5555/simple/pyyaml/pyyaml-6.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+Collecting tqdm>=4.42.1 (from huggingface-hub==0.34.4)
+  Downloading http://pypi-mirror.modal.local:5555/simple/tqdm/tqdm-4.70.1-py3-none-any.whl.metadata (57 kB)
+Requirement already satisfied: typing-extensions>=3.7.4.3 in /usr/local/lib/python3.10/site-packages (from huggingface-hub==0.34.4) (4.16.0)
+Collecting hf-xet<2.0.0,>=1.1.3 (from huggingface-hub==0.34.4)
+  Downloading http://pypi-mirror.modal.local:5555/simple/hf-xet/hf_xet-1.8.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (4.9 kB)
+Collecting tomli>=2.0 (from kernels==0.11.7)
+  Downloading http://pypi-mirror.modal.local:5555/simple/tomli/tomli-2.5.0-py3-none-any.whl.metadata (10 kB)
+Collecting dill<0.4.2,>=0.3.0 (from datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/dill/dill-0.4.1-py3-none-any.whl.metadata (10 kB)
+Collecting pandas (from datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/pandas/pandas-2.3.3-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (91 kB)
+Collecting xxhash (from datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/xxhash/xxhash-4.0.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (17 kB)
+Collecting multiprocess<0.70.20 (from datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/multiprocess/multiprocess-0.70.19-py310-none-any.whl.metadata (7.5 kB)
+Collecting fsspec>=2023.5.0 (from huggingface-hub==0.34.4)
+  Downloading http://pypi-mirror.modal.local:5555/simple/fsspec/fsspec-2026.7.0-py3-none-any.whl.metadata (10 kB)
+INFO: pip is looking at multiple versions of datasets to determine which version is compatible with other requirements. This could take a while.
+Collecting datasets
+  Downloading http://pypi-mirror.modal.local:5555/simple/datasets/datasets-5.0.1-py3-none-any.whl.metadata (23 kB)
+Collecting httpx<1.0.0 (from datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/httpx/httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+Collecting fsspec>=2023.5.0 (from huggingface-hub==0.34.4)
+  Downloading http://pypi-mirror.modal.local:5555/simple/fsspec/fsspec-2026.6.0-py3-none-any.whl.metadata (10 kB)
+Collecting aiohttp!=4.0.0a0,!=4.0.0a1 (from fsspec[http]<=2026.6.0,>=2023.1.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/aiohttp/aiohttp-3.14.5-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (8.3 kB)
+Collecting anyio (from httpx<1.0.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/anyio/anyio-4.16.0-py3-none-any.whl.metadata (4.7 kB)
+Collecting certifi (from httpx<1.0.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/certifi/certifi-2026.10.23-py3-none-any.whl.metadata (2.5 kB)
+Collecting httpcore==1.* (from httpx<1.0.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/httpcore/httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+Collecting idna (from httpx<1.0.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/idna/idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+Collecting h11>=0.16 (from httpcore==1.*->httpx<1.0.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/h11/h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+Requirement already satisfied: MarkupSafe>=2.0 in /usr/local/lib/python3.10/site-packages (from jinja2) (3.0.3)
+Collecting charset_normalizer<4,>=2 (from requests)
+  Downloading http://pypi-mirror.modal.local:5555/simple/charset-normalizer/charset_normalizer-3.5.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (46 kB)
+Collecting urllib3<3,>=1.26 (from requests)
+  Downloading http://pypi-mirror.modal.local:5555/simple/urllib3/urllib3-2.8.0-py3-none-any.whl.metadata (7.4 kB)
+Collecting regex (from tiktoken)
+  Downloading http://pypi-mirror.modal.local:5555/simple/regex/regex-2026.9.29-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (40 kB)
+Collecting click>=8.2.0 (from wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/click/click-8.5.1-py3-none-any.whl.metadata (2.6 kB)
+Collecting cwevals==0.0.1b1 (from wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/cwevals/cwevals-0.0.1b1-py3-none-any.whl.metadata (13 kB)
+Collecting opentelemetry-api>=1.43.0 (from wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/opentelemetry-api/opentelemetry_api-1.45.2-py3-none-any.whl.metadata (1.4 kB)
+Collecting opentelemetry-exporter-otlp-proto-http>=1.43.0 (from wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/opentelemetry-exporter-otlp-proto-http/opentelemetry_exporter_otlp_proto_http-1.45.2-py3-none-any.whl.metadata (3.0 kB)
+Collecting opentelemetry-sdk>=1.43.0 (from wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/opentelemetry-sdk/opentelemetry_sdk-1.45.2-py3-none-any.whl.metadata (1.6 kB)
+Collecting platformdirs (from wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/platformdirs/platformdirs-4.12.4-py3-none-any.whl.metadata (5.5 kB)
+Collecting protobuf!=5.28.0,!=5.29.0,<8,>=5 (from wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/protobuf/protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl.metadata (595 bytes)
+Collecting pydantic<3,>=2.6 (from wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/pydantic/pydantic-2.14.3-py3-none-any.whl.metadata (141 kB)
+Collecting distro<2,>=1.7.0 (from cwevals==0.0.1b1->wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/distro/distro-1.9.0-py3-none-any.whl.metadata (6.8 kB)
+Collecting sniffio (from cwevals==0.0.1b1->wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/sniffio/sniffio-1.3.1-py3-none-any.whl.metadata (3.9 kB)
+Collecting exceptiongroup>=1.0.2 (from anyio->httpx<1.0.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/exceptiongroup/exceptiongroup-1.3.1-py3-none-any.whl.metadata (6.7 kB)
+Collecting annotated-types>=0.6.0 (from pydantic<3,>=2.6->wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/annotated-types/annotated_types-0.8.0-py3-none-any.whl.metadata (15 kB)
+Collecting pydantic-core==2.50.4 (from pydantic<3,>=2.6->wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/pydantic-core/pydantic_core-2.50.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (6.6 kB)
+Collecting typing-inspection>=0.4.4 (from pydantic<3,>=2.6->wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/typing-inspection/typing_inspection-0.4.5-py3-none-any.whl.metadata (2.6 kB)
+Collecting aiohappyeyeballs>=2.5.0 (from aiohttp!=4.0.0a0,!=4.0.0a1->fsspec[http]<=2026.6.0,>=2023.1.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/aiohappyeyeballs/aiohappyeyeballs-2.7.1-py3-none-any.whl.metadata (5.9 kB)
+Collecting aiosignal>=1.4.0 (from aiohttp!=4.0.0a0,!=4.0.0a1->fsspec[http]<=2026.6.0,>=2023.1.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/aiosignal/aiosignal-1.4.0-py3-none-any.whl.metadata (3.7 kB)
+Collecting async-timeout<6.0,>=4.0 (from aiohttp!=4.0.0a0,!=4.0.0a1->fsspec[http]<=2026.6.0,>=2023.1.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/async-timeout/async_timeout-5.0.1-py3-none-any.whl.metadata (5.1 kB)
+Collecting attrs>=17.3.0 (from aiohttp!=4.0.0a0,!=4.0.0a1->fsspec[http]<=2026.6.0,>=2023.1.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/attrs/attrs-26.1.0-py3-none-any.whl.metadata (8.8 kB)
+Collecting frozenlist>=1.1.1 (from aiohttp!=4.0.0a0,!=4.0.0a1->fsspec[http]<=2026.6.0,>=2023.1.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/frozenlist/frozenlist-1.8.0-cp310-cp310-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (20 kB)
+Collecting multidict<8.0,>=4.5 (from aiohttp!=4.0.0a0,!=4.0.0a1->fsspec[http]<=2026.6.0,>=2023.1.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/multidict/multidict-7.1.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (6.2 kB)
+Collecting propcache>=0.2.0 (from aiohttp!=4.0.0a0,!=4.0.0a1->fsspec[http]<=2026.6.0,>=2023.1.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/propcache/propcache-0.5.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (25 kB)
+Collecting yarl<2.0,>=1.25.1 (from aiohttp!=4.0.0a0,!=4.0.0a1->fsspec[http]<=2026.6.0,>=2023.1.0->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/yarl/yarl-1.25.1-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (111 kB)
+Collecting googleapis-common-protos~=1.52 (from opentelemetry-exporter-otlp-proto-http>=1.43.0->wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/googleapis-common-protos/googleapis_common_protos-1.76.0-py3-none-any.whl.metadata (8.5 kB)
+Collecting opentelemetry-exporter-http-transport==0.66b2 (from opentelemetry-exporter-http-transport[requests]==0.66b2->opentelemetry-exporter-otlp-proto-http>=1.43.0->wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/opentelemetry-exporter-http-transport/opentelemetry_exporter_http_transport-0.66b2-py3-none-any.whl.metadata (2.3 kB)
+Collecting opentelemetry-exporter-otlp-common==0.66b2 (from opentelemetry-exporter-otlp-proto-http>=1.43.0->wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/opentelemetry-exporter-otlp-common/opentelemetry_exporter_otlp_common-0.66b2-py3-none-any.whl.metadata (1.9 kB)
+Collecting opentelemetry-exporter-otlp-proto-common==1.45.2 (from opentelemetry-exporter-otlp-proto-http>=1.43.0->wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/opentelemetry-exporter-otlp-proto-common/opentelemetry_exporter_otlp_proto_common-1.45.2-py3-none-any.whl.metadata (1.8 kB)
+Collecting opentelemetry-proto==1.45.2 (from opentelemetry-exporter-otlp-proto-http>=1.43.0->wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/opentelemetry-proto/opentelemetry_proto-1.45.2-py3-none-any.whl.metadata (2.3 kB)
+Collecting opentelemetry-semantic-conventions==0.66b2 (from opentelemetry-sdk>=1.43.0->wandb)
+  Downloading http://pypi-mirror.modal.local:5555/simple/opentelemetry-semantic-conventions/opentelemetry_semantic_conventions-0.66b2-py3-none-any.whl.metadata (2.4 kB)
+Collecting python-dateutil>=2.8.2 (from pandas->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/python-dateutil/python_dateutil-3.0.0-py2.py3-none-any.whl.metadata (8.2 kB)
+Collecting pytz>=2020.1 (from pandas->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/pytz/pytz-2026.6-py2.py3-none-any.whl.metadata (22 kB)
+Collecting tzdata>=2022.7 (from pandas->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/tzdata/tzdata-2026.6-py2.py3-none-any.whl.metadata (1.4 kB)
+Collecting six>=1.6 (from python-dateutil>=2.8.2->pandas->datasets)
+  Downloading http://pypi-mirror.modal.local:5555/simple/six/six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/huggingface-hub/huggingface_hub-0.34.4-py3-none-any.whl (561 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 561.5/561.5 kB 862.5 MB/s eta 0:00:00
+Downloading http://pypi-mirror.modal.local:5555/simple/kernels/kernels-0.11.7-py3-none-any.whl (46 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/hf-xet/hf_xet-1.8.0-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.3/4.3 MB 846.2 MB/s eta 0:00:00
+Downloading http://pypi-mirror.modal.local:5555/simple/datasets/datasets-5.0.1-py3-none-any.whl (559 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 559.1/559.1 kB 1.1 GB/s eta 0:00:00
+Downloading http://pypi-mirror.modal.local:5555/simple/dill/dill-0.4.1-py3-none-any.whl (120 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/fsspec/fsspec-2026.6.0-py3-none-any.whl (203 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/httpx/httpx-0.28.1-py3-none-any.whl (73 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/httpcore/httpcore-1.0.9-py3-none-any.whl (78 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/multiprocess/multiprocess-0.70.19-py310-none-any.whl (134 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/numpy/numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.8/16.8 MB 897.3 MB/s eta 0:00:00
+Downloading http://pypi-mirror.modal.local:5555/simple/psutil/psutil-7.2.2-cp36-abi3-manylinux2010_x86_64.manylinux_2_12_x86_64.manylinux_2_28_x86_64.whl (155 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/pyarrow/pyarrow-25.0.1-cp310-cp310-manylinux_2_28_x86_64.whl (50.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50.1/50.1 MB 773.3 MB/s eta 0:00:00
+Downloading http://pypi-mirror.modal.local:5555/simple/requests/requests-2.34.2-py3-none-any.whl (73 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/charset-normalizer/charset_normalizer-3.5.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (271 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/idna/idna-3.20-py3-none-any.whl (69 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/urllib3/urllib3-2.8.0-py3-none-any.whl (135 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/rustbpe/rustbpe-0.1.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (1.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 48.5 MB/s eta 0:00:00
+Downloading http://pypi-mirror.modal.local:5555/simple/tiktoken/tiktoken-0.14.0-cp310-cp310-manylinux_2_28_x86_64.whl (1.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 533.8 MB/s eta 0:00:00
+Downloading http://pypi-mirror.modal.local:5555/simple/wandb/wandb-0.31.0-py3-none-manylinux_2_28_x86_64.whl (20.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 20.3/20.3 MB 846.7 MB/s eta 0:00:00
+Downloading http://pypi-mirror.modal.local:5555/simple/cwevals/cwevals-0.0.1b1-py3-none-any.whl (176 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/anyio/anyio-4.16.0-py3-none-any.whl (134 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/distro/distro-1.9.0-py3-none-any.whl (20 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/protobuf/protobuf-7.36.2-cp310-abi3-manylinux2014_x86_64.whl (343 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/pydantic/pydantic-2.14.3-py3-none-any.whl (494 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/pydantic-core/pydantic_core-2.50.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (2.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.3/2.3 MB 1.1 GB/s eta 0:00:00
+Downloading http://pypi-mirror.modal.local:5555/simple/aiohttp/aiohttp-3.14.5-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (1.9 MB)
+   ━━━━━━━━�Traceback (most recent call last):
+  File "/pkg/modal/_runtime/task_lifecycle_manager.py", line 84, in handle_task_lifecycle_exception
+    yield
+  File "/pkg/modal/_container_entrypoint.py", line 362, in hydrate_function
+    service = get_function_service(function_def, _client)
+  File "/pkg/modal/_container_entrypoint.py", line 340, in get_function_service
+    service = import_single_function_service(
+  File "/pkg/modal/_runtime/user_code_imports.py", line 509, in import_single_function_service
+    module = importlib.import_module(function_def.module_name)
+  File "/usr/local/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/root/emergent.py", line 15, in <module>
+    from train_d12 import BASE, app, vol
+ModuleNotFoundError: No module named 'train_d12'
+
+Function emergent.ask is crash-looping: containers are repeatedly failing to start.
+Function fu-FxdzfMeeG2FB18142eCUNK failed during startup.
+Runner failed with exception: ModuleNotFoundError("No module named 'train_d12'")
+Traceback (most recent call last):
+  File "/pkg/modal/_runtime/task_lifecycle_manager.py", line 84, in handle_task_lifecycle_exception
+    yield
+  File "/pkg/modal/_container_entrypoint.py", line 362, in hydrate_function
+    service = get_function_service(function_def, _client)
+  File "/pkg/modal/_container_entrypoint.py", line 340, in get_function_service
+    service = import_single_function_service(
+  File "/pkg/modal/_runtime/user_code_imports.py", line 509, in import_single_function_service
+    module = importlib.import_module(function_def.module_name)
+  File "/usr/local/lib/python3.10/importlib/__init__.py", line 126, in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+  File "<frozen importlib._bootstrap>", line 1050, in _gcd_import
+  File "<frozen importlib._bootstrap>", line 1027, in _find_and_load
+  File "<frozen importlib._bootstrap>", line 1006, in _find_and_load_unlocked
+  File "<frozen importlib._bootstrap>", line 688, in _load_unlocked
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "/root/emergent.py", line 15, in <module>
+    from train_d12 import BASE, app, vol
+ModuleNotFoundError: No module named 'train_d12'
+
+Function fu-FxdzfMeeG2FB18142eCUNK failed during startup.
+Runner failed with exception: ModuleNotFoundError("No module named 'train_d12'")
+r.modal.local:5555/simple/packaging/packaging-26.3-py3-none-any.whl (129 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/propcache/propcache-0.5.4-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (224 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/pyyaml/pyyaml-6.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (770 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 770.3/770.3 kB 1.2 GB/s eta 0:00:00
+Downloading http://pypi-mirror.modal.local:5555/simple/tomli/tomli-2.5.0-py3-none-any.whl (14 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/tqdm/tqdm-4.70.1-py3-none-any.whl (80 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/typing-inspection/typing_inspection-0.4.5-py3-none-any.whl (14 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/xxhash/xxhash-4.0.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (249 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/pandas/pandas-2.3.3-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (12.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.8/12.8 MB 892.2 MB/s eta 0:00:00
+Downloading http://pypi-mirror.modal.local:5555/simple/python-dateutil/python_dateutil-3.0.0-py2.py3-none-any.whl (94 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/pytz/pytz-2026.6-py2.py3-none-any.whl (506 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/six/six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/tzdata/tzdata-2026.6-py2.py3-none-any.whl (348 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/platformdirs/platformdirs-4.12.4-py3-none-any.whl (32 kB)
+Downloading http://pypi-mirror.modal.local:5555/simple/regex/regex-2026.9.29-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (797 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 797.6/797.6 kB 1.1 GB/s eta 0:00:00
+Downloading http://pypi-mirror.modal.local:5555/simple/sniffio/sniffio-1.3.1-py3-none-any.whl (10 kB)
+Installing collected packages: pytz, xxhash, urllib3, tzdata, typing-inspection, tqdm, tomli, sniffio, six, rustbpe, regex, pyyaml, pydantic-core, pyarrow, psutil, protobuf, propcache, platformdirs, packaging, opentelemetry-api, numpy, multidict, idna, hf-xet, h11, fsspec, frozenlist, exceptiongroup, distro, dill, click, charset_normalizer, certifi, attrs, async-timeout, annotated-types, aiohappyeyeballs, yarl, requests, python-dateutil, pydantic, opentelemetry-semantic-conventions, opentelemetry-proto, opentelemetry-exporter-http-transport, multiprocess, httpcore, googleapis-common-protos, anyio, aiosignal, tiktoken, pandas, opentelemetry-sdk, opentelemetry-exporter-otlp-proto-common, huggingface-hub, httpx, aiohttp, opentelemetry-exporter-otlp-common, kernels, cwevals, opentelemetry-exporter-otlp-proto-http, datasets, wandb
+  Attempting uninstall: fsspec
+    Found existing installation: fsspec 2026.9.0
+    Uninstalling fsspec-2026.9.0:
+      Successfully uninstalled fsspec-2026.9.0
+
+Successfully installed aiohappyeyeballs-2.7.1 aiohttp-3.14.5 aiosignal-1.4.0 annotated-types-0.8.0 anyio-4.16.0 async-timeout-5.0.1 attrs-26.1.0 certifi-2026.10.23 charset_normalizer-3.5.2 click-8.5.1 cwevals-0.0.1b1 datasets-5.0.1 dill-0.4.1 distro-1.9.0 exceptiongroup-1.3.1 frozenlist-1.8.0 fsspec-2026.6.0 googleapis-common-protos-1.76.0 h11-0.16.0 hf-xet-1.8.0 httpcore-1.0.9 httpx-0.28.1 huggingface-hub-0.34.4 idna-3.20 kernels-0.11.7 multidict-7.1.0 multiprocess-0.70.19 numpy-2.2.6 opentelemetry-api-1.45.2 opentelemetry-exporter-http-transport-0.66b2 opentelemetry-exporter-otlp-common-0.66b2 opentelemetry-exporter-otlp-proto-common-1.45.2 opentelemetry-exporter-otlp-proto-http-1.45.2 opentelemetry-proto-1.45.2 opentelemetry-sdk-1.45.2 opentelemetry-semantic-conventions-0.66b2 packaging-26.3 pandas-2.3.3 platformdirs-4.12.4 propcache-0.5.4 protobuf-7.36.2 psutil-7.2.2 pyarrow-25.0.1 pydantic-2.14.3 pydantic-core-2.50.4 python-dateutil-3.0.0 pytz-2026.6 pyyaml-6.0.3 regex-2026.9.29 requests-2.34.2 rustbpe-0.1.0 six-1.17.0 sniffio-1.3.1 tiktoken-0.14.0 tomli-2.5.0 tqdm-4.70.1 typing-inspection-0.4.5 tzdata-2026.6 urllib3-2.8.0 wandb-0.31.0 xxhash-4.0.2 yarl-1.25.1
+
+[notice] A new release of pip is available: 25.1.1 -> 26.3
+[notice] To update, run: pip install --upgrade pip
+Saving image...
+Image saved, took 2.32s
+
+Built image im-nqv3ROEp00XYF0wSg2iyO4 in 19.78s
+
+
+✓ Created objects.
+├── ✓ Uploaded 
+│   C:\Users\tjsin\vocalocate-gpu\.claude\worktrees\a3-d12-ablations\a3\modal\e
+│   mergent.py
+├── ✓ Uploaded 
+│   C:\Users\tjsin\vocalocate-gpu\.claude\worktrees\a3-d12-ablations\a3\modal\.
+│   .\nanochat
+└── ✓ Created Function ask.
+2026-11-06 17:37:58,467 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Loading model from /vol/a3/base_checkpoints/d12-baseline with step 2520
+2026-11-06 17:38:02,821 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Building model with config: {'sequence_len': 2048, 'vocab_size': 32768, 'n_layer': 12, 'n_head': 6, 'n_kv_head': 6, 'n_embd': 768, 'window_pattern': 'SSSL', 'n_loops': 1, 'n_prelude': 0, 'n_coda': 0}
+2026-11-06 17:38:14,450 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Loading model from /vol/a3/base_checkpoints/d12-looped-l2-embed with step 2520
+2026-11-06 17:38:28,554 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Building model with config: {'sequence_len': 2048, 'vocab_size': 32768, 'n_layer': 12, 'n_head': 6, 'n_kv_head': 6, 'n_embd': 768, 'window_pattern': 'SSSL', 'n_loops': 2, 'n_prelude': 1, 'n_coda': 1, 'loop_embed': True}
+2026-11-06 17:38:47,796 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Loading model from /vol/a3/base_checkpoints/d20-combined with step 9960
+2026-11-06 17:38:51,566 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Building model with config: {'sequence_len': 2048, 'vocab_size': 32768, 'n_layer': 20, 'n_head': 10, 'n_kv_head': 10, 'n_embd': 1280, 'window_pattern': 'SSSL', 'n_loops': 2, 'n_prelude': 1, 'n_coda': 1, 'loop_embed': True, 'diff_v2': True}
+d12-baseline 23 of 50
+d12-looped-l2-embed 21 of 50
+d20-combined 43 of 50
+d20 right, d12 looped-l2 wrong: 22
+d12 looped-l2 right, d20 wrong: 0
+Stopping app - local entrypoint completed.
+✓ App completed. View run at 
+https://modal.com/apps/tjsinghchawla/main/ap-lCYl76ggMk43BEFvMywlcJ

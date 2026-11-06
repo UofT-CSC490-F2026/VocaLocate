@@ -1,0 +1,211 @@
+✓ Initialized. View run at 
+https://modal.com/apps/tjsinghchawla/main/ap-OK27fh203H7HwJDhVGHZD3
+✓ Created objects.
+├── ✓ Uploaded 
+│   C:\Users\tjsin\vocalocate-gpu\.claude\worktrees\a3-d12-ablations\a3\modal\t
+│   rain_d12.py
+├── ✓ Uploaded 
+│   C:\Users\tjsin\vocalocate-gpu\.claude\worktrees\a3-d12-ablations\a3\modal\.
+│   .\nanochat
+├── ✓ Created Function prep.
+├── ✓ Created Function train.
+├── ✓ Created Function train_a100.
+├── ✓ Created Function train_rtx.
+├── ✓ Created Function train_d20.
+├── ✓ Created Function train_b200.
+├── ✓ Created Function train_l40s.
+├── ✓ Created Function d20_check.
+├── ✓ Created Function prepare_d20.
+├── ✓ Created Function resume_check.
+├── ✓ Created Function launch_all.
+├── ✓ Created Function loop_sweep.
+└── ✓ Created Function eval_loops.
+
+                                                       █████                █████
+                                                      ░░███                ░░███
+     ████████    ██████   ████████    ██████   ██████  ░███████    ██████  ███████
+    ░░███░░███  ░░░░░███ ░░███░░███  ███░░███ ███░░███ ░███░░███  ░░░░░███░░░███░
+     ░███ ░███   ███████  ░███ ░███ ░███ ░███░███ ░░░  ░███ ░███   ███████  ░███
+     ░███ ░███  ███░░███  ░███ ░███ ░███ ░███░███  ███ ░███ ░███  ███░░███  ░███ ███
+     ████ █████░░████████ ████ █████░░██████ ░░██████  ████ █████░░███████  ░░█████
+    ░░░░ ░░░░░  ░░░░░░░░ ░░░░ ░░░░░  ░░░░░░   ░░░░░░  ░░░░ ░░░░░  ░░░░░░░░   ░░░░░
+    
+Autodetected device type: cuda
+2026-11-06 07:12:02,802 - nanochat.common - [32m[1mINFO[0m - Distributed world size: 4
+GPU: NVIDIA H100 80GB HBM3 | Peak FLOPS (BF16): 9.89e+14
+COMPUTE_DTYPE: torch.bfloat16 (auto-detected: CUDA SM 90 (bf16 supported))
+wandb: Tracking run with wandb version 0.31.0
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /vol/a3/wandb/wandb/offline-run-20261106_071202-3ytbicjh
+wandb: View this run in the terminal with `wandb leet`
+✓ Using Flash Attention 3: efficient, new and awesome.
+Vocab size: 32,768
+Model config:
+{
+  "sequence_len": 2048,
+  "vocab_size": 32768,
+  "n_layer": 20,
+  "n_head": 10,
+  "n_kv_head": 10,
+  "n_embd": 1280,
+  "window_pattern": "SSSL",
+  "n_loops": 2,
+  "n_prelude": 1,
+  "n_coda": 1,
+  "loop_embed": true,
+  "diff_v2": true
+}
+Parameter counts:
+wte                     : 41,943,040
+value_embeds            : 419,430,400
+lm_head                 : 41,943,040
+transformer_matrices    : 426,241,200
+scalars                 : 2,662
+total                   : 929,560,342
+Estimated FLOPs per token: 6.180356e+09
+Scaling weight decay from 0.280000 to 0.070112 for depth 20
+Scaling the LR for the AdamW parameters ∝1/√(1280/768) = 0.774597
+Using user-provided number of iterations: 20
+Total number of training tokens: 10,485,760
+Tokens : Scaling params ratio: 0.02
+Total training FLOPs estimate: 6.480573e+16
+Tokens / micro-batch / rank: 8 x 2048 = 16,384
+Tokens / micro-batch: 65,536
+Total batch size 524,288 => gradient accumulation steps: 8
+step 00000/00020 (0.00%) | loss: 10.397879 | lrm: 0.03 | dt: 132152.14ms | tok/sec: 3,967 | bf16_mfu: 0.62 | epoch: 1 pq: 0 rg: 4 | total time: 0.00m
+step 00001/00020 (5.00%) | loss: 10.381281 | lrm: 0.05 | dt: 2135.87ms | tok/sec: 245,468 | bf16_mfu: 38.35 | epoch: 1 pq: 0 rg: 4 | total time: 0.00m
+step 00002/00020 (10.00%) | loss: 10.354544 | lrm: 0.07 | dt: 1976.02ms | tok/sec: 265,325 | bf16_mfu: 41.45 | epoch: 1 pq: 0 rg: 4 | total time: 0.00m
+step 00003/00020 (15.00%) | loss: 10.314225 | lrm: 0.10 | dt: 1965.40ms | tok/sec: 266,759 | bf16_mfu: 41.68 | epoch: 1 pq: 0 rg: 4 | total time: 0.00m
+step 00004/00020 (20.00%) | loss: 10.258468 | lrm: 0.12 | dt: 1968.92ms | tok/sec: 266,281 | bf16_mfu: 41.60 | epoch: 1 pq: 0 rg: 4 | total time: 0.00m
+step 00005/00020 (25.00%) | loss: 10.167590 | lrm: 0.15 | dt: 1966.27ms | tok/sec: 266,641 | bf16_mfu: 41.66 | epoch: 1 pq: 0 rg: 8 | total time: 0.00m
+step 00006/00020 (30.00%) | loss: 10.035559 | lrm: 0.17 | dt: 1969.17ms | tok/sec: 266,248 | bf16_mfu: 41.60 | epoch: 1 pq: 0 rg: 8 | total time: 0.00m
+step 00007/00020 (35.00%) | loss: 9.827970 | lrm: 0.20 | dt: 1965.23ms | tok/sec: 266,781 | bf16_mfu: 41.68 | epoch: 1 pq: 0 rg: 8 | total time: 0.00m
+step 00008/00020 (40.00%) | loss: 9.508236 | lrm: 0.23 | dt: 1967.26ms | tok/sec: 266,506 | bf16_mfu: 41.64 | epoch: 1 pq: 0 rg: 8 | total time: 0.00m
+step 00009/00020 (45.00%) | loss: 9.326285 | lrm: 0.25 | dt: 1954.83ms | tok/sec: 268,200 | bf16_mfu: 41.90 | epoch: 1 pq: 0 rg: 12 | total time: 0.00m
+2026-11-06 07:14:39,223 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d20-combined/optim_000010_rank2.pt
+2026-11-06 07:14:39,579 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d20-combined/optim_000010_rank3.pt
+2026-11-06 07:14:39,948 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d20-combined/optim_000010_rank1.pt
+2026-11-06 07:14:45,983 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved model parameters to: /vol/a3/base_checkpoints/smoke-d20-combined/model_000010.pt
+2026-11-06 07:14:45,987 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved metadata to: /vol/a3/base_checkpoints/smoke-d20-combined/meta_000010.json
+2026-11-06 07:14:49,250 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d20-combined/optim_000010_rank0.pt
+step 00010/00020 (50.00%) | loss: 9.107901 | lrm: 0.28 | dt: 1935.89ms | tok/sec: 270,825 | bf16_mfu: 42.31 | epoch: 1 pq: 0 rg: 12 | total time: 0.00m
+step 00011/00020 (55.00%) | loss: 8.818658 | lrm: 0.30 | dt: 1954.18ms | tok/sec: 268,290 | bf16_mfu: 41.91 | epoch: 1 pq: 0 rg: 12 | total time: 0.03m | eta: 0.3m
+step 00012/00020 (60.00%) | loss: 8.575226 | lrm: 0.33 | dt: 1971.00ms | tok/sec: 266,001 | bf16_mfu: 41.56 | epoch: 1 pq: 0 rg: 12 | total time: 0.07m | eta: 0.3m
+step 00013/00020 (65.00%) | loss: 8.351655 | lrm: 0.35 | dt: 1981.59ms | tok/sec: 264,580 | bf16_mfu: 41.33 | epoch: 1 pq: 0 rg: 16 | total time: 0.10m | eta: 0.2m
+step 00014/00020 (70.00%) | loss: 8.153017 | lrm: 0.38 | dt: 1972.05ms | tok/sec: 265,859 | bf16_mfu: 41.53 | epoch: 1 pq: 0 rg: 16 | total time: 0.13m | eta: 0.2m
+step 00015/00020 (75.00%) | loss: 7.954622 | lrm: 0.40 | dt: 1975.73ms | tok/sec: 265,364 | bf16_mfu: 41.46 | epoch: 1 pq: 0 rg: 16 | total time: 0.16m | eta: 0.2m
+step 00016/00020 (80.00%) | loss: 7.773723 | lrm: 0.42 | dt: 1979.00ms | tok/sec: 264,925 | bf16_mfu: 41.39 | epoch: 1 pq: 0 rg: 16 | total time: 0.20m | eta: 0.1m
+step 00017/00020 (85.00%) | loss: 7.623443 | lrm: 0.45 | dt: 1980.76ms | tok/sec: 264,690 | bf16_mfu: 41.35 | epoch: 1 pq: 0 rg: 20 | total time: 0.23m | eta: 0.1m
+step 00018/00020 (90.00%) | loss: 7.479000 | lrm: 0.47 | dt: 1980.52ms | tok/sec: 264,722 | bf16_mfu: 41.36 | epoch: 1 pq: 0 rg: 20 | total time: 0.26m | eta: 0.1m
+step 00019/00020 (95.00%) | loss: 7.363757 | lrm: 0.50 | dt: 1978.05ms | tok/sec: 265,053 | bf16_mfu: 41.41 | epoch: 1 pq: 0 rg: 20 | total time: 0.30m | eta: 0.0m
+2026-11-06 07:15:11,488 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d20-combined/optim_000020_rank2.pt
+2026-11-06 07:15:11,738 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d20-combined/optim_000020_rank3.pt
+2026-11-06 07:15:11,946 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d20-combined/optim_000020_rank1.pt
+2026-11-06 07:15:15,108 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved model parameters to: /vol/a3/base_checkpoints/smoke-d20-combined/model_000020.pt
+2026-11-06 07:15:15,110 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved metadata to: /vol/a3/base_checkpoints/smoke-d20-combined/meta_000020.json
+2026-11-06 07:15:17,514 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d20-combined/optim_000020_rank0.pt
+Peak memory usage: 46225.93MiB
+Total training time: 0.30m
+wandb: 
+wandb: Run history:
+wandb:                 step ▁
+wandb: total_training_flops ▁
+wandb:  total_training_time ▁
+wandb:             train/dt ▁
+wandb:           train/loss ▁
+wandb:            train/lrm ▁
+wandb:            train/mfu ▁
+wandb:    train/tok_per_sec ▁
+wandb: 
+wandb: Run summary:
+wandb:                 step 0
+wandb: total_training_flops 0
+wandb:  total_training_time 0
+wandb:             train/dt 132.15214
+wandb:          train/epoch 1 pq: 0 rg: 4
+wandb:           train/loss 10.39788
+wandb:            train/lrm 0.025
+wandb:            train/mfu 0.6198
+wandb:    train/tok_per_sec 3967
+wandb: 
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /vol/a3/wandb/wandb/offline-run-20261106_071202-3ytbicjh
+wandb: Find logs at: /vol/a3/wandb/wandb/offline-run-20261106_071202-3ytbicjh/logs
+
+                                                       █████                █████
+                                                      ░░███                ░░███
+     ████████    ██████   ████████    ██████   ██████  ░███████    ██████  ███████
+    ░░███░░███  ░░░░░███ ░░███░░███  ███░░███ ███░░███ ░███░░███  ░░░░░███░░░███░
+     ░███ ░███   ███████  ░███ ░███ ░███ ░███░███ ░░░  ░███ ░███   ███████  ░███
+     ░███ ░███  ███░░███  ░███ ░███ ░███ ░███░███  ███ ░███ ░███  ███░░███  ░███ ███
+     ████ █████░░████████ ████ █████░░██████ ░░██████  ████ █████░░███████  ░░█████
+    ░░░░ ░░░░░  ░░░░░░░░ ░░░░ ░░░░░  ░░░░░░   ░░░░░░  ░░░░ ░░░░░  ░░░░░░░░   ░░░░░
+    
+Autodetected device type: cuda
+2026-11-06 07:15:40,545 - nanochat.common - [32m[1mINFO[0m - Distributed world size: 4
+GPU: NVIDIA H100 80GB HBM3 | Peak FLOPS (BF16): 9.89e+14
+COMPUTE_DTYPE: torch.bfloat16 (auto-detected: CUDA SM 90 (bf16 supported))
+wandb: Tracking run with wandb version 0.31.0
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /vol/a3/wandb/wandb/offline-run-20261106_071540-2udgwgbs
+wandb: View this run in the terminal with `wandb leet`
+✓ Using Flash Attention 3: efficient, new and awesome.
+Vocab size: 32,768
+Model config:
+{
+  "sequence_len": 2048,
+  "vocab_size": 32768,
+  "n_layer": 20,
+  "n_head": 10,
+  "n_kv_head": 10,
+  "n_embd": 1280,
+  "window_pattern": "SSSL",
+  "n_loops": 2,
+  "n_prelude": 1,
+  "n_coda": 1,
+  "loop_embed": true,
+  "diff_v2": true
+}
+Resuming optimization from step 10
+Parameter counts:
+wte                     : 41,943,040
+value_embeds            : 419,430,400
+lm_head                 : 41,943,040
+transformer_matrices    : 426,241,200
+scalars                 : 2,662
+total                   : 929,560,342
+Estimated FLOPs per token: 6.180356e+09
+Scaling weight decay from 0.280000 to 0.070112 for depth 20
+Scaling the LR for the AdamW parameters ∝1/√(1280/768) = 0.774597
+Using user-provided number of iterations: 20
+Total number of training tokens: 10,485,760
+Tokens : Scaling params ratio: 0.02
+Total training FLOPs estimate: 6.480573e+16
+Tokens / micro-batch / rank: 8 x 2048 = 16,384
+Tokens / micro-batch: 65,536
+Total batch size 524,288 => gradient accumulation steps: 8
+step 00010/00020 (50.00%) | loss: 9.127016 | lrm: 0.28 | dt: 42704.38ms | tok/sec: 12,277 | bf16_mfu: 1.92 | epoch: 1 pq: 0 rg: 20 | total time: 0.00m
+step 00011/00020 (55.00%) | loss: 8.861068 | lrm: 0.30 | dt: 1932.65ms | tok/sec: 271,279 | bf16_mfu: 42.38 | epoch: 1 pq: 0 rg: 20 | total time: 0.03m | eta: 0.3m
+step 00012/00020 (60.00%) | loss: 8.617006 | lrm: 0.33 | dt: 1961.01ms | tok/sec: 267,356 | bf16_mfu: 41.77 | epoch: 1 pq: 0 rg: 20 | total time: 0.06m | eta: 0.3m
+step 00013/00020 (65.00%) | loss: 8.392560 | lrm: 0.35 | dt: 1972.39ms | tok/sec: 265,814 | bf16_mfu: 41.53 | epoch: 1 pq: 0 rg: 20 | total time: 0.10m | eta: 0.2m
+step 00014/00020 (70.00%) | loss: 8.171405 | lrm: 0.38 | dt: 1973.84ms | tok/sec: 265,618 | bf16_mfu: 41.50 | epoch: 1 pq: 0 rg: 20 | total time: 0.13m | eta: 0.2m
+step 00015/00020 (75.00%) | loss: 7.972301 | lrm: 0.40 | dt: 1969.61ms | tok/sec: 266,188 | bf16_mfu: 41.59 | epoch: 1 pq: 0 rg: 24 | total time: 0.16m | eta: 0.2m
+step 00016/00020 (80.00%) | loss: 7.795452 | lrm: 0.42 | dt: 1969.96ms | tok/sec: 266,140 | bf16_mfu: 41.58 | epoch: 1 pq: 0 rg: 24 | total time: 0.20m | eta: 0.1m
+step 00017/00020 (85.00%) | loss: 7.610968 | lrm: 0.45 | dt: 1975.72ms | tok/sec: 265,366 | bf16_mfu: 41.46 | epoch: 1 pq: 0 rg: 24 | total time: 0.23m | eta: 0.1m
+step 00018/00020 (90.00%) | loss: 7.451940 | lrm: 0.47 | dt: 1981.92ms | tok/sec: 264,534 | bf16_mfu: 41.33 | epoch: 1 pq: 0 rg: 24 | total time: 0.26m | eta: 0.1m
+step 00019/00020 (95.00%) | loss: 7.304690 | lrm: 0.50 | dt: 1977.13ms | tok/sec: 265,175 | bf16_mfu: 41.43 | epoch: 1 pq: 0 rg: 28 | total time: 0.30m | eta: 0.0m
+2026-11-06 07:16:48,544 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d20-combined/optim_000020_rank1.pt
+2026-11-06 07:16:48,544 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d20-combined/optim_000020_rank3.pt
+2026-11-06 07:16:48,591 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d20-combined/optim_000020_rank2.pt
+2026-11-06 07:16:55,953 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved model parameters to: /vol/a3/base_checkpoints/smoke-d20-combined/model_000020.pt
+2026-11-06 07:16:55,955 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved metadata to: /vol/a3/base_checkpoints/smoke-d20-combined/meta_000020.json
+2026-11-06 07:16:59,513 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d20-combined/optim_000020_rank0.pt
+Peak memory usage: 46245.55MiB
+Total training time: 0.30m
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /vol/a3/wandb/wandb/offline-run-20261106_071540-2udgwgbs
+wandb: Find logs at: /vol/a3/wandb/wandb/offline-run-20261106_071540-2udgwgbs/logs
+D20_CHECK {"first_rc": 0, "picked": 10, "second_rc": 0, "resumed_from": 10, "tok_per_sec": 252124.25, "mfu_pct": 39.3895, "peak_mem_mib": 46225.93, "fa3": true, "flops_per_token": 6180356000.0, "ckpt_gb": 6.68315391, "first_s": 216.06336569786072, "error_tail": "", "final_exists": true}
+Stopping app - local entrypoint completed.
+✓ App completed. View run at 
+https://modal.com/apps/tjsinghchawla/main/ap-OK27fh203H7HwJDhVGHZD3

@@ -1,0 +1,12 @@
+{"time":"2026-11-03T04:00:23.291662975Z","level":"INFO","msg":"wandb-core"}
+{"time":"2026-11-03T04:00:23.291838307Z","level":"INFO","msg":"stream: starting","core version":"0.31.0"}
+{"time":"2026-11-03T04:00:23.29218772Z","level":"INFO","msg":"stream: created new stream","id":"44s1qies"}
+{"time":"2026-11-03T04:00:23.292347108Z","level":"INFO","msg":"handler: started"}
+{"time":"2026-11-03T04:00:23.293074517Z","level":"INFO","msg":"stream: started"}
+{"time":"2026-11-03T04:00:23.29309302Z","level":"INFO","msg":"writer: started","stream_id":"44s1qies"}
+{"time":"2026-11-03T04:00:23.293111084Z","level":"INFO","msg":"sender: started"}
+{"time":"2026-11-03T04:02:10.751189897Z","level":"INFO","msg":"handler: operation stats","stats":{}}
+{"time":"2026-11-03T04:02:10.75552122Z","level":"INFO","msg":"stream: finishing up"}
+{"time":"2026-11-03T04:02:10.755666319Z","level":"INFO","msg":"handler: closed"}
+{"time":"2026-11-03T04:02:10.755943121Z","level":"INFO","msg":"sender: closed"}
+{"time":"2026-11-03T04:02:10.756055099Z","level":"INFO","msg":"stream: all finished"}

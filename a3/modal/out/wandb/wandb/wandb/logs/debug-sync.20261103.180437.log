@@ -1,0 +1,130 @@
+{"time":"2026-11-03T13:04:37.4602236-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261103_143326-brihic8u\\run-brihic8u.wandb"}
+{"time":"2026-11-03T13:04:37.4613959-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261103_040531-cxowofgs\\run-cxowofgs.wandb"}
+{"time":"2026-11-03T13:04:37.4810054-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261103_143326-8q6ma4j8\\run-8q6ma4j8.wandb"}
+{"time":"2026-11-03T13:04:37.4810054-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261103_144732-ys0w0wws\\run-ys0w0wws.wandb"}
+{"time":"2026-11-03T13:04:37.4826382-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261103_144743-3uaqex4a\\run-3uaqex4a.wandb"}
+{"time":"2026-11-03T13:04:37.4832083-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261103_040506-u4asolds\\run-u4asolds.wandb"}
+{"time":"2026-11-03T13:04:37.502985-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261103_042935-cmrws97h\\run-cmrws97h.wandb"}
+{"time":"2026-11-03T13:04:37.5281665-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261103_040506-2msa7208\\run-2msa7208.wandb"}
+{"time":"2026-11-03T13:04:37.5608511-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261103_144732-hnvy3kv8\\run-hnvy3kv8.wandb"}
+{"time":"2026-11-03T13:04:37.5615352-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261103_144744-cqcpx9lb\\run-cqcpx9lb.wandb"}
+{"time":"2026-11-03T13:04:37.5624012-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261103_040507-y6nvh3l6\\run-y6nvh3l6.wandb"}
+{"time":"2026-11-03T13:04:37.5955385-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261103_040507-kn36s4nh\\run-kn36s4nh.wandb"}
+{"time":"2026-11-03T13:04:37.6163041-05:00","level":"INFO","msg":"runsync: getting info","sync_path":"offline-run-20261103_040529-e4cyz84k\\run-e4cyz84k.wandb"}
+{"time":"2026-11-03T13:04:37.6383566-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261103_040529-e4cyz84k\\run-e4cyz84k.wandb"}
+{"time":"2026-11-03T13:04:37.6383566-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261103_143326-8q6ma4j8\\run-8q6ma4j8.wandb"}
+{"time":"2026-11-03T13:04:37.6383566-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261103_040529-e4cyz84k\\run-e4cyz84k.wandb"}
+{"time":"2026-11-03T13:04:37.6389129-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261103_143326-8q6ma4j8\\run-8q6ma4j8.wandb"}
+{"time":"2026-11-03T13:04:37.6389129-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261103_144744-cqcpx9lb\\run-cqcpx9lb.wandb"}
+{"time":"2026-11-03T13:04:37.6389129-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261103_144732-hnvy3kv8\\run-hnvy3kv8.wandb"}
+{"time":"2026-11-03T13:04:37.6389129-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261103_144744-cqcpx9lb\\run-cqcpx9lb.wandb"}
+{"time":"2026-11-03T13:04:37.6383566-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261103_144732-hnvy3kv8\\run-hnvy3kv8.wandb"}
+{"time":"2026-11-03T13:04:37.6389129-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261103_040507-kn36s4nh\\run-kn36s4nh.wandb"}
+{"time":"2026-11-03T13:04:37.6389129-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261103_040507-kn36s4nh\\run-kn36s4nh.wandb"}
+{"time":"2026-11-03T13:04:38.2596008-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_040507-kn36s4nh\\run-kn36s4nh.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-03T13:04:38.2897659-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_143326-8q6ma4j8\\run-8q6ma4j8.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-03T13:04:38.3862386-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_144732-hnvy3kv8\\run-hnvy3kv8.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-03T13:04:38.4336412-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_144744-cqcpx9lb\\run-cqcpx9lb.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-03T13:04:38.6277153-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_040529-e4cyz84k\\run-e4cyz84k.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-03T13:04:38.6881102-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_144744-cqcpx9lb\\run-cqcpx9lb.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:38.6881102-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_144732-hnvy3kv8\\run-hnvy3kv8.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:38.6952874-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_040507-kn36s4nh\\run-kn36s4nh.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:38.7338788-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_143326-8q6ma4j8\\run-8q6ma4j8.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:38.8157855-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_040529-e4cyz84k\\run-e4cyz84k.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:39.3714947-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261103_040507-kn36s4nh\\run-kn36s4nh.wandb"}
+{"time":"2026-11-03T13:04:39.3758174-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_040507-kn36s4nh\\run-kn36s4nh.wandb","total_files":4,"history_offset":0,"history_lines":40,"events_offset":1,"events_lines":223,"console_offset":0,"console_lines":2595,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-03T13:04:39.3904302-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261103_143326-8q6ma4j8\\run-8q6ma4j8.wandb"}
+{"time":"2026-11-03T13:04:39.3962975-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_143326-8q6ma4j8\\run-8q6ma4j8.wandb","total_files":4,"history_offset":0,"history_lines":39,"events_offset":1,"events_lines":209,"console_offset":0,"console_lines":2593,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-03T13:04:39.5305527-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261103_144744-cqcpx9lb\\run-cqcpx9lb.wandb"}
+{"time":"2026-11-03T13:04:39.5364836-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_144744-cqcpx9lb\\run-cqcpx9lb.wandb","total_files":4,"history_offset":0,"history_lines":39,"events_offset":1,"events_lines":336,"console_offset":0,"console_lines":2593,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-03T13:04:39.5752831-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261103_144732-hnvy3kv8\\run-hnvy3kv8.wandb"}
+{"time":"2026-11-03T13:04:39.5800066-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_144732-hnvy3kv8\\run-hnvy3kv8.wandb","total_files":4,"history_offset":0,"history_lines":39,"events_offset":1,"events_lines":206,"console_offset":0,"console_lines":2593,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-03T13:04:39.9303544-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_143326-8q6ma4j8\\run-8q6ma4j8.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:39.9303544-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261103_143326-8q6ma4j8\\run-8q6ma4j8.wandb"}
+{"time":"2026-11-03T13:04:39.9303544-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261103_143326-8q6ma4j8\\run-8q6ma4j8.wandb"}
+{"time":"2026-11-03T13:04:39.9308955-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261103_042935-cmrws97h\\run-cmrws97h.wandb"}
+{"time":"2026-11-03T13:04:39.9308955-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261103_042935-cmrws97h\\run-cmrws97h.wandb"}
+{"time":"2026-11-03T13:04:40.1700716-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_040507-kn36s4nh\\run-kn36s4nh.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:40.1841291-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261103_040507-kn36s4nh\\run-kn36s4nh.wandb"}
+{"time":"2026-11-03T13:04:40.1841291-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261103_040507-kn36s4nh\\run-kn36s4nh.wandb"}
+{"time":"2026-11-03T13:04:40.1848002-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261103_040506-u4asolds\\run-u4asolds.wandb"}
+{"time":"2026-11-03T13:04:40.1848002-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261103_040506-u4asolds\\run-u4asolds.wandb"}
+{"time":"2026-11-03T13:04:40.2981378-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_144732-hnvy3kv8\\run-hnvy3kv8.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:40.2987075-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261103_144732-hnvy3kv8\\run-hnvy3kv8.wandb"}
+{"time":"2026-11-03T13:04:40.2987075-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261103_144732-hnvy3kv8\\run-hnvy3kv8.wandb"}
+{"time":"2026-11-03T13:04:40.2993116-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261103_143326-brihic8u\\run-brihic8u.wandb"}
+{"time":"2026-11-03T13:04:40.2993116-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261103_143326-brihic8u\\run-brihic8u.wandb"}
+{"time":"2026-11-03T13:04:40.3227336-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_144744-cqcpx9lb\\run-cqcpx9lb.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:40.3227336-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261103_144744-cqcpx9lb\\run-cqcpx9lb.wandb"}
+{"time":"2026-11-03T13:04:40.3227336-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261103_144744-cqcpx9lb\\run-cqcpx9lb.wandb"}
+{"time":"2026-11-03T13:04:40.3232906-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261103_040531-cxowofgs\\run-cxowofgs.wandb"}
+{"time":"2026-11-03T13:04:40.3232906-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261103_040531-cxowofgs\\run-cxowofgs.wandb"}
+{"time":"2026-11-03T13:04:40.4048565-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261103_040529-e4cyz84k\\run-e4cyz84k.wandb"}
+{"time":"2026-11-03T13:04:40.4077916-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_040529-e4cyz84k\\run-e4cyz84k.wandb","total_files":4,"history_offset":0,"history_lines":39,"events_offset":1,"events_lines":345,"console_offset":0,"console_lines":2592,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-03T13:04:40.4649858-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_040506-u4asolds\\run-u4asolds.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-03T13:04:40.6274049-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_042935-cmrws97h\\run-cmrws97h.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-03T13:04:40.6794184-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_040506-u4asolds\\run-u4asolds.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:40.7923925-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_040531-cxowofgs\\run-cxowofgs.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-03T13:04:40.8607862-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_042935-cmrws97h\\run-cmrws97h.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:40.871172-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_040529-e4cyz84k\\run-e4cyz84k.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:40.8718359-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261103_040529-e4cyz84k\\run-e4cyz84k.wandb"}
+{"time":"2026-11-03T13:04:40.8718359-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261103_040529-e4cyz84k\\run-e4cyz84k.wandb"}
+{"time":"2026-11-03T13:04:40.8722629-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261103_144732-ys0w0wws\\run-ys0w0wws.wandb"}
+{"time":"2026-11-03T13:04:40.8722629-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261103_144732-ys0w0wws\\run-ys0w0wws.wandb"}
+{"time":"2026-11-03T13:04:40.90317-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_143326-brihic8u\\run-brihic8u.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-03T13:04:40.9893745-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_040531-cxowofgs\\run-cxowofgs.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:41.0925778-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_143326-brihic8u\\run-brihic8u.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:41.1641347-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_144732-ys0w0wws\\run-ys0w0wws.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-03T13:04:41.2807552-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261103_040506-u4asolds\\run-u4asolds.wandb"}
+{"time":"2026-11-03T13:04:41.2850015-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_040506-u4asolds\\run-u4asolds.wandb","total_files":4,"history_offset":0,"history_lines":39,"events_offset":1,"events_lines":255,"console_offset":0,"console_lines":2593,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-03T13:04:41.389873-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_144732-ys0w0wws\\run-ys0w0wws.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:41.6450313-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261103_042935-cmrws97h\\run-cmrws97h.wandb"}
+{"time":"2026-11-03T13:04:41.6670978-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_042935-cmrws97h\\run-cmrws97h.wandb","total_files":4,"history_offset":0,"history_lines":39,"events_offset":1,"events_lines":206,"console_offset":0,"console_lines":2593,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-03T13:04:41.7156777-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261103_040531-cxowofgs\\run-cxowofgs.wandb"}
+{"time":"2026-11-03T13:04:41.7282861-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_040531-cxowofgs\\run-cxowofgs.wandb","total_files":4,"history_offset":0,"history_lines":39,"events_offset":1,"events_lines":211,"console_offset":0,"console_lines":2593,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-03T13:04:42.0999491-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_042935-cmrws97h\\run-cmrws97h.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:42.1004624-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261103_042935-cmrws97h\\run-cmrws97h.wandb"}
+{"time":"2026-11-03T13:04:42.1004624-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261103_042935-cmrws97h\\run-cmrws97h.wandb"}
+{"time":"2026-11-03T13:04:42.1016625-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261103_144743-3uaqex4a\\run-3uaqex4a.wandb"}
+{"time":"2026-11-03T13:04:42.1016625-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261103_144743-3uaqex4a\\run-3uaqex4a.wandb"}
+{"time":"2026-11-03T13:04:42.3647925-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_040531-cxowofgs\\run-cxowofgs.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:42.3647925-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_040506-u4asolds\\run-u4asolds.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:42.3647925-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261103_040506-u4asolds\\run-u4asolds.wandb"}
+{"time":"2026-11-03T13:04:42.3647925-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261103_040531-cxowofgs\\run-cxowofgs.wandb"}
+{"time":"2026-11-03T13:04:42.3653067-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261103_040506-u4asolds\\run-u4asolds.wandb"}
+{"time":"2026-11-03T13:04:42.3658642-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261103_040531-cxowofgs\\run-cxowofgs.wandb"}
+{"time":"2026-11-03T13:04:42.3675451-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261103_040506-2msa7208\\run-2msa7208.wandb"}
+{"time":"2026-11-03T13:04:42.3675451-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261103_040506-2msa7208\\run-2msa7208.wandb"}
+{"time":"2026-11-03T13:04:42.3680869-05:00","level":"INFO","msg":"sender: started","sync_path":"offline-run-20261103_040507-y6nvh3l6\\run-y6nvh3l6.wandb"}
+{"time":"2026-11-03T13:04:42.3680869-05:00","level":"INFO","msg":"runsync: starting to read","sync_path":"offline-run-20261103_040507-y6nvh3l6\\run-y6nvh3l6.wandb"}
+{"time":"2026-11-03T13:04:42.4982791-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261103_143326-brihic8u\\run-brihic8u.wandb"}
+{"time":"2026-11-03T13:04:42.5062385-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_143326-brihic8u\\run-brihic8u.wandb","total_files":4,"history_offset":0,"history_lines":62,"events_offset":1,"events_lines":338,"console_offset":0,"console_lines":4302,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-03T13:04:42.6040465-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_144743-3uaqex4a\\run-3uaqex4a.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-03T13:04:42.7422611-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_040506-2msa7208\\run-2msa7208.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-03T13:04:42.7599218-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_040507-y6nvh3l6\\run-y6nvh3l6.wandb","total_files":1,"events_offset":0,"events_lines":1}
+{"time":"2026-11-03T13:04:42.8036345-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_144743-3uaqex4a\\run-3uaqex4a.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:42.9331296-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_040506-2msa7208\\run-2msa7208.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:42.9388981-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_040507-y6nvh3l6\\run-y6nvh3l6.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:43.1322996-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261103_144732-ys0w0wws\\run-ys0w0wws.wandb"}
+{"time":"2026-11-03T13:04:43.1415797-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_144732-ys0w0wws\\run-ys0w0wws.wandb","total_files":4,"history_offset":0,"history_lines":62,"events_offset":1,"events_lines":338,"console_offset":0,"console_lines":4302,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-03T13:04:43.6745559-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_144732-ys0w0wws\\run-ys0w0wws.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:43.6745559-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261103_144732-ys0w0wws\\run-ys0w0wws.wandb"}
+{"time":"2026-11-03T13:04:43.6766038-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261103_144732-ys0w0wws\\run-ys0w0wws.wandb"}
+{"time":"2026-11-03T13:04:43.8453147-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261103_040506-2msa7208\\run-2msa7208.wandb"}
+{"time":"2026-11-03T13:04:43.8502058-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_040506-2msa7208\\run-2msa7208.wandb","total_files":4,"history_offset":0,"history_lines":39,"events_offset":1,"events_lines":208,"console_offset":0,"console_lines":2592,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-03T13:04:43.9003463-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261103_144743-3uaqex4a\\run-3uaqex4a.wandb"}
+{"time":"2026-11-03T13:04:43.9032109-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_144743-3uaqex4a\\run-3uaqex4a.wandb","total_files":4,"history_offset":0,"history_lines":39,"events_offset":1,"events_lines":359,"console_offset":0,"console_lines":2595,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-03T13:04:43.9409273-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_143326-brihic8u\\run-brihic8u.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:43.9409273-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261103_143326-brihic8u\\run-brihic8u.wandb"}
+{"time":"2026-11-03T13:04:43.9409273-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261103_143326-brihic8u\\run-brihic8u.wandb"}
+{"time":"2026-11-03T13:04:43.9519296-05:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed","sync_path":"offline-run-20261103_040507-y6nvh3l6\\run-y6nvh3l6.wandb"}
+{"time":"2026-11-03T13:04:43.9546881-05:00","level":"INFO","msg":"filestream: sending request","sync_path":"offline-run-20261103_040507-y6nvh3l6\\run-y6nvh3l6.wandb","total_files":4,"history_offset":0,"history_lines":40,"events_offset":1,"events_lines":244,"console_offset":0,"console_lines":2595,"uploaded_len":5,"complete":true,"exit_code":0}
+{"time":"2026-11-03T13:04:44.5763925-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_144743-3uaqex4a\\run-3uaqex4a.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:44.5763925-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261103_144743-3uaqex4a\\run-3uaqex4a.wandb"}
+{"time":"2026-11-03T13:04:44.5763925-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261103_144743-3uaqex4a\\run-3uaqex4a.wandb"}
+{"time":"2026-11-03T13:04:44.7639513-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_040506-2msa7208\\run-2msa7208.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:44.7639513-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261103_040506-2msa7208\\run-2msa7208.wandb"}
+{"time":"2026-11-03T13:04:44.7639513-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261103_040506-2msa7208\\run-2msa7208.wandb"}
+{"time":"2026-11-03T13:04:44.8304548-05:00","level":"INFO","msg":"filestream: request sent","sync_path":"offline-run-20261103_040507-y6nvh3l6\\run-y6nvh3l6.wandb","status":"200 OK"}
+{"time":"2026-11-03T13:04:44.8304548-05:00","level":"INFO","msg":"runsync: done reading","sync_path":"offline-run-20261103_040507-y6nvh3l6\\run-y6nvh3l6.wandb"}
+{"time":"2026-11-03T13:04:44.8304548-05:00","level":"INFO","msg":"sender: closed","sync_path":"offline-run-20261103_040507-y6nvh3l6\\run-y6nvh3l6.wandb"}

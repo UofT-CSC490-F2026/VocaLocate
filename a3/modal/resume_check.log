@@ -1,0 +1,206 @@
+✓ Initialized. View run at 
+https://modal.com/apps/tjsinghchawla/main/ap-e8NQInmlZszPfcfWNbpFIS
+✓ Created objects.
+├── ✓ Uploaded 
+│   C:\Users\tjsin\vocalocate-gpu\.claude\worktrees\a3-d12-ablations\a3\modal\t
+│   rain_d12.py
+├── ✓ Uploaded 
+│   C:\Users\tjsin\vocalocate-gpu\.claude\worktrees\a3-d12-ablations\a3\modal\.
+│   .\nanochat
+├── ✓ Created Function prep.
+├── ✓ Created Function train.
+├── ✓ Created Function train_a100.
+├── ✓ Created Function train_rtx.
+├── ✓ Created Function train_b200.
+├── ✓ Created Function resume_check.
+├── ✓ Created Function eval_loops.
+├── ✓ Created Function loop_sweep.
+└── ✓ Created Function launch_all.
+
+                                                       █████                █████
+                                                      ░░███                ░░███
+     ████████    ██████   ████████    ██████   ██████  ░███████    ██████  ███████
+    ░░███░░███  ░░░░░███ ░░███░░███  ███░░███ ███░░███ ░███░░███  ░░░░░███░░░███░
+     ░███ ░███   ███████  ░███ ░███ ░███ ░███░███ ░░░  ░███ ░███   ███████  ░███
+     ░███ ░███  ███░░███  ░███ ░███ ░███ ░███░███  ███ ░███ ░███  ███░░███  ░███ ███
+     ████ █████░░████████ ████ █████░░██████ ░░██████  ████ █████░░███████  ░░█████
+    ░░░░ ░░░░░  ░░░░░░░░ ░░░░ ░░░░░  ░░░░░░   ░░░░░░  ░░░░ ░░░░░  ░░░░░░░░   ░░░░░
+    
+Autodetected device type: cuda
+2026-11-06 05:21:16,000 - nanochat.common - [32m[1mINFO[0m - Distributed world size: 1
+2026-11-06 05:21:16,001 - nanochat.common - [33m[1mWARNING[0m - Peak flops undefined for: NVIDIA RTX PRO 6000 Blackwell Server Edition, MFU will show as 0%
+GPU: NVIDIA RTX PRO 6000 Blackwell Server Edition | Peak FLOPS (BF16): inf
+COMPUTE_DTYPE: torch.bfloat16 (auto-detected: CUDA SM 120 (bf16 supported))
+wandb: Tracking run with wandb version 0.31.0
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /vol/a3/wandb/wandb/offline-run-20261106_052116-72gxbq5g
+wandb: View this run in the terminal with `wandb leet`
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+WARNING: Flash Attention 3 not available, using PyTorch SDPA fallback
+WARNING: Training will be less efficient without FA3
+WARNING: SDPA has no support for sliding window attention (window_pattern='SSSL'). Your GPU utilization will be terrible.
+WARNING: Recommend using --window-pattern L for full context attention without alternating sliding window patterns.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Vocab size: 32,768
+Model config:
+{
+  "sequence_len": 2048,
+  "vocab_size": 32768,
+  "n_layer": 12,
+  "n_head": 6,
+  "n_kv_head": 6,
+  "n_embd": 768,
+  "window_pattern": "SSSL",
+  "n_loops": 1,
+  "n_prelude": 0,
+  "n_coda": 0,
+  "diff_v2": true
+}
+Parameter counts:
+wte                     : 25,165,824
+value_embeds            : 150,994,944
+lm_head                 : 25,165,824
+transformer_matrices    : 92,068,272
+scalars                 : 50
+total                   : 293,394,914
+Estimated FLOPs per token: 9.015856e+08
+Scaling the LR for the AdamW parameters ∝1/√(768/768) = 1.000000
+Using user-provided number of iterations: 20
+Total number of training tokens: 10,485,760
+Tokens : Scaling params ratio: 0.09
+Total training FLOPs estimate: 9.453810e+15
+Tokens / micro-batch / rank: 16 x 2048 = 32,768
+Tokens / micro-batch: 32,768
+Total batch size 524,288 => gradient accumulation steps: 16
+step 00000/00020 (0.00%) | loss: 10.398059 | lrm: 0.03 | dt: 44194.47ms | tok/sec: 11,863 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 1 | total time: 0.00m
+step 00001/00020 (5.00%) | loss: 10.385845 | lrm: 0.05 | dt: 5908.48ms | tok/sec: 88,734 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 2 | total time: 0.00m
+step 00002/00020 (10.00%) | loss: 10.363437 | lrm: 0.07 | dt: 5905.09ms | tok/sec: 88,785 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 3 | total time: 0.00m
+step 00003/00020 (15.00%) | loss: 10.330167 | lrm: 0.10 | dt: 5904.50ms | tok/sec: 88,794 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 4 | total time: 0.00m
+step 00004/00020 (20.00%) | loss: 10.282941 | lrm: 0.12 | dt: 5903.99ms | tok/sec: 88,802 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 5 | total time: 0.00m
+step 00005/00020 (25.00%) | loss: 10.203901 | lrm: 0.15 | dt: 5909.83ms | tok/sec: 88,714 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 6 | total time: 0.00m
+step 00006/00020 (30.00%) | loss: 10.095732 | lrm: 0.17 | dt: 5907.45ms | tok/sec: 88,750 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 7 | total time: 0.00m
+step 00007/00020 (35.00%) | loss: 9.924450 | lrm: 0.20 | dt: 5907.97ms | tok/sec: 88,742 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 8 | total time: 0.00m
+step 00008/00020 (40.00%) | loss: 9.653926 | lrm: 0.23 | dt: 5908.38ms | tok/sec: 88,736 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 9 | total time: 0.00m
+step 00009/00020 (45.00%) | loss: 9.395194 | lrm: 0.25 | dt: 5911.40ms | tok/sec: 88,690 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 11 | total time: 0.00m
+2026-11-06 05:22:56,486 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved model parameters to: /vol/a3/base_checkpoints/smoke-d12-diff-v2-rtx/model_000010.pt
+2026-11-06 05:22:56,487 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved metadata to: /vol/a3/base_checkpoints/smoke-d12-diff-v2-rtx/meta_000010.json
+2026-11-06 05:22:57,452 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d12-diff-v2-rtx/optim_000010_rank0.pt
+step 00010/00020 (50.00%) | loss: 9.086858 | lrm: 0.28 | dt: 5910.93ms | tok/sec: 88,698 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 12 | total time: 0.00m
+step 00011/00020 (55.00%) | loss: 8.797014 | lrm: 0.30 | dt: 5919.74ms | tok/sec: 88,566 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 13 | total time: 0.10m | eta: 0.9m
+step 00012/00020 (60.00%) | loss: 8.557988 | lrm: 0.33 | dt: 5918.39ms | tok/sec: 88,586 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 14 | total time: 0.20m | eta: 0.8m
+step 00013/00020 (65.00%) | loss: 8.318060 | lrm: 0.35 | dt: 5911.19ms | tok/sec: 88,694 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 15 | total time: 0.30m | eta: 0.7m
+step 00014/00020 (70.00%) | loss: 8.111232 | lrm: 0.38 | dt: 5912.05ms | tok/sec: 88,681 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 16 | total time: 0.39m | eta: 0.6m
+step 00015/00020 (75.00%) | loss: 7.921669 | lrm: 0.40 | dt: 5912.77ms | tok/sec: 88,670 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 17 | total time: 0.49m | eta: 0.5m
+step 00016/00020 (80.00%) | loss: 7.738917 | lrm: 0.42 | dt: 5910.17ms | tok/sec: 88,709 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 18 | total time: 0.59m | eta: 0.4m
+step 00017/00020 (85.00%) | loss: 7.582489 | lrm: 0.45 | dt: 5918.34ms | tok/sec: 88,586 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 19 | total time: 0.69m | eta: 0.3m
+step 00018/00020 (90.00%) | loss: 7.433165 | lrm: 0.47 | dt: 5913.41ms | tok/sec: 88,660 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 20 | total time: 0.79m | eta: 0.2m
+step 00019/00020 (95.00%) | loss: 7.300567 | lrm: 0.50 | dt: 5918.56ms | tok/sec: 88,583 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 21 | total time: 0.89m | eta: 0.1m
+2026-11-06 05:23:57,164 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved model parameters to: /vol/a3/base_checkpoints/smoke-d12-diff-v2-rtx/model_000020.pt
+2026-11-06 05:23:57,165 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved metadata to: /vol/a3/base_checkpoints/smoke-d12-diff-v2-rtx/meta_000020.json
+2026-11-06 05:23:58,060 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d12-diff-v2-rtx/optim_000020_rank0.pt
+Peak memory usage: 50198.34MiB
+Total training time: 0.89m
+wandb: 
+wandb: Run history:
+wandb:                 step ▁
+wandb: total_training_flops ▁
+wandb:  total_training_time ▁
+wandb:             train/dt ▁
+wandb:           train/loss ▁
+wandb:            train/lrm ▁
+wandb:            train/mfu ▁
+wandb:    train/tok_per_sec ▁
+wandb: 
+wandb: Run summary:
+wandb:                 step 0
+wandb: total_training_flops 0
+wandb:  total_training_time 0
+wandb:             train/dt 44.19447
+wandb:          train/epoch 1 pq: 0 rg: 1
+wandb:           train/loss 10.39806
+wandb:            train/lrm 0.025
+wandb:            train/mfu 0
+wandb:    train/tok_per_sec 11863
+wandb: 
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /vol/a3/wandb/wandb/offline-run-20261106_052116-72gxbq5g
+wandb: Find logs at: /vol/a3/wandb/wandb/offline-run-20261106_052116-72gxbq5g/logs
+
+                                                       █████                █████
+                                                      ░░███                ░░███
+     ████████    ██████   ████████    ██████   ██████  ░███████    ██████  ███████
+    ░░███░░███  ░░░░░███ ░░███░░███  ███░░███ ███░░███ ░███░░███  ░░░░░███░░░███░
+     ░███ ░███   ███████  ░███ ░███ ░███ ░███░███ ░░░  ░███ ░███   ███████  ░███
+     ░███ ░███  ███░░███  ░███ ░███ ░███ ░███░███  ███ ░███ ░███  ███░░███  ░███ ███
+     ████ █████░░████████ ████ █████░░██████ ░░██████  ████ █████░░███████  ░░█████
+    ░░░░ ░░░░░  ░░░░░░░░ ░░░░ ░░░░░  ░░░░░░   ░░░░░░  ░░░░ ░░░░░  ░░░░░░░░   ░░░░░
+    
+Autodetected device type: cuda
+2026-11-06 05:24:09,133 - nanochat.common - [32m[1mINFO[0m - Distributed world size: 1
+2026-11-06 05:24:09,133 - nanochat.common - [33m[1mWARNING[0m - Peak flops undefined for: NVIDIA RTX PRO 6000 Blackwell Server Edition, MFU will show as 0%
+GPU: NVIDIA RTX PRO 6000 Blackwell Server Edition | Peak FLOPS (BF16): inf
+COMPUTE_DTYPE: torch.bfloat16 (auto-detected: CUDA SM 120 (bf16 supported))
+wandb: Tracking run with wandb version 0.31.0
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /vol/a3/wandb/wandb/offline-run-20261106_052409-c7t5qwsm
+wandb: View this run in the terminal with `wandb leet`
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+WARNING: Flash Attention 3 not available, using PyTorch SDPA fallback
+WARNING: Training will be less efficient without FA3
+WARNING: SDPA has no support for sliding window attention (window_pattern='SSSL'). Your GPU utilization will be terrible.
+WARNING: Recommend using --window-pattern L for full context attention without alternating sliding window patterns.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Vocab size: 32,768
+Model config:
+{
+  "sequence_len": 2048,
+  "vocab_size": 32768,
+  "n_layer": 12,
+  "n_head": 6,
+  "n_kv_head": 6,
+  "n_embd": 768,
+  "window_pattern": "SSSL",
+  "n_loops": 1,
+  "n_prelude": 0,
+  "n_coda": 0,
+  "diff_v2": true
+}
+Resuming optimization from step 10
+Parameter counts:
+wte                     : 25,165,824
+value_embeds            : 150,994,944
+lm_head                 : 25,165,824
+transformer_matrices    : 92,068,272
+scalars                 : 50
+total                   : 293,394,914
+Estimated FLOPs per token: 9.015856e+08
+Scaling the LR for the AdamW parameters ∝1/√(768/768) = 1.000000
+Using user-provided number of iterations: 20
+Total number of training tokens: 10,485,760
+Tokens : Scaling params ratio: 0.09
+Total training FLOPs estimate: 9.453810e+15
+Tokens / micro-batch / rank: 16 x 2048 = 32,768
+Tokens / micro-batch: 32,768
+Total batch size 524,288 => gradient accumulation steps: 16
+step 00010/00020 (50.00%) | loss: 9.071362 | lrm: 0.28 | dt: 8704.48ms | tok/sec: 60,231 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 13 | total time: 0.00m
+step 00011/00020 (55.00%) | loss: 8.788523 | lrm: 0.30 | dt: 5911.20ms | tok/sec: 88,693 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 14 | total time: 0.10m | eta: 0.9m
+step 00012/00020 (60.00%) | loss: 8.539108 | lrm: 0.33 | dt: 5907.62ms | tok/sec: 88,747 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 15 | total time: 0.20m | eta: 0.8m
+step 00013/00020 (65.00%) | loss: 8.298610 | lrm: 0.35 | dt: 5909.59ms | tok/sec: 88,718 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 16 | total time: 0.30m | eta: 0.7m
+step 00014/00020 (70.00%) | loss: 8.083548 | lrm: 0.38 | dt: 5910.50ms | tok/sec: 88,704 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 17 | total time: 0.39m | eta: 0.6m
+step 00015/00020 (75.00%) | loss: 7.874255 | lrm: 0.40 | dt: 5909.70ms | tok/sec: 88,716 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 18 | total time: 0.49m | eta: 0.5m
+step 00016/00020 (80.00%) | loss: 7.708757 | lrm: 0.42 | dt: 5914.97ms | tok/sec: 88,637 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 19 | total time: 0.59m | eta: 0.4m
+step 00017/00020 (85.00%) | loss: 7.543662 | lrm: 0.45 | dt: 5915.78ms | tok/sec: 88,625 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 20 | total time: 0.69m | eta: 0.3m
+step 00018/00020 (90.00%) | loss: 7.397873 | lrm: 0.47 | dt: 5914.06ms | tok/sec: 88,651 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 21 | total time: 0.79m | eta: 0.2m
+step 00019/00020 (95.00%) | loss: 7.260055 | lrm: 0.50 | dt: 5914.13ms | tok/sec: 88,650 | bf16_mfu: 0.00 | epoch: 1 pq: 0 rg: 23 | total time: 0.89m | eta: 0.1m
+2026-11-06 05:25:13,953 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved model parameters to: /vol/a3/base_checkpoints/smoke-d12-diff-v2-rtx/model_000020.pt
+2026-11-06 05:25:13,954 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved metadata to: /vol/a3/base_checkpoints/smoke-d12-diff-v2-rtx/meta_000020.json
+2026-11-06 05:25:14,864 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d12-diff-v2-rtx/optim_000020_rank0.pt
+Peak memory usage: 50194.96MiB
+Total training time: 0.89m
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /vol/a3/wandb/wandb/offline-run-20261106_052409-c7t5qwsm
+wandb: Find logs at: /vol/a3/wandb/wandb/offline-run-20261106_052409-c7t5qwsm/logs
+RESUME_CHECK {"first_rc": 0, "picked": 10, "second_rc": 0, "resumed_from": 10, "error_tail": "", "final_exists": true}
+Stopping app - local entrypoint completed.
+✓ App completed. View run at 
+https://modal.com/apps/tjsinghchawla/main/ap-e8NQInmlZszPfcfWNbpFIS

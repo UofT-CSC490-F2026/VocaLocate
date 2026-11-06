@@ -1,0 +1,444 @@
+✓ Initialized. View run at 
+https://modal.com/apps/tjsinghchawla/main/ap-QvwxokUGpa8guuRmiqzKEI
+✓ Created objects.
+├── ✓ Uploaded 
+│   C:\Users\tjsin\vocalocate-gpu\.claude\worktrees\a3-d12-ablations\a3\modal\t
+│   rain_d12.py
+├── ✓ Uploaded 
+│   C:\Users\tjsin\vocalocate-gpu\.claude\worktrees\a3-d12-ablations\a3\modal\.
+│   .\nanochat
+├── ✓ Created Function prep.
+├── ✓ Created Function train.
+├── ✓ Created Function eval_loops.
+├── ✓ Created Function loop_sweep.
+└── ✓ Created Function launch_all.
+spawned: {'d12-xsa': 'fc-01M6HCGP4HCCTJ9H7QGHSVJFQZ', 'd12-mudd': 'fc-01M6HCGQTE9ZHW9F7B83E2CSMC', 'd12-baseline-s1': 'fc-01M6HCGT899DEAE8BC5D5RJX3Z'}
+
+                                                       █████                █████
+                                                      ░░███                ░░███
+     ████████    ██████   ████████    ██████   ██████  ░███████    ██████  ███████
+    ░░███░░███  ░░░░░███ ░░███░░███  ███░░███ ███░░███ ░███░░███  ░░░░░███░░░███░
+     ░███ ░███   ███████  ░███ ░███ ░███ ░███░███ ░░░  ░███ ░███   ███████  ░███
+     ░███ ░███  ███░░███  ░███ ░███ ░███ ░███░███  ███ ░███ ░███  ███░░███  ░███ ███
+     ████ █████░░████████ ████ █████░░██████ ░░██████  ████ █████░░███████  ░░█████
+    ░░░░ ░░░░░  ░░░░░░░░ ░░░░ ░░░░░  ░░░░░░   ░░░░░░  ░░░░ ░░░░░  ░░░░░░░░   ░░░░░
+    
+Autodetected device type: cuda
+2026-11-03 19:00:17,570 - nanochat.common - [32m[1mINFO[0m - Distributed world size: 1
+GPU: NVIDIA H100 80GB HBM3 | Peak FLOPS (BF16): 9.89e+14
+COMPUTE_DTYPE: torch.bfloat16 (auto-detected: CUDA SM 90 (bf16 supported))
+wandb: Tracking run with wandb version 0.31.0
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /vol/a3/wandb/wandb/offline-run-20261103_190017-hy6rsfm7
+wandb: View this run in the terminal with `wandb leet`
+✓ Using Flash Attention 3: efficient, new and awesome.
+Vocab size: 32,768
+Model config:
+{
+  "sequence_len": 2048,
+  "vocab_size": 32768,
+  "n_layer": 12,
+  "n_head": 6,
+  "n_kv_head": 6,
+  "n_embd": 768,
+  "window_pattern": "SSSL",
+  "n_loops": 1,
+  "n_prelude": 0,
+  "n_coda": 0,
+  "xsa": true
+}
+Parameter counts:
+
+                                                       █████                █████
+wte                     : 25,165,824
+value_embeds            : 150,994,944
+lm_head                 : 25,165,824
+transformer_matrices    : 84,935,088
+scalars                 : 122
+total                   : 286,261,802
+Estimated FLOPs per token: 7.596960e+08
+Scaling the LR for the AdamW parameters ∝1/√(768/768) = 1.000000
+                                                      ░░███                ░░███
+     ████████    ██████   ████████    ██████   ██████  ░███████    ██████  ███████
+    ░░███░░███  ░░░░░███ ░░███░░███  ███░░███ ███░░███ ░███░░███  ░░░░░███░░░███░
+     ░███ ░███   ███████  ░███ ░███ ░███ ░███░███ ░░░  ░███ ░███   ███████  ░███
+     ░███ ░███  ███░░███  ░███ ░███ ░███ ░███░███  ███ ░███ ░███  ███░░███  ░███ ███
+     ████ █████░░████████ ████ █████░░██████ ░░██████  ████ █████░░███████  ░░█████
+    ░░░░ ░░░░░  ░░░░░░░░ ░░░░ ░░░░░  ░░░░░░   ░░░░░░  ░░░░ ░░░░░  ░░░░░░░░   ░░░░░
+    
+Autodetected device type: cuda
+2026-11-03 19:00:19,998 - nanochat.common - [32m[1mINFO[0m - Distributed world size: 1
+GPU: NVIDIA H100 80GB HBM3 | Peak FLOPS (BF16): 9.89e+14
+COMPUTE_DTYPE: torch.bfloat16 (auto-detected: CUDA SM 90 (bf16 supported))
+Using user-provided number of iterations: 30
+Total number of training tokens: 15,728,640
+wandb: Tracking run with wandb version 0.31.0
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /vol/a3/wandb/wandb/offline-run-20261103_190020-ij3wnryd
+wandb: View this run in the terminal with `wandb leet`
+Tokens : Scaling params ratio: 0.14
+Total training FLOPs estimate: 1.194899e+16
+Tokens / micro-batch / rank: 32 x 2048 = 65,536
+Tokens / micro-batch: 65,536
+Total batch size 524,288 => gradient accumulation steps: 8
+✓ Using Flash Attention 3: efficient, new and awesome.
+Vocab size: 32,768
+Model config:
+{
+  "sequence_len": 2048,
+  "vocab_size": 32768,
+  "n_layer": 12,
+  "n_head": 6,
+  "n_kv_head": 6,
+  "n_embd": 768,
+  "window_pattern": "SSSL",
+  "n_loops": 1,
+  "n_prelude": 0,
+  "n_coda": 0
+}
+
+                                                       █████                █████
+                                                      ░░███                ░░███
+     ████████    ██████   ████████    ██████   ██████  ░███████    ██████  ███████
+    ░░███░░███  ░░░░░███ ░░███░░███  ███░░███ ███░░███ ░███░░███  ░░░░░███░░░███░
+     ░███ ░███   ███████  ░███ ░███ ░███ ░███░███ ░░░  ░███ ░███   ███████  ░███
+     ░███ ░███  ███░░███  ░███ ░███ ░███ ░███░███  ███ ░███ ░███  ███░░███  ░███ ███
+     ████ █████░░████████ ████ █████░░██████ ░░██████  ████ █████░░███████  ░░█████
+    ░░░░ ░░░░░  ░░░░░░░░ ░░░░ ░░░░░  ░░░░░░   ░░░░░░  ░░░░ ░░░░░  ░░░░░░░░   ░░░░░
+    
+Parameter counts:
+Autodetected device type: cuda
+2026-11-03 19:00:22,683 - nanochat.common - [32m[1mINFO[0m - Distributed world size: 1
+GPU: NVIDIA H100 80GB HBM3 | Peak FLOPS (BF16): 9.89e+14
+COMPUTE_DTYPE: torch.bfloat16 (auto-detected: CUDA SM 90 (bf16 supported))
+wte                     : 25,165,824
+value_embeds            : 150,994,944
+lm_head                 : 25,165,824
+transformer_matrices    : 84,935,088
+scalars                 : 50
+total                   : 286,261,730
+Estimated FLOPs per token: 7.596960e+08
+Scaling the LR for the AdamW parameters ∝1/√(768/768) = 1.000000
+Using user-provided number of iterations: 30
+Total number of training tokens: 15,728,640
+Tokens : Scaling params ratio: 0.14
+Total training FLOPs estimate: 1.194899e+16
+Tokens / micro-batch / rank: 32 x 2048 = 65,536
+Tokens / micro-batch: 65,536
+Total batch size 524,288 => gradient accumulation steps: 8
+wandb: Tracking run with wandb version 0.31.0
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /vol/a3/wandb/wandb/offline-run-20261103_190022-pnz2a4y8
+wandb: View this run in the terminal with `wandb leet`
+✓ Using Flash Attention 3: efficient, new and awesome.
+Vocab size: 32,768
+Model config:
+{
+  "sequence_len": 2048,
+  "vocab_size": 32768,
+  "n_layer": 12,
+  "n_head": 6,
+  "n_kv_head": 6,
+  "n_embd": 768,
+  "window_pattern": "SSSL",
+  "n_loops": 1,
+  "n_prelude": 0,
+  "n_coda": 0,
+  "mudd": true
+}
+Parameter counts:
+wte                     : 25,165,824
+value_embeds            : 150,994,944
+lm_head                 : 25,165,824
+transformer_matrices    : 84,935,088
+scalars                 : 50
+mudd                    : 99,084
+total                   : 286,360,814
+Estimated FLOPs per token: 7.602905e+08
+Scaling the LR for the AdamW parameters ∝1/√(768/768) = 1.000000
+Using user-provided number of iterations: 30
+Total number of training tokens: 15,728,640
+Tokens : Scaling params ratio: 0.14
+Total training FLOPs estimate: 1.195834e+16
+Tokens / micro-batch / rank: 32 x 2048 = 65,536
+Tokens / micro-batch: 65,536
+Total batch size 524,288 => gradient accumulation steps: 8
+Step 00000 | Validation bpb: 3.142817
+Step 00000 | Validation bpb: 3.142940
+Step 00000 | Validation bpb: 3.142818
+step 00000/00030 (0.00%) | loss: 10.398091 | lrm: 0.03 | dt: 54266.65ms | tok/sec: 9,661 | bf16_mfu: 0.74 | epoch: 1 pq: 0 rg: 1 | total time: 0.00m
+step 00000/00030 (0.00%) | loss: 10.397567 | lrm: 0.03 | dt: 55973.15ms | tok/sec: 9,366 | bf16_mfu: 0.72 | epoch: 1 pq: 0 rg: 1 | total time: 0.00m
+step 00001/00030 (3.33%) | loss: 10.385569 | lrm: 0.05 | dt: 969.40ms | tok/sec: 540,839 | bf16_mfu: 41.54 | epoch: 1 pq: 0 rg: 2 | total time: 0.00m
+step 00001/00030 (3.33%) | loss: 10.385139 | lrm: 0.05 | dt: 1004.09ms | tok/sec: 522,154 | bf16_mfu: 40.11 | epoch: 1 pq: 0 rg: 2 | total time: 0.00m
+step 00002/00030 (6.67%) | loss: 10.363268 | lrm: 0.07 | dt: 971.55ms | tok/sec: 539,642 | bf16_mfu: 41.45 | epoch: 1 pq: 0 rg: 3 | total time: 0.00m
+step 00002/00030 (6.67%) | loss: 10.363024 | lrm: 0.07 | dt: 1007.40ms | tok/sec: 520,437 | bf16_mfu: 39.98 | epoch: 1 pq: 0 rg: 3 | total time: 0.00m
+step 00003/00030 (10.00%) | loss: 10.329131 | lrm: 0.10 | dt: 981.95ms | tok/sec: 533,924 | bf16_mfu: 41.01 | epoch: 1 pq: 0 rg: 4 | total time: 0.00m
+step 00003/00030 (10.00%) | loss: 10.328937 | lrm: 0.10 | dt: 1013.00ms | tok/sec: 517,560 | bf16_mfu: 39.76 | epoch: 1 pq: 0 rg: 4 | total time: 0.00m
+step 00004/00030 (13.33%) | loss: 10.279619 | lrm: 0.12 | dt: 980.26ms | tok/sec: 534,844 | bf16_mfu: 41.08 | epoch: 1 pq: 0 rg: 5 | total time: 0.00m
+step 00004/00030 (13.33%) | loss: 10.279538 | lrm: 0.12 | dt: 1010.52ms | tok/sec: 518,828 | bf16_mfu: 39.85 | epoch: 1 pq: 0 rg: 5 | total time: 0.00m
+step 00005/00030 (16.67%) | loss: 10.199697 | lrm: 0.15 | dt: 983.03ms | tok/sec: 533,340 | bf16_mfu: 40.97 | epoch: 1 pq: 0 rg: 6 | total time: 0.00m
+step 00000/00030 (0.00%) | loss: 10.397568 | lrm: 0.03 | dt: 53549.59ms | tok/sec: 9,790 | bf16_mfu: 0.75 | epoch: 1 pq: 0 rg: 1 | total time: 0.00m
+step 00005/00030 (16.67%) | loss: 10.200426 | lrm: 0.15 | dt: 1007.00ms | tok/sec: 520,642 | bf16_mfu: 39.99 | epoch: 1 pq: 0 rg: 6 | total time: 0.00m
+step 00006/00030 (20.00%) | loss: 10.074639 | lrm: 0.17 | dt: 976.66ms | tok/sec: 536,815 | bf16_mfu: 41.24 | epoch: 1 pq: 0 rg: 7 | total time: 0.00m
+step 00006/00030 (20.00%) | loss: 10.077667 | lrm: 0.17 | dt: 1006.39ms | tok/sec: 520,960 | bf16_mfu: 40.02 | epoch: 1 pq: 0 rg: 7 | total time: 0.00m
+step 00001/00030 (3.33%) | loss: 10.385141 | lrm: 0.05 | dt: 951.66ms | tok/sec: 550,917 | bf16_mfu: 42.35 | epoch: 1 pq: 0 rg: 2 | total time: 0.00m
+step 00007/00030 (23.33%) | loss: 9.858661 | lrm: 0.20 | dt: 991.41ms | tok/sec: 528,828 | bf16_mfu: 40.62 | epoch: 1 pq: 0 rg: 8 | total time: 0.00m
+step 00002/00030 (6.67%) | loss: 10.363031 | lrm: 0.07 | dt: 966.36ms | tok/sec: 542,541 | bf16_mfu: 41.71 | epoch: 1 pq: 0 rg: 3 | total time: 0.00m
+step 00007/00030 (23.33%) | loss: 9.868070 | lrm: 0.20 | dt: 1009.71ms | tok/sec: 519,244 | bf16_mfu: 39.89 | epoch: 1 pq: 0 rg: 8 | total time: 0.00m
+step 00008/00030 (26.67%) | loss: 9.562556 | lrm: 0.23 | dt: 969.24ms | tok/sec: 540,924 | bf16_mfu: 41.55 | epoch: 1 pq: 0 rg: 10 | total time: 0.00m
+step 00003/00030 (10.00%) | loss: 10.328973 | lrm: 0.10 | dt: 973.75ms | tok/sec: 538,419 | bf16_mfu: 41.39 | epoch: 1 pq: 0 rg: 4 | total time: 0.00m
+step 00008/00030 (26.67%) | loss: 9.563276 | lrm: 0.23 | dt: 1010.92ms | tok/sec: 518,623 | bf16_mfu: 39.84 | epoch: 1 pq: 0 rg: 10 | total time: 0.00m
+step 00009/00030 (30.00%) | loss: 9.283343 | lrm: 0.25 | dt: 992.58ms | tok/sec: 528,208 | bf16_mfu: 40.57 | epoch: 1 pq: 0 rg: 11 | total time: 0.00m
+step 00004/00030 (13.33%) | loss: 10.279632 | lrm: 0.12 | dt: 967.90ms | tok/sec: 541,678 | bf16_mfu: 41.64 | epoch: 1 pq: 0 rg: 5 | total time: 0.00m
+step 00009/00030 (30.00%) | loss: 9.327041 | lrm: 0.25 | dt: 1008.27ms | tok/sec: 519,985 | bf16_mfu: 39.94 | epoch: 1 pq: 0 rg: 11 | total time: 0.00m
+step 00010/00030 (33.33%) | loss: 8.988117 | lrm: 0.28 | dt: 969.42ms | tok/sec: 540,826 | bf16_mfu: 41.54 | epoch: 1 pq: 0 rg: 12 | total time: 0.00m
+step 00005/00030 (16.67%) | loss: 10.200642 | lrm: 0.15 | dt: 960.94ms | tok/sec: 545,600 | bf16_mfu: 41.94 | epoch: 1 pq: 0 rg: 6 | total time: 0.00m
+step 00010/00030 (33.33%) | loss: 9.068771 | lrm: 0.28 | dt: 1009.67ms | tok/sec: 519,266 | bf16_mfu: 39.89 | epoch: 1 pq: 0 rg: 12 | total time: 0.00m
+step 00011/00030 (36.67%) | loss: 8.721074 | lrm: 0.30 | dt: 977.48ms | tok/sec: 536,366 | bf16_mfu: 41.20 | epoch: 1 pq: 0 rg: 13 | total time: 0.02m | eta: 0.3m
+step 00006/00030 (20.00%) | loss: 10.077878 | lrm: 0.17 | dt: 966.67ms | tok/sec: 542,366 | bf16_mfu: 41.69 | epoch: 1 pq: 0 rg: 7 | total time: 0.00m
+step 00011/00030 (36.67%) | loss: 8.804569 | lrm: 0.30 | dt: 1009.28ms | tok/sec: 519,468 | bf16_mfu: 39.90 | epoch: 1 pq: 0 rg: 13 | total time: 0.02m | eta: 0.3m
+step 00012/00030 (40.00%) | loss: 8.490107 | lrm: 0.33 | dt: 977.23ms | tok/sec: 536,506 | bf16_mfu: 41.21 | epoch: 1 pq: 0 rg: 14 | total time: 0.03m | eta: 0.3m
+step 00007/00030 (23.33%) | loss: 9.866256 | lrm: 0.20 | dt: 969.57ms | tok/sec: 540,742 | bf16_mfu: 41.57 | epoch: 1 pq: 0 rg: 8 | total time: 0.00m
+step 00012/00030 (40.00%) | loss: 8.576573 | lrm: 0.33 | dt: 1009.65ms | tok/sec: 519,279 | bf16_mfu: 39.89 | epoch: 1 pq: 0 rg: 14 | total time: 0.03m | eta: 0.3m
+step 00013/00030 (43.33%) | loss: 8.269981 | lrm: 0.35 | dt: 979.73ms | tok/sec: 535,134 | bf16_mfu: 41.11 | epoch: 1 pq: 0 rg: 15 | total time: 0.05m | eta: 0.3m
+step 00008/00030 (26.67%) | loss: 9.567829 | lrm: 0.23 | dt: 961.50ms | tok/sec: 545,278 | bf16_mfu: 41.92 | epoch: 1 pq: 0 rg: 10 | total time: 0.00m
+step 00013/00030 (43.33%) | loss: 8.361013 | lrm: 0.35 | dt: 1011.42ms | tok/sec: 518,368 | bf16_mfu: 39.82 | epoch: 1 pq: 0 rg: 15 | total time: 0.05m | eta: 0.3m
+step 00014/00030 (46.67%) | loss: 8.071118 | lrm: 0.38 | dt: 976.85ms | tok/sec: 536,710 | bf16_mfu: 41.23 | epoch: 1 pq: 0 rg: 16 | total time: 0.07m | eta: 0.3m
+step 00009/00030 (30.00%) | loss: 9.264353 | lrm: 0.25 | dt: 962.48ms | tok/sec: 544,728 | bf16_mfu: 41.88 | epoch: 1 pq: 0 rg: 11 | total time: 0.00m
+step 00014/00030 (46.67%) | loss: 8.164831 | lrm: 0.38 | dt: 1008.41ms | tok/sec: 519,913 | bf16_mfu: 39.94 | epoch: 1 pq: 0 rg: 16 | total time: 0.07m | eta: 0.3m
+Step 00015 | Validation bpb: 1.963614
+step 00010/00030 (33.33%) | loss: 8.964007 | lrm: 0.28 | dt: 971.33ms | tok/sec: 539,764 | bf16_mfu: 41.49 | epoch: 1 pq: 0 rg: 12 | total time: 0.00m
+Step 00015 | Validation bpb: 1.987346
+step 00015/00030 (50.00%) | loss: 7.881316 | lrm: 0.40 | dt: 981.72ms | tok/sec: 534,051 | bf16_mfu: 41.02 | epoch: 1 pq: 0 rg: 17 | total time: 0.08m | eta: 0.2m
+step 00011/00030 (36.67%) | loss: 8.695940 | lrm: 0.30 | dt: 964.55ms | tok/sec: 543,554 | bf16_mfu: 41.79 | epoch: 1 pq: 0 rg: 13 | total time: 0.02m | eta: 0.3m
+step 00015/00030 (50.00%) | loss: 7.973346 | lrm: 0.40 | dt: 1013.01ms | tok/sec: 517,555 | bf16_mfu: 39.76 | epoch: 1 pq: 0 rg: 17 | total time: 0.08m | eta: 0.3m
+step 00016/00030 (53.33%) | loss: 7.700380 | lrm: 0.42 | dt: 979.16ms | tok/sec: 535,444 | bf16_mfu: 41.13 | epoch: 1 pq: 0 rg: 18 | total time: 0.10m | eta: 0.2m
+step 00012/00030 (40.00%) | loss: 8.462811 | lrm: 0.33 | dt: 976.86ms | tok/sec: 536,706 | bf16_mfu: 41.26 | epoch: 1 pq: 0 rg: 14 | total time: 0.03m | eta: 0.3m
+step 00016/00030 (53.33%) | loss: 7.787450 | lrm: 0.42 | dt: 1011.93ms | tok/sec: 518,106 | bf16_mfu: 39.80 | epoch: 1 pq: 0 rg: 18 | total time: 0.10m | eta: 0.2m
+step 00017/00030 (56.67%) | loss: 7.541293 | lrm: 0.45 | dt: 981.85ms | tok/sec: 533,981 | bf16_mfu: 41.02 | epoch: 1 pq: 0 rg: 19 | total time: 0.11m | eta: 0.2m
+step 00013/00030 (43.33%) | loss: 8.239227 | lrm: 0.35 | dt: 965.66ms | tok/sec: 542,932 | bf16_mfu: 41.74 | epoch: 1 pq: 0 rg: 15 | total time: 0.05m | eta: 0.3m
+step 00017/00030 (56.67%) | loss: 7.622795 | lrm: 0.45 | dt: 1011.82ms | tok/sec: 518,162 | bf16_mfu: 39.80 | epoch: 1 pq: 0 rg: 19 | total time: 0.12m | eta: 0.2m
+step 00018/00030 (60.00%) | loss: 7.398311 | lrm: 0.47 | dt: 993.16ms | tok/sec: 527,900 | bf16_mfu: 40.55 | epoch: 1 pq: 0 rg: 20 | total time: 0.13m | eta: 0.2m
+step 00014/00030 (46.67%) | loss: 8.040241 | lrm: 0.38 | dt: 972.15ms | tok/sec: 539,307 | bf16_mfu: 41.46 | epoch: 1 pq: 0 rg: 16 | total time: 0.06m | eta: 0.3m
+step 00018/00030 (60.00%) | loss: 7.475277 | lrm: 0.47 | dt: 1015.36ms | tok/sec: 516,358 | bf16_mfu: 39.66 | epoch: 1 pq: 0 rg: 20 | total time: 0.13m | eta: 0.2m
+step 00019/00030 (63.33%) | loss: 7.269974 | lrm: 0.50 | dt: 978.96ms | tok/sec: 535,557 | bf16_mfu: 41.14 | epoch: 1 pq: 0 rg: 21 | total time: 0.15m | eta: 0.2m
+Step 00015 | Validation bpb: 1.957242
+step 00019/00030 (63.33%) | loss: 7.342625 | lrm: 0.50 | dt: 1011.77ms | tok/sec: 518,190 | bf16_mfu: 39.80 | epoch: 1 pq: 0 rg: 21 | total time: 0.15m | eta: 0.2m
+step 00020/00030 (66.67%) | loss: 7.150217 | lrm: 0.53 | dt: 993.80ms | tok/sec: 527,557 | bf16_mfu: 40.52 | epoch: 1 pq: 0 rg: 22 | total time: 0.16m | eta: 0.2m
+step 00015/00030 (50.00%) | loss: 7.851924 | lrm: 0.40 | dt: 973.52ms | tok/sec: 538,550 | bf16_mfu: 41.40 | epoch: 1 pq: 0 rg: 17 | total time: 0.08m | eta: 0.2m
+step 00020/00030 (66.67%) | loss: 7.218024 | lrm: 0.53 | dt: 1014.69ms | tok/sec: 516,700 | bf16_mfu: 39.69 | epoch: 1 pq: 0 rg: 22 | total time: 0.17m | eta: 0.2m
+step 00021/00030 (70.00%) | loss: 7.033146 | lrm: 0.55 | dt: 990.24ms | tok/sec: 529,454 | bf16_mfu: 40.67 | epoch: 1 pq: 0 rg: 23 | total time: 0.18m | eta: 0.1m
+step 00016/00030 (53.33%) | loss: 7.672198 | lrm: 0.42 | dt: 977.72ms | tok/sec: 536,236 | bf16_mfu: 41.22 | epoch: 1 pq: 0 rg: 18 | total time: 0.10m | eta: 0.2m
+step 00021/00030 (70.00%) | loss: 7.096356 | lrm: 0.55 | dt: 1004.38ms | tok/sec: 522,000 | bf16_mfu: 40.10 | epoch: 1 pq: 0 rg: 23 | total time: 0.19m | eta: 0.2m
+step 00022/00030 (73.33%) | loss: 6.933043 | lrm: 0.57 | dt: 992.66ms | tok/sec: 528,166 | bf16_mfu: 40.57 | epoch: 1 pq: 0 rg: 24 | total time: 0.20m | eta: 0.1m
+step 00017/00030 (56.67%) | loss: 7.514122 | lrm: 0.45 | dt: 976.83ms | tok/sec: 536,726 | bf16_mfu: 41.26 | epoch: 1 pq: 0 rg: 19 | total time: 0.11m | eta: 0.2m
+step 00022/00030 (73.33%) | loss: 6.992355 | lrm: 0.57 | dt: 1011.84ms | tok/sec: 518,152 | bf16_mfu: 39.80 | epoch: 1 pq: 0 rg: 24 | total time: 0.20m | eta: 0.1m
+step 00023/00030 (76.67%) | loss: 6.829653 | lrm: 0.60 | dt: 997.24ms | tok/sec: 525,738 | bf16_mfu: 40.38 | epoch: 1 pq: 0 rg: 26 | total time: 0.21m | eta: 0.1m
+step 00018/00030 (60.00%) | loss: 7.372423 | lrm: 0.47 | dt: 974.17ms | tok/sec: 538,187 | bf16_mfu: 41.37 | epoch: 1 pq: 0 rg: 20 | total time: 0.13m | eta: 0.2m
+step 00023/00030 (76.67%) | loss: 6.885068 | lrm: 0.60 | dt: 1014.68ms | tok/sec: 516,705 | bf16_mfu: 39.69 | epoch: 1 pq: 0 rg: 26 | total time: 0.22m | eta: 0.1m
+step 00024/00030 (80.00%) | loss: 6.739250 | lrm: 0.62 | dt: 979.86ms | tok/sec: 535,064 | bf16_mfu: 41.10 | epoch: 1 pq: 0 rg: 27 | total time: 0.23m | eta: 0.1m
+step 00019/00030 (63.33%) | loss: 7.245520 | lrm: 0.50 | dt: 971.93ms | tok/sec: 539,432 | bf16_mfu: 41.47 | epoch: 1 pq: 0 rg: 21 | total time: 0.15m | eta: 0.2m
+step 00024/00030 (80.00%) | loss: 6.791011 | lrm: 0.62 | dt: 1012.25ms | tok/sec: 517,943 | bf16_mfu: 39.79 | epoch: 1 pq: 0 rg: 27 | total time: 0.24m | eta: 0.1m
+step 00020/00030 (66.67%) | loss: 7.127084 | lrm: 0.53 | dt: 972.21ms | tok/sec: 539,271 | bf16_mfu: 41.46 | epoch: 1 pq: 0 rg: 22 | total time: 0.16m | eta: 0.2m
+step 00025/00030 (83.33%) | loss: 6.657726 | lrm: 0.65 | dt: 991.63ms | tok/sec: 528,715 | bf16_mfu: 40.61 | epoch: 1 pq: 0 rg: 28 | total time: 0.25m | eta: 0.1m
+step 00025/00030 (83.33%) | loss: 6.706182 | lrm: 0.65 | dt: 1013.22ms | tok/sec: 517,446 | bf16_mfu: 39.75 | epoch: 1 pq: 0 rg: 28 | total time: 0.25m | eta: 0.1m
+step 00026/00030 (86.67%) | loss: 6.583039 | lrm: 0.68 | dt: 986.89ms | tok/sec: 531,254 | bf16_mfu: 40.81 | epoch: 1 pq: 0 rg: 29 | total time: 0.26m | eta: 0.1m
+step 00021/00030 (70.00%) | loss: 7.010695 | lrm: 0.55 | dt: 979.25ms | tok/sec: 535,396 | bf16_mfu: 41.16 | epoch: 1 pq: 0 rg: 23 | total time: 0.18m | eta: 0.1m
+step 00026/00030 (86.67%) | loss: 6.628065 | lrm: 0.68 | dt: 1021.07ms | tok/sec: 513,468 | bf16_mfu: 39.44 | epoch: 1 pq: 0 rg: 29 | total time: 0.27m | eta: 0.1m
+step 00022/00030 (73.33%) | loss: 6.911284 | lrm: 0.57 | dt: 976.83ms | tok/sec: 536,723 | bf16_mfu: 41.26 | epoch: 1 pq: 0 rg: 24 | total time: 0.19m | eta: 0.1m
+step 00027/00030 (90.00%) | loss: 6.507534 | lrm: 0.70 | dt: 987.89ms | tok/sec: 530,714 | bf16_mfu: 40.77 | epoch: 1 pq: 0 rg: 30 | total time: 0.28m | eta: 0.0m
+step 00027/00030 (90.00%) | loss: 6.549907 | lrm: 0.70 | dt: 1013.31ms | tok/sec: 517,399 | bf16_mfu: 39.74 | epoch: 1 pq: 0 rg: 30 | total time: 0.29m | eta: 0.1m
+step 00023/00030 (76.67%) | loss: 6.808987 | lrm: 0.60 | dt: 975.59ms | tok/sec: 537,407 | bf16_mfu: 41.31 | epoch: 1 pq: 0 rg: 26 | total time: 0.21m | eta: 0.1m
+step 00028/00030 (93.33%) | loss: 6.438713 | lrm: 0.72 | dt: 1000.17ms | tok/sec: 524,197 | bf16_mfu: 40.27 | epoch: 1 pq: 0 rg: 31 | total time: 0.30m | eta: 0.0m
+step 00024/00030 (80.00%) | loss: 6.719521 | lrm: 0.62 | dt: 965.67ms | tok/sec: 542,924 | bf16_mfu: 41.74 | epoch: 1 pq: 0 rg: 27 | total time: 0.23m | eta: 0.1m
+step 00028/00030 (93.33%) | loss: 6.478433 | lrm: 0.72 | dt: 1013.47ms | tok/sec: 517,321 | bf16_mfu: 39.74 | epoch: 1 pq: 0 rg: 31 | total time: 0.30m | eta: 0.0m
+step 00029/00030 (96.67%) | loss: 6.385892 | lrm: 0.75 | dt: 982.72ms | tok/sec: 533,508 | bf16_mfu: 40.98 | epoch: 1 pq: 0 rg: 32 | total time: 0.31m | eta: 0.0m
+step 00025/00030 (83.33%) | loss: 6.638683 | lrm: 0.65 | dt: 975.31ms | tok/sec: 537,559 | bf16_mfu: 41.32 | epoch: 1 pq: 0 rg: 28 | total time: 0.24m | eta: 0.1m
+step 00029/00030 (96.67%) | loss: 6.423367 | lrm: 0.75 | dt: 1018.82ms | tok/sec: 514,602 | bf16_mfu: 39.53 | epoch: 1 pq: 0 rg: 32 | total time: 0.32m | eta: 0.0m
+Step 00030 | Validation bpb: 1.761177
+step 00026/00030 (86.67%) | loss: 6.564310 | lrm: 0.68 | dt: 963.97ms | tok/sec: 543,882 | bf16_mfu: 41.81 | epoch: 1 pq: 0 rg: 29 | total time: 0.26m | eta: 0.1m
+Evaluating: hellaswag_zeroshot (0-shot, type: multiple_choice)... accuracy: 0.2500 | centered: 0.0000 | time: 0.91s
+Step 00030 | Validation bpb: 1.766685
+Evaluating: jeopardy (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.47s
+step 00027/00030 (90.00%) | loss: 6.489186 | lrm: 0.70 | dt: 973.51ms | tok/sec: 538,552 | bf16_mfu: 41.40 | epoch: 1 pq: 0 rg: 30 | total time: 0.28m | eta: 0.0m
+Evaluating: hellaswag_zeroshot (0-shot, type: multiple_choice)... accuracy: 0.2500 | centered: 0.0000 | time: 0.83s
+Evaluating: bigbench_qa_wikidata (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.51s
+Evaluating: jeopardy (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.49s
+Evaluating: arc_easy (10-shot, type: multiple_choice)... accuracy: 0.2500 | centered: 0.0000 | time: 0.50s
+step 00028/00030 (93.33%) | loss: 6.420884 | lrm: 0.72 | dt: 963.95ms | tok/sec: 543,895 | bf16_mfu: 41.81 | epoch: 1 pq: 0 rg: 31 | total time: 0.29m | eta: 0.0m
+Evaluating: bigbench_qa_wikidata (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.56s
+Evaluating: arc_challenge (10-shot, type: multiple_choice)... accuracy: 0.2000 | centered: -0.0667 | time: 0.53s
+Evaluating: copa (0-shot, type: multiple_choice)... accuracy: 0.4000 | centered: -0.2000 | time: 0.41s
+Evaluating: arc_easy (10-shot, type: multiple_choice)... accuracy: 0.3500 | centered: 0.1333 | time: 0.56s
+step 00029/00030 (96.67%) | loss: 6.368463 | lrm: 0.75 | dt: 976.21ms | tok/sec: 537,062 | bf16_mfu: 41.29 | epoch: 1 pq: 0 rg: 32 | total time: 0.31m | eta: 0.0m
+Evaluating: commonsense_qa (10-shot, type: multiple_choice)... accuracy: 0.2000 | centered: 0.0000 | time: 0.45s
+Evaluating: arc_challenge (10-shot, type: multiple_choice)... accuracy: 0.2500 | centered: 0.0000 | time: 0.54s
+Evaluating: piqa (10-shot, type: multiple_choice)... accuracy: 0.5000 | centered: 0.0000 | time: 0.48s
+Evaluating: copa (0-shot, type: multiple_choice)... accuracy: 0.4000 | centered: -0.2000 | time: 0.45s
+Step 00030 | Validation bpb: 1.758112
+Evaluating: openbook_qa (0-shot, type: multiple_choice)... accuracy: 0.2000 | centered: -0.0667 | time: 0.42s
+Evaluating: commonsense_qa (10-shot, type: multiple_choice)... accuracy: 0.2000 | centered: 0.0000 | time: 0.51s
+Evaluating: lambada_openai (0-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.49s
+Evaluating: hellaswag_zeroshot (0-shot, type: multiple_choice)... accuracy: 0.3000 | centered: 0.0667 | time: 0.64s
+Evaluating: piqa (10-shot, type: multiple_choice)... accuracy: 0.5000 | centered: 0.0000 | time: 0.54s
+Evaluating: jeopardy (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.38s
+Evaluating: hellaswag (10-shot, type: multiple_choice)... accuracy: 0.2500 | centered: 0.0000 | time: 0.56s
+Evaluating: openbook_qa (0-shot, type: multiple_choice)... accuracy: 0.2500 | centered: 0.0000 | time: 0.48s
+Evaluating: winograd (0-shot, type: schema)... accuracy: 0.6500 | centered: 0.3000 | time: 0.34s
+Evaluating: bigbench_qa_wikidata (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.43s
+Evaluating: winogrande (0-shot, type: schema)... accuracy: 0.3000 | centered: -0.4000 | time: 0.35s
+Evaluating: lambada_openai (0-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.53s
+Evaluating: arc_easy (10-shot, type: multiple_choice)... accuracy: 0.3500 | centered: 0.1333 | time: 0.43s
+Evaluating: bigbench_dyck_languages (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.47s
+Evaluating: arc_challenge (10-shot, type: multiple_choice)... accuracy: 0.2500 | centered: 0.0000 | time: 0.38s
+Evaluating: hellaswag (10-shot, type: multiple_choice)... accuracy: 0.2500 | centered: 0.0000 | time: 0.64s
+Evaluating: copa (0-shot, type: multiple_choice)... accuracy: 0.4000 | centered: -0.2000 | time: 0.30s
+Evaluating: agi_eval_lsat_ar (3-shot, type: multiple_choice)... accuracy: 0.1000 | centered: -0.1250 | time: 0.50s
+Evaluating: winograd (0-shot, type: schema)... accuracy: 0.5500 | centered: 0.1000 | time: 0.39s
+Evaluating: commonsense_qa (10-shot, type: multiple_choice)... accuracy: 0.2000 | centered: 0.0000 | time: 0.35s
+Evaluating: bigbench_cs_algorithms (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.46s
+Evaluating: winogrande (0-shot, type: schema)... accuracy: 0.2500 | centered: -0.5000 | time: 0.40s
+Evaluating: piqa (10-shot, type: multiple_choice)... accuracy: 0.5000 | centered: 0.0000 | time: 0.41s
+Evaluating: bigbench_operators (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.40s
+Evaluating: openbook_qa (0-shot, type: multiple_choice)... accuracy: 0.2000 | centered: -0.0667 | time: 0.33s
+Evaluating: bigbench_dyck_languages (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.49s
+Evaluating: bigbench_repeat_copy_logic (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.40s
+Evaluating: lambada_openai (0-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.40s
+Evaluating: agi_eval_lsat_ar (3-shot, type: multiple_choice)... accuracy: 0.1000 | centered: -0.1250 | time: 0.52s
+Evaluating: hellaswag (10-shot, type: multiple_choice)... accuracy: 0.2500 | centered: 0.0000 | time: 0.48s
+Evaluating: squad (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.59s
+Evaluating: bigbench_cs_algorithms (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.52s
+Evaluating: winograd (0-shot, type: schema)... accuracy: 0.5000 | centered: 0.0000 | time: 0.26s
+Evaluating: winogrande (0-shot, type: schema)... accuracy: 0.2500 | centered: -0.5000 | time: 0.26s
+Evaluating: coqa (0-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.53s
+Evaluating: bigbench_operators (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.46s
+Evaluating: bigbench_dyck_languages (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.38s
+Evaluating: boolq (10-shot, type: multiple_choice)... accuracy: 0.4000 | centered: -0.5789 | time: 0.50s
+Evaluating: bigbench_repeat_copy_logic (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.47s
+Evaluating: agi_eval_lsat_ar (3-shot, type: multiple_choice)... accuracy: 0.1000 | centered: -0.1250 | time: 0.43s
+Evaluating: bigbench_cs_algorithms (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.37s
+Evaluating: bigbench_language_identification (10-shot, type: multiple_choice)... accuracy: 0.2000 | centered: 0.1199 | time: 0.62s
+Evaluating: squad (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.62s
+Step 00030 | CORE metric: -0.0462
+Evaluating: bigbench_operators (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.32s
+Evaluating: bigbench_repeat_copy_logic (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.33s
+Evaluating: coqa (0-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.60s
+Evaluating: squad (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.49s
+Evaluating: boolq (10-shot, type: multiple_choice)... accuracy: 0.4000 | centered: -0.5789 | time: 0.55s
+Evaluating: coqa (0-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.43s
+2026-11-03 19:02:16,573 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved model parameters to: /vol/a3/base_checkpoints/smoke-d12-baseline-s1/model_000030.pt
+Evaluating: bigbench_language_identification (10-shot, type: multiple_choice)... accuracy: 0.2000 | centered: 0.1199 | time: 0.69s
+2026-11-03 19:02:16,575 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved metadata to: /vol/a3/base_checkpoints/smoke-d12-baseline-s1/meta_000030.json
+Step 00030 | CORE metric: -0.0478
+Evaluating: boolq (10-shot, type: multiple_choice)... accuracy: 0.4000 | centered: -0.5789 | time: 0.42s
+Evaluating: bigbench_language_identification (10-shot, type: multiple_choice)... accuracy: 0.2000 | centered: 0.1199 | time: 0.57s
+Step 00030 | CORE metric: -0.0523
+2026-11-03 19:02:18,617 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved model parameters to: /vol/a3/base_checkpoints/smoke-d12-mudd/model_000030.pt
+2026-11-03 19:02:18,619 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved metadata to: /vol/a3/base_checkpoints/smoke-d12-mudd/meta_000030.json
+2026-11-03 19:02:19,143 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved model parameters to: /vol/a3/base_checkpoints/smoke-d12-xsa/model_000030.pt
+2026-11-03 19:02:19,145 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved metadata to: /vol/a3/base_checkpoints/smoke-d12-xsa/meta_000030.json
+2026-11-03 19:02:19,156 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d12-baseline-s1/optim_000030_rank0.pt
+Peak memory usage: 28818.70MiB
+Total training time: 0.31m
+Minimum validation bpb: 1.761177
+wandb: 
+wandb: Run history:
+wandb:          core_metric ▁
+wandb:                 step ▁▁▅██
+wandb: total_training_flops ▁▁▅██
+wandb:  total_training_time ▁▁▂█
+wandb:             train/dt ▁
+wandb:           train/loss ▁
+wandb:            train/lrm ▁
+wandb:            train/mfu ▁
+wandb:    train/tok_per_sec ▁
+wandb:              val/bpb █▂▁
+wandb: 
+wandb: Run summary:
+wandb:          core_metric -0.04624
+wandb:                 step 30
+wandb: total_training_flops 11948985648414720
+wandb:  total_training_time 18.72923
+wandb:             train/dt 54.26665
+wandb:          train/epoch 1 pq: 0 rg: 1
+wandb:           train/loss 10.39809
+wandb:            train/lrm 0.025
+wandb:            train/mfu 0.74213
+wandb:    train/tok_per_sec 9661
+wandb:                   +1 ...
+wandb: 
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /vol/a3/wandb/wandb/offline-run-20261103_190020-ij3wnryd
+wandb: Find logs at: /vol/a3/wandb/wandb/offline-run-20261103_190020-ij3wnryd/logs
+2026-11-03 19:02:20,840 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d12-mudd/optim_000030_rank0.pt
+Peak memory usage: 29240.15MiB
+Total training time: 0.31m
+Minimum validation bpb: 1.758112
+wandb: 
+wandb: Run history:
+wandb:          core_metric ▁
+wandb:                 step ▁▁▅██
+wandb: total_training_flops ▁▁▅██
+wandb:  total_training_time ▁▁▂█
+wandb:             train/dt ▁
+wandb:           train/loss ▁
+wandb:            train/lrm ▁
+wandb:            train/mfu ▁
+wandb:    train/tok_per_sec ▁
+wandb:              val/bpb █▂▁
+wandb: 
+wandb: Run summary:
+wandb:          core_metric -0.0523
+wandb:                 step 30
+wandb: total_training_flops 11958335255347200
+wandb:  total_training_time 18.47591
+wandb:             train/dt 53.54959
+wandb:          train/epoch 1 pq: 0 rg: 1
+wandb:           train/loss 10.39757
+wandb:            train/lrm 0.025
+wandb:            train/mfu 0.75266
+wandb:    train/tok_per_sec 9790
+wandb:                   +1 ...
+wandb: 
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /vol/a3/wandb/wandb/offline-run-20261103_190022-pnz2a4y8
+wandb: Find logs at: /vol/a3/wandb/wandb/offline-run-20261103_190022-pnz2a4y8/logs
+2026-11-03 19:02:23,627 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Saved optimizer state to: /vol/a3/base_checkpoints/smoke-d12-xsa/optim_000030_rank0.pt
+Peak memory usage: 31141.09MiB
+Total training time: 0.32m
+Minimum validation bpb: 1.766685
+wandb: 
+wandb: Run history:
+wandb:          core_metric ▁
+wandb:                 step ▁▁▅██
+wandb: total_training_flops ▁▁▅██
+wandb:  total_training_time ▁▁▂█
+wandb:             train/dt ▁
+wandb:           train/loss ▁
+wandb:            train/lrm ▁
+wandb:            train/mfu ▁
+wandb:    train/tok_per_sec ▁
+wandb:              val/bpb █▂▁
+wandb: 
+wandb: Run summary:
+wandb:          core_metric -0.04776
+wandb:                 step 30
+wandb: total_training_flops 11948985648414720
+wandb:  total_training_time 19.24037
+wandb:             train/dt 55.97315
+wandb:          train/epoch 1 pq: 0 rg: 1
+wandb:           train/loss 10.39757
+wandb:            train/lrm 0.025
+wandb:            train/mfu 0.7195
+wandb:    train/tok_per_sec 9366
+wandb:                   +1 ...
+wandb: 
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /vol/a3/wandb/wandb/offline-run-20261103_190017-hy6rsfm7
+wandb: Find logs at: /vol/a3/wandb/wandb/offline-run-20261103_190017-hy6rsfm7/logs
+d12-xsa {"returncode": 0, "val_bpb": 1.766685, "core": -0.0478, "train_minutes": 0.32, "tok_per_sec": 517173.6, "mfu_pct": 39.727, "peak_mem_mib": 31141.09, "fa3": true, "container_s": 141.24120831489563, "error": null}
+d12-mudd {"returncode": 0, "val_bpb": 1.758112, "core": -0.0523, "train_minutes": 0.31, "tok_per_sec": 539267.1, "mfu_pct": 41.456, "peak_mem_mib": 29240.15, "fa3": true, "container_s": 134.32923913002014, "error": null}
+d12-baseline-s1 {"returncode": 0, "val_bpb": 1.761177, "core": -0.0462, "train_minutes": 0.31, "tok_per_sec": 529436.7, "mfu_pct": 40.66799999999999, "peak_mem_mib": 28818.7, "fa3": true, "container_s": 132.86289262771606, "error": null}
+Stopping app - local entrypoint completed.
+✓ App completed. View run at 
+https://modal.com/apps/tjsinghchawla/main/ap-QvwxokUGpa8guuRmiqzKEI

@@ -1,0 +1,55 @@
+[09:35] d12 status
+  d12-looped-u9        step 00056/02520 (2.22%) | bf16_mfu: 41.48 | eta: 39.5m | Validation bpb: 3.171536
+  d12-baseline-long    step 00060/04224 (1.42%) | bf16_mfu: 41.19 | eta: 67.5m | Validation bpb: 3.171536
+[09:41] d12 status
+  d12-looped-u9        step 00331/02520 (13.13%) | bf16_mfu: 41.42 | eta: 35.4m | Validation bpb: 1.105934
+  d12-baseline-long    step 00333/04224 (7.88%) | bf16_mfu: 41.54 | eta: 63.4m | Validation bpb: 1.095350
+[09:46] d12 status
+  d12-looped-u9        step 00607/02520 (24.09%) | bf16_mfu: 41.90 | eta: 30.8m | Validation bpb: 1.020126
+  d12-baseline-long    step 00609/04224 (14.42%) | bf16_mfu: 41.71 | eta: 58.8m | Validation bpb: 1.008362
+[09:51] d12 status
+  d12-looped-u9        step 00881/02520 (34.96%) | bf16_mfu: 41.24 | eta: 26.4m | Validation bpb: 0.991453
+  d12-baseline-long    step 00885/04224 (20.95%) | bf16_mfu: 41.31 | eta: 54.2m | Validation bpb: 0.974495
+[09:56] d12 status
+  d12-looped-u9        step 01158/02520 (45.95%) | bf16_mfu: 41.90 | eta: 21.9m | Validation bpb: 0.968824
+  d12-baseline-long    step 01157/04224 (27.39%) | bf16_mfu: 41.16 | eta: 49.9m | Validation bpb: 0.958523
+[10:01] d12 status
+  d12-looped-u9        step 01434/02520 (56.90%) | bf16_mfu: 41.79 | eta: 17.5m | Validation bpb: 0.946373
+  d12-baseline-long    step 01424/04224 (33.71%) | bf16_mfu: 41.08 | eta: 45.6m | Validation bpb: 0.947973
+[10:06] d12 status
+  d12-looped-u9        step 01708/02520 (67.78%) | bf16_mfu: 41.82 | eta: 13.1m | Validation bpb: 0.925665
+  d12-baseline-long    step 01697/04224 (40.18%) | bf16_mfu: 41.27 | eta: 41.1m | Validation bpb: 0.938141
+[10:11] d12 status
+  d12-looped-u9        step 01982/02520 (78.65%) | bf16_mfu: 41.96 | eta: 8.7m | Validation bpb: 0.904211
+  d12-baseline-long    step 01970/04224 (46.64%) | bf16_mfu: 41.74 | eta: 36.7m | Validation bpb: 0.923896
+[10:17] d12 status
+  d12-looped-u9        step 02249/02520 (89.25%) | bf16_mfu: 41.97 | eta: 4.4m | Validation bpb: 0.885126
+  d12-baseline-long    step 02243/04224 (53.10%) | bf16_mfu: 41.24 | eta: 32.2m | Validation bpb: 0.911054
+[10:22] d12 status
+  d12-looped-u9        step 02499/02520 (99.17%) | bf16_mfu: 41.49 | eta: 0.3m | Validation bpb: 0.868515
+  d12-baseline-long    step 02499/04224 (59.16%) | bf16_mfu: 41.47 | eta: 28.1m | Validation bpb: 0.899694
+[10:27] d12 status
+  d12-looped-u9        DONE rc=0 val_bpb=0.855898 CORE=0.1456 train=40.38m mfu=41.7%
+  d12-baseline-long    step 02749/04224 (65.08%) | bf16_mfu: 41.16 | eta: 24.0m | Validation bpb: 0.888941
+[10:32] d12 status
+  d12-looped-u9        DONE rc=0 val_bpb=0.855898 CORE=0.1456 train=40.38m mfu=41.7%
+  d12-baseline-long    step 03008/04224 (71.21%) | bf16_mfu: 41.24 | eta: 19.8m | Validation bpb: 0.867275
+[10:37] d12 status
+  d12-looped-u9        DONE rc=0 val_bpb=0.855898 CORE=0.1456 train=40.38m mfu=41.7%
+  d12-baseline-long    step 03276/04224 (77.56%) | bf16_mfu: 41.18 | eta: 15.4m | Validation bpb: 0.857499
+[10:42] d12 status
+  d12-looped-u9        DONE rc=0 val_bpb=0.856052 CORE=0.1526 train=40.21m mfu=41.9%
+  d12-baseline-long    step 03546/04224 (83.95%) | bf16_mfu: 41.20 | eta: 11.0m | Validation bpb: 0.848407
+[10:47] d12 status
+  d12-looped-u9        DONE rc=0 val_bpb=0.856052 CORE=0.1526 train=40.21m mfu=41.9%
+  d12-baseline-long    step 03821/04224 (90.46%) | bf16_mfu: 41.28 | eta: 6.6m | Validation bpb: 0.839915
+[10:52] d12 status
+  d12-looped-u9        DONE rc=0 val_bpb=0.856052 CORE=0.1526 train=40.21m mfu=41.9%
+  d12-baseline-long    step 04092/04224 (96.88%) | bf16_mfu: 41.20 | eta: 2.1m | Validation bpb: 0.832771
+[10:58] d12 status
+  d12-looped-u9        DONE rc=0 val_bpb=0.856052 CORE=0.1526 train=40.21m mfu=41.9%
+  d12-baseline-long    step 04223/04224 (99.98%) | bf16_mfu: 41.19 | eta: 0.0m | Validation bpb: 0.828014 | CORE metric: 0.1690
+[11:03] d12 status
+  d12-looped-u9        DONE rc=0 val_bpb=0.856052 CORE=0.1526 train=40.21m mfu=41.9%
+  d12-baseline-long    DONE rc=0 val_bpb=0.828014 CORE=0.169 train=68.49m mfu=41.3%
+ALL 2 RUNS FINISHED

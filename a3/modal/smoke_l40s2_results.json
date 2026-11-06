@@ -1,0 +1,43 @@
+{
+  "d12-looped-l2-embed-l40s": {
+    "tag": "smoke-d12-looped-l2-embed-l40s",
+    "returncode": 0,
+    "container_s": 319.50339436531067,
+    "cmd": [
+      "python",
+      "-m",
+      "scripts.base_train",
+      "--depth=12",
+      "--num-iterations=2520",
+      "--total-batch-size=524288",
+      "--device-batch-size=32",
+      "--core-metric-every=999999",
+      "--sample-every=-1",
+      "--save-every=-1",
+      "--experiment=looped",
+      "--n-loops=2",
+      "--n-prelude=1",
+      "--n-coda=1",
+      "--loop-embed",
+      "--device-batch-size=16",
+      "--run=smoke-d12-looped-l2-embed-l40s",
+      "--model-tag=smoke-d12-looped-l2-embed-l40s",
+      "--num-iterations=30",
+      "--eval-every=15",
+      "--eval-tokens=1048576",
+      "--core-metric-max-per-task=20"
+    ],
+    "gpu": "NVIDIA L40S",
+    "attempts": 1,
+    "resumed_from": null,
+    "val_bpb": 1.768037,
+    "min_val_bpb": 1.768037,
+    "core": -0.0372,
+    "train_minutes": 1.9,
+    "peak_mem_mib": 24554.16,
+    "flops_per_token": 1274025000.0,
+    "tok_per_sec": 86567.9,
+    "mfu_pct": 30.466999999999995,
+    "fa3": true
+  }
+}

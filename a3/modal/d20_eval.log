@@ -1,0 +1,69 @@
+✓ Initialized. View run at 
+https://modal.com/apps/tjsinghchawla/main/ap-m22EJzkcQZ09a9uLbrTXH0
+✓ Created objects.
+├── ✓ Uploaded 
+│   C:\Users\tjsin\vocalocate-gpu\.claude\worktrees\a3-d12-ablations\a3\modal\t
+│   rain_d12.py
+├── ✓ Uploaded 
+│   C:\Users\tjsin\vocalocate-gpu\.claude\worktrees\a3-d12-ablations\a3\modal\.
+│   .\nanochat
+├── ✓ Created Function prep.
+├── ✓ Created Function train.
+├── ✓ Created Function train_a100.
+├── ✓ Created Function train_rtx.
+├── ✓ Created Function train_b200.
+├── ✓ Created Function train_l40s.
+├── ✓ Created Function train_d20.
+├── ✓ Created Function prepare_d20.
+├── ✓ Created Function sdpa_check.
+├── ✓ Created Function d20_check.
+├── ✓ Created Function resume_check.
+├── ✓ Created Function eval_loops.
+├── ✓ Created Function loop_sweep.
+└── ✓ Created Function launch_all.
+Autodetected device type: cuda
+2026-11-06 13:39:34,248 - nanochat.common - [32m[1mINFO[0m - Distributed world size: 1
+2026-11-06 13:39:34,249 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Loading model from /vol/a3/base_checkpoints/d20-combined with step 9960
+2026-11-06 13:39:38,457 - nanochat.checkpoint_manager - [32m[1mINFO[0m - Building model with config: {'sequence_len': 2048, 'vocab_size': 32768, 'n_layer': 20, 'n_head': 10, 'n_kv_head': 10, 'n_embd': 1280, 'window_pattern': 'SSSL', 'n_loops': 2, 'n_prelude': 1, 'n_coda': 1, 'loop_embed': True, 'diff_v2': True}
+Evaluating with n_loops=2 (trained default: 2)
+Evaluating model: base_model (step 9960)
+Eval modes: bpb, core
+
+================================================================================
+BPB Evaluation
+================================================================================
+train bpb: 0.724635
+val bpb: 0.723605
+
+================================================================================
+CORE Evaluation
+================================================================================
+Evaluating: hellaswag_zeroshot (0-shot, type: multiple_choice)... accuracy: 0.5680 | centered: 0.4240 | time: 13.89s
+Evaluating: jeopardy (10-shot, type: language_modeling)... accuracy: 0.1060 | centered: 0.1060 | time: 13.96s
+Evaluating: bigbench_qa_wikidata (10-shot, type: language_modeling)... accuracy: 0.5000 | centered: 0.5000 | time: 13.57s
+Evaluating: arc_easy (10-shot, type: multiple_choice)... accuracy: 0.7160 | centered: 0.6213 | time: 13.92s
+Evaluating: arc_challenge (10-shot, type: multiple_choice)... accuracy: 0.3980 | centered: 0.1973 | time: 13.39s
+Evaluating: copa (0-shot, type: multiple_choice)... accuracy: 0.6500 | centered: 0.3000 | time: 2.64s
+Evaluating: commonsense_qa (10-shot, type: multiple_choice)... accuracy: 0.3080 | centered: 0.1350 | time: 13.24s
+Evaluating: piqa (10-shot, type: multiple_choice)... accuracy: 0.7520 | centered: 0.5040 | time: 13.66s
+Evaluating: openbook_qa (0-shot, type: multiple_choice)... accuracy: 0.4040 | centered: 0.2053 | time: 12.64s
+Evaluating: lambada_openai (0-shot, type: language_modeling)... accuracy: 0.4740 | centered: 0.4740 | time: 12.65s
+Evaluating: hellaswag (10-shot, type: multiple_choice)... accuracy: 0.5680 | centered: 0.4240 | time: 19.17s
+Evaluating: winograd (0-shot, type: schema)... accuracy: 0.6740 | centered: 0.3480 | time: 7.53s
+Evaluating: winogrande (0-shot, type: schema)... accuracy: 0.5440 | centered: 0.0880 | time: 12.26s
+Evaluating: bigbench_dyck_languages (10-shot, type: language_modeling)... accuracy: 0.1140 | centered: 0.1140 | time: 13.84s
+Evaluating: agi_eval_lsat_ar (3-shot, type: multiple_choice)... accuracy: 0.2826 | centered: 0.1033 | time: 8.52s
+Evaluating: bigbench_cs_algorithms (10-shot, type: language_modeling)... accuracy: 0.4300 | centered: 0.4300 | time: 12.58s
+Evaluating: bigbench_operators (10-shot, type: language_modeling)... accuracy: 0.1905 | centered: 0.1905 | time: 5.29s
+Evaluating: bigbench_repeat_copy_logic (10-shot, type: language_modeling)... accuracy: 0.0000 | centered: 0.0000 | time: 0.78s
+Evaluating: squad (10-shot, type: language_modeling)... accuracy: 0.4780 | centered: 0.4780 | time: 15.21s
+Evaluating: coqa (0-shot, type: language_modeling)... accuracy: 0.3240 | centered: 0.3240 | time: 12.74s
+Evaluating: boolq (10-shot, type: multiple_choice)... accuracy: 0.5160 | centered: -0.2737 | time: 18.38s
+Evaluating: bigbench_language_identification (10-shot, type: multiple_choice)... accuracy: 0.2400 | centered: 0.1639 | time: 30.84s
+
+Results written to: /vol/a3/base_eval/base_model_009960.csv
+CORE metric: 0.2662
+
+Stopping app - local entrypoint completed.
+✓ App completed. View run at 
+https://modal.com/apps/tjsinghchawla/main/ap-m22EJzkcQZ09a9uLbrTXH0

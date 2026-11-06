@@ -1,0 +1,208 @@
+_wandb:
+    value:
+        cli_version: 0.31.0
+        e:
+            01a1b116-eba8-748e-b6b9-5fd43dacf6d6:
+                args:
+                    - --depth=12
+                    - --num-iterations=2520
+                    - --total-batch-size=524288
+                    - --device-batch-size=32
+                    - --core-metric-every=999999
+                    - --sample-every=-1
+                    - --save-every=-1
+                    - --experiment=combined
+                    - --diff-v2
+                    - --n-loops=2
+                    - --n-prelude=1
+                    - --n-coda=1
+                    - --loop-embed
+                    - --depth=20
+                    - --num-iterations=9960
+                    - --device-batch-size=8
+                    - --max-seq-len=2048
+                    - --eval-every=500
+                    - --run=d20-combined
+                    - --model-tag=d20-combined
+                    - --save-every=500
+                cpu:
+                    model: unknown
+                cpu_count: 115
+                cpu_count_logical: 115
+                cudaVersion: "13.3"
+                disk:
+                    /:
+                        total: "9223372036854771712"
+                        used: "816566272"
+                executable: /usr/local/bin/python
+                gpu: NVIDIA H100 80GB HBM3
+                gpu_count: 8
+                gpu_nvidia:
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: "00000000:18:00.0"
+                      uuid: GPU-5e7c728a-0f02-c944-d78f-49ccbff67d0f
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: 00000000:2A:00.0
+                      uuid: GPU-9bf46f42-a296-0f72-efe8-9eb2a54be560
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: 00000000:3A:00.0
+                      uuid: GPU-33de1542-cf3d-aa8b-8b6c-65cd4eef3155
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: 00000000:5D:00.0
+                      uuid: GPU-6a50a788-0d19-3a4e-c15b-f249270d7176
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: 00000000:9A:00.0
+                      uuid: GPU-51e2b31e-2faf-494b-c30f-6d62af3190bf
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: 00000000:AB:00.0
+                      uuid: GPU-828e7fd7-2745-1ce1-a023-1b29769b1cd9
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: 00000000:BA:00.0
+                      uuid: GPU-87196b6d-8e4a-9689-2a78-9de307fb68ae
+                    - architecture: Hopper
+                      cudaCores: 16896
+                      memoryTotal: "85520809984"
+                      name: NVIDIA H100 80GB HBM3
+                      pciBusId: 00000000:DB:00.0
+                      uuid: GPU-4dff85e5-73e2-d042-40e2-c66e0d7e36ac
+                host: modal
+                memory:
+                    total: "1099511627776"
+                os: Linux-4.19.0-gvisor-x86_64-with-glibc2.36
+                program: -m scripts.base_train
+                python: CPython 3.10.17
+                root: /vol/a3/wandb
+                startedAt: "2026-11-06T10:40:53.767053Z"
+                writerId: 01a1b072-7745-7d3f-b200-e7219288c45b
+        m: []
+        python_version: 3.10.17
+        t:
+            "1":
+                - 1
+                - 49
+            "2":
+                - 1
+                - 49
+            "3":
+                - 2
+                - 4
+                - 13
+                - 16
+                - 76
+            "4": 3.10.17
+            "5": 0.31.0
+            "12": 0.31.0
+            "13": linux-x86_64
+aspect_ratio:
+    value: 64
+core_metric_every:
+    value: 999999
+core_metric_max_per_task:
+    value: 500
+depth:
+    value: 20
+depth_attention:
+    value: false
+depth_attention_stride:
+    value: null
+device_batch_size:
+    value: 8
+device_type:
+    value: ""
+diff_v2:
+    value: true
+embedding_lr:
+    value: 0.3
+eval_every:
+    value: 500
+eval_tokens:
+    value: 41943040
+experiment:
+    value: combined
+final_lr_frac:
+    value: 0.05
+fp8:
+    value: false
+fp8_recipe:
+    value: tensorwise
+gpu_hourly_cost:
+    value: null
+head_dim:
+    value: 128
+loop_embed:
+    value: true
+matrix_lr:
+    value: 0.02
+max_seq_len:
+    value: 2048
+mgvr:
+    value: false
+mlp_activation:
+    value: relu2
+model_tag:
+    value: d20-combined
+mudd:
+    value: false
+n_coda:
+    value: 1
+n_loops:
+    value: 2
+n_loops_max:
+    value: 0
+n_loops_min:
+    value: 0
+n_prelude:
+    value: 1
+num_iterations:
+    value: 9960
+resume_from_step:
+    value: -1
+run:
+    value: d20-combined
+sample_every:
+    value: -1
+save_every:
+    value: 500
+scalar_lr:
+    value: 0.5
+ssa:
+    value: false
+target_flops:
+    value: -1
+target_param_data_ratio:
+    value: 12
+total_batch_size:
+    value: 524288
+unembedding_lr:
+    value: 0.008
+warmdown_ratio:
+    value: 0.65
+warmup_steps:
+    value: 40
+weight_decay:
+    value: 0.28
+window_pattern:
+    value: SSSL
+xsa:
+    value: false
