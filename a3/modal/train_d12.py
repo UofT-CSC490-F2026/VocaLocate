@@ -15,7 +15,6 @@ Full runs (detached, results land in the volume under /a3/results):
     modal run --detach train_d12.py
 One baseline model distributed across four H100s, at the same global token budget:
     modal run --detach train_d12.py --only=d12-baseline --gpus=4
-Combined Diff V2 + XSA, smoke test then full run:
 The --gpus option accepts 1 (default), 2, 4 or 8 H100s per selected model.
 """
 import json
