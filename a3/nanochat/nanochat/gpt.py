@@ -184,13 +184,6 @@ class CausalSelfAttention(nn.Module):
             lam = torch.sigmoid(self.lambda_proj(x)).to(y).unsqueeze(-1)
             y = y[:, :, 0::2] - lam * y[:, :, 1::2]
 
-        if self.xsa_alpha is not None:
-            # XSA acts on the final output heads, after any differential pairs are reduced.
-            # Each pair shares K/V, so its output keeps the same token-local value direction.
-            vn = F.normalize(v, dim=-1, eps=1e-4).repeat_interleave(self.n_head // self.n_kv_head, dim=2)
-            alpha = torch.tanh(self.xsa_alpha).to(y.dtype).view(1, 1, self.n_head, 1)
-            y = y - alpha * (y * vn).sum(-1, keepdim=True) * vn
-
         # Re-assemble the heads and project back to residual stream
         y = y.contiguous().view(B, T, -1)
         y = self.c_proj(y)
@@ -233,11 +226,6 @@ class GPT(nn.Module):
         self.config = config
         # Compute per-layer window sizes for sliding window attention
         # window_size is (left, right) tuple: (-1, 0) for full context, (N, 0) for sliding window
-        variable_loops = config.loop_range[0] < config.loop_range[1]
-        assert not ((variable_loops or config.loop_embed) and (config.depth_attention or config.mgvr)), \
-            "loop_embed / random loop counts are not supported together with depth_attention or mgvr"
-        assert not (config.mudd and (config.n_loops > 1 or config.depth_attention or config.mgvr or config.n_layer < 4)), \
-            "mudd needs a plain (non-looped) model of depth >= 4 without depth_attention or mgvr"
         self.slot_windows = self._compute_window_sizes(config) # one per per-step scalar slot
         self._plans = {config.n_loops: self._execution_plan(config.n_loops)}
         self.layer_plan = config.layer_plan() # block index executed at each step (length = effective depth)

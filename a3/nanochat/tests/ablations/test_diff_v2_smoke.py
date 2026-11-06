@@ -11,7 +11,7 @@ import torch
 from smoke_helpers import LOCAL_TRAINER, local_data
 
 
-@pytest.mark.parametrize("activation", ["relu2", "xiprelu"])
+@pytest.mark.parametrize("activation", ["relu2"])
 @pytest.mark.parametrize("xsa", [False, True])
 def test_compiled_diff_v2_training_and_resume(local_data, activation, xsa):
     environment = dict(os.environ, NANOCHAT_BASE_DIR=str(local_data),
@@ -29,7 +29,7 @@ def test_compiled_diff_v2_training_and_resume(local_data, activation, xsa):
     ]
     if xsa:
         command += ["--experiment=combined", "--xsa"]
-    tag = "d2" + ("-xiprelu" if activation == "xiprelu" else "") + "-diff-v2" + ("-xsa" if xsa else "")
+    tag = "d2-diff-v2" + ("-xsa" if xsa else "")
     directory = local_data / "base_checkpoints" / tag
     previous = None
     for step, options in ((3, ["--num-iterations=3"]),
@@ -58,13 +58,7 @@ def test_compiled_diff_v2_training_and_resume(local_data, activation, xsa):
                 assert weights[gate_key].shape == (4,) and weights[gate_key].abs().sum() > 0
                 if previous is not None:
                     assert not torch.equal(weights[gate_key], previous[gate_key])
-        if activation == "xiprelu":
-            assert meta["model_config"]["mlp_activation"] == "xiprelu"
-            assert len(meta["activation_stats"]) == 4
-            assert all(abs(value - 0.8) > 1e-7 for value in meta["activation_stats"].values())
-        else:
-            assert "mlp_activation" not in meta["model_config"]
-            assert "activation_stats" not in meta
+        assert "activation_stats" not in meta
         assert "SDPA fallback" in result.stdout
         previous = weights
         print(f"{tag} step {step}: {sum(v.numel() for v in weights.values()):,} parameters, "

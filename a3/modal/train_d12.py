@@ -16,8 +16,6 @@ Full runs (detached, results land in the volume under /a3/results):
 One baseline model distributed across four H100s, at the same global token budget:
     modal run --detach train_d12.py --only=d12-baseline --gpus=4
 Combined Diff V2 + XSA, smoke test then full run:
-    modal run train_d12.py --only=d12-diff-v2-xsa --gpus=4 --smoke --out=smoke_d12_diff_v2_xsa_results.json
-    modal run --detach train_d12.py --only=d12-diff-v2-xsa --gpus=4 --out=d12_diff_v2_xsa_results.json
 The --gpus option accepts 1 (default), 2, 4 or 8 H100s per selected model.
 """
 import json
@@ -58,13 +56,6 @@ CONFIGS = {
     # looped-l2 plus a learned vector per core pass (2 x 768 extra params), so shared blocks know which pass they're in
     "d12-looped-l2-embed": ["--experiment=looped", "--n-loops=2", "--n-prelude=1", "--n-coda=1", "--loop-embed"],
     "d12-diff-v2": ["--experiment=diff-v2"],
-    "d12-diff-v2-xsa": ["--experiment=combined", "--diff-v2", "--xsa"],
-    "d12-depth-attention": ["--experiment=depth-attention"],
-    "d12-mgvr": ["--experiment=mgvr"],
-    # same-compute candidates from the 2026 modded-nanogpt records: learnable XSA (#82) and MUDD on the last two
-    # layers (#81). Both start as the baseline (zero init); MUDD adds ~0.1M weights and ~0.1% FLOPs/token.
-    "d12-xsa": ["--experiment=xsa"],
-    "d12-mudd": ["--experiment=mudd"],
     # baseline at other init seeds (NANOCHAT_SEED; data order is unchanged) to measure seed-to-seed noise
     "d12-baseline-s1": ["--experiment=baseline"],
     "d12-baseline-s2": ["--experiment=baseline"],

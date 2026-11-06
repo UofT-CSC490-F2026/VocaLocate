@@ -46,10 +46,7 @@ def test_baseline_rejects_stray_architecture_options(flag):
 def test_combined_needs_both_changes():
     args = options(experiment="combined", diff_v2=True, n_loops=2, n_prelude=1, n_coda=1, loop_embed=True)
     select_experiment(args)
-    assert args.mgvr and args.depth_attention
-    args = options(experiment="combined", diff_v2=True, xsa=True)
-    select_experiment(args)
-    assert args.diff_v2 and args.xsa and not args.mgvr and not args.depth_attention
+    assert args.diff_v2 and args.n_loops == 2
     with pytest.raises(ValueError, match="at least two"):
         select_experiment(options(experiment="combined", diff_v2=True))
     with pytest.raises(ValueError, match="n-loops >= 2"):

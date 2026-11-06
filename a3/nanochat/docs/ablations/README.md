@@ -54,7 +54,7 @@ and at least two explicit ablations. Raw flags are `--n-loops=2`,
 `--mlp-activation=xiprelu`, `--diff-v2`, `--depth-attention`, `--mgvr`, and `--xsa`:
 
 ```sh
-train --experiment=combined --mgvr --depth-attention --model-tag=handover-combined
+train --experiment=combined --diff-v2 --n-loops=2 --n-prelude=1 --n-coda=1 --loop-embed --model-tag=handover-combined
 train --experiment=combined --diff-v2 --xsa --model-tag=handover-diff-v2-xsa
 train --experiment=combined --diff-v2 --n-loops=2 --n-prelude=1 --n-coda=1 \
   --model-tag=handover-looped-l2-diff-v2
