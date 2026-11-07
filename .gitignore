@@ -21,6 +21,10 @@ demo/demo_out/
 !*.tfvars.example
 crash.log
 
+# Local Part 2 baseline files supplied for inference.
+/model_002520.pt
+/meta_002520.json
+
 # Python build output
 build/
 dist/

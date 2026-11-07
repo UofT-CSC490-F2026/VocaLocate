@@ -4,7 +4,9 @@ from pathlib import Path
 import torch
 
 from nanochat.tokenizer import RustBPETokenizer
-from scripts.part4_eval import CompetingPasskeyTask, PasskeyCase, PasskeyTask, score
+from scripts.part4_eval import (
+    CompetingPasskeyTask, PasskeyCase, PasskeyTask, prompt_check_cases, score,
+)
 
 
 def test_cases_keep_the_same_code_at_the_requested_token_distances():
@@ -44,3 +46,22 @@ def test_score_can_record_predictions_in_case_order():
     assert score(model, cases, "cpu", 2, predictions=predictions) == 2
     assert predictions == [2, 0, 3]
     assert score(model, cases, "cpu", 2) == 2
+
+
+def test_prompt_checks_change_only_the_code_and_keep_original_candidates():
+    tokenizer = RustBPETokenizer.from_directory(Path(__file__).resolve().parents[2] / "tokenizer")
+    case = PasskeyTask(tokenizer).case(length=2048, distance=768, seed=42)
+    unknown = tokenizer.encode(" unknown")
+    assert len(unknown) == 1
+    removed, swapped = prompt_check_cases([case], unknown[0])
+    position = 2048 - 1 - 768
+    for edited in (removed[0], swapped[0]):
+        assert edited.candidates == case.candidates
+        assert len(edited.tokens) == len(case.tokens)
+        assert [i for i, (a, b) in enumerate(zip(case.tokens, edited.tokens)) if a != b] == [position]
+    assert removed[0].tokens[position] == unknown[0]
+    assert removed[0].correct == case.correct
+    assert unknown[0] not in case.candidates
+    assert swapped[0].correct == (case.correct + 1) % 4
+    assert swapped[0].tokens[position] == case.candidates[swapped[0].correct]
+    assert case.tokens[position] == case.candidates[case.correct]
