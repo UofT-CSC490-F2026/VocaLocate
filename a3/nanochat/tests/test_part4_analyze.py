@@ -10,7 +10,7 @@ import pytest
 from scripts.part4_analyze import paired_summary, read_training_log
 
 
-ROOT = Path(__file__).resolve().parents[2] / "evaluation"
+ROOT = Path(__file__).resolve().parents[2] / "part4"
 
 
 def saved_trials():

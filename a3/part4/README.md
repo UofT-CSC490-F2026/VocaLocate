@@ -30,8 +30,8 @@ Use the dependencies declared in `a3/nanochat/pyproject.toml`. Download
 from the volume into `a3/nanochat/dev-ignore/part4/`. From `a3/nanochat`, run:
 
 ```sh
-python -m scripts.part4_eval --checkpoint-dir dev-ignore/part4 --steps 1260 2520 --trials 128 --seed 42 --output ../evaluation/results/passkey-results.json
-python -m scripts.part4_eval --checkpoint-dir dev-ignore/part4 --steps 1260 2520 --trials 128 --seed 20261104 --competing-records --output ../evaluation/results/passkey-competing-paired.json
+python -m scripts.part4_eval --checkpoint-dir dev-ignore/part4 --steps 1260 2520 --trials 128 --seed 42 --output ../part4/results/passkey-results.json
+python -m scripts.part4_eval --checkpoint-dir dev-ignore/part4 --steps 1260 2520 --trials 128 --seed 20261104 --competing-records --output ../part4/results/passkey-competing-paired.json
 ```
 
 Both checkpoints receive identical prompts and candidate words within each task.
@@ -44,7 +44,7 @@ limit of 2048 tokens.
 To repeat the two input-edit checks using checkpoint B, from `a3/nanochat`:
 
 ```sh
-python -m scripts.part4_eval --checkpoint-dir dev-ignore/part4 --steps 2520 --trials 128 --seed 42 --prompt-checks --output ../evaluation/results/passkey-leakage-audit.json
+python -m scripts.part4_eval --checkpoint-dir dev-ignore/part4 --steps 2520 --trials 128 --seed 42 --prompt-checks --output ../part4/results/passkey-leakage-audit.json
 ```
 
 This repeats the original single-record prompts, then scores the versions with
@@ -60,8 +60,8 @@ the supplied checkpoint files are not included in the repository. From
 `a3/nanochat`, evaluate the baseline on the same prompts as A and B:
 
 ```sh
-python -m scripts.part4_eval --checkpoint-dir dev-ignore/part2-baseline --steps 2520 --trials 128 --batch-size 2 --seed 42 --output ../evaluation/results/part2-baseline-single-record.json
-python -m scripts.part4_eval --checkpoint-dir dev-ignore/part2-baseline --steps 2520 --trials 128 --batch-size 2 --seed 20261104 --competing-records --output ../evaluation/results/part2-baseline-four-record-paired.json
+python -m scripts.part4_eval --checkpoint-dir dev-ignore/part2-baseline --steps 2520 --trials 128 --batch-size 2 --seed 42 --output ../part4/results/part2-baseline-single-record.json
+python -m scripts.part4_eval --checkpoint-dir dev-ignore/part2-baseline --steps 2520 --trials 128 --batch-size 2 --seed 20261104 --competing-records --output ../part4/results/part2-baseline-four-record-paired.json
 ```
 
 This baseline trained at 2048 tokens throughout, with the same 2520 optimizer
@@ -71,10 +71,7 @@ accuracy totals; the four-record output also contains each prediction.
 accuracy in all nine conditions, together with B-minus-baseline paired
 intervals. The JSON records the interval formula and source filenames.
 `results/part2-baseline-eval-manifest.json` records the checkpoint and tokenizer
-hashes, original evaluation commands, runtime, and output hashes. Its
-`reproduction_commands` use the current `a3/evaluation` output directory;
-`commands` preserves the original paths from before the directory rename.
-A runtime cross-check
+hashes, evaluation commands, runtime, and output hashes. A runtime cross-check
 reproduced all 256 archived B predictions at input length 2048 and code
 distances 128 and 1536. These are inference results; no model was trained.
 
@@ -111,7 +108,7 @@ The baseline flag can also be combined with `--summary-only`.
 To write a separate copy without replacing the archived outputs:
 
 ```sh
-python -m scripts.part4_analyze --include-baseline --output-dir dev-ignore/evaluation-rebuilt
+python -m scripts.part4_analyze --include-baseline --output-dir dev-ignore/part4-rebuilt
 ```
 
 ## Saved outputs
