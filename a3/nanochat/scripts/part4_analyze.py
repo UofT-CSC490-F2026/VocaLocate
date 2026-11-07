@@ -117,7 +117,38 @@ def read_training_log(path):
     return dict(train=train, validation=validation)
 
 
-def plot_figures(payload, summary, log_dir, output_dir):
+def plot_paired_difference(rows, output_path, label="B - A", *,
+                           xlim=(-16, 44), figsize=(8.2, 4.7), right=0.94):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 12})
+    blue = "#285e80"
+    fig, ax = plt.subplots(figsize=figsize)
+    for y, row in enumerate(rows):
+        gain = row["difference_pp"]
+        lo, hi = row["ci95_pp"]
+        ax.errorbar(gain, y, xerr=[[gain - lo], [hi - gain]], fmt="o", color=blue, capsize=4)
+        value = Decimal(str(gain)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+        ax.text(1.02, y, f"{value:+.1f}", transform=ax.get_yaxis_transform(), va="center")
+    ax.text(1.02, 1.025, label, transform=ax.transAxes, fontsize=11)
+    ax.set_yticks(range(len(rows)),
+                  [f"{r['input_tokens']} / {r['distance_tokens']}" for r in rows])
+    ax.invert_yaxis()
+    ax.set_xlim(*xlim)
+    ax.axvline(0, color="0.4", linestyle="--", linewidth=1.2)
+    ax.set_xlabel(f"Accuracy difference {label} (percentage points)")
+    ax.set_ylabel("Input length / code distance (tokens)")
+    ax.grid(axis="x", alpha=0.2)
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+    fig.tight_layout(rect=(0, 0, right, 1))
+    fig.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close(fig)
+
+
+def plot_figures(payload, summary, log_dir, output_dir, baseline_comparison=None):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -125,27 +156,14 @@ def plot_figures(payload, summary, log_dir, output_dir):
     output_dir.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 12})
     blue, orange = "#285e80", "#ac4b15"
-    fig, ax = plt.subplots(figsize=(8.2, 4.7))
-    for y, row in enumerate(summary["results"]):
-        gain = row["difference_pp"]
-        lo, hi = row["ci95_pp"]
-        ax.errorbar(gain, y, xerr=[[gain - lo], [hi - gain]], fmt="o", color=blue, capsize=4)
-        label = Decimal(str(gain)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
-        ax.text(1.02, y, f"{label:+.1f}", transform=ax.get_yaxis_transform(), va="center")
-    ax.text(1.02, 1.025, "B - A", transform=ax.transAxes, fontsize=11)
-    ax.set_yticks(range(len(summary["results"])),
-                  [f"{r['input_tokens']} / {r['distance_tokens']}" for r in summary["results"]])
-    ax.invert_yaxis()
-    ax.set_xlim(-16, 44)
-    ax.axvline(0, color="0.4", linestyle="--", linewidth=1.2)
-    ax.set_xlabel("Accuracy difference B - A (percentage points)")
-    ax.set_ylabel("Input length / code distance (tokens)")
-    ax.grid(axis="x", alpha=0.2)
-    for spine in ("top", "right"):
-        ax.spines[spine].set_visible(False)
-    fig.tight_layout(rect=(0, 0, 0.94, 1))
-    fig.savefig(output_dir / "paired-accuracy-difference.png", dpi=300, bbox_inches="tight")
-    plt.close(fig)
+    plot_paired_difference(summary["results"], output_dir / "paired-accuracy-difference.png")
+    if baseline_comparison is not None:
+        rows = [dict(input_tokens=r["input_tokens"], distance_tokens=r["distance_tokens"],
+                     difference_pp=r["b_minus_baseline_pp"],
+                     ci95_pp=[r["ci95_low_pp"], r["ci95_high_pp"]])
+                for r in baseline_comparison["results"]]
+        plot_paired_difference(rows, output_dir / "baseline-accuracy-difference.png",
+                               "B - baseline", xlim=(-44, 9), figsize=(8.2, 4.9), right=0.91)
 
     fig, ax = plt.subplots(figsize=(8.2, 3.0))
     for step, label, color, marker in [(1260, "Checkpoint A", blue, "o"), (2520, "Checkpoint B", orange, "s")]:
@@ -195,6 +213,7 @@ def main():
     destination = args.output_dir / "results/passkey-paired-summary.json"
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    comparison = None
     if args.include_baseline:
         read = lambda name: json.loads((args.results.parent / name).read_text(encoding="utf-8"))
         comparison = baseline_summary(read("passkey-results.json"), payload,
@@ -207,7 +226,7 @@ def main():
             writer.writeheader()
             writer.writerows(comparison["results"])
     if not args.summary_only:
-        plot_figures(payload, summary, ROOT / "logs", args.output_dir / "figures")
+        plot_figures(payload, summary, ROOT / "logs", args.output_dir / "figures", comparison)
     print(f"Recalculated {len(summary['results'])} paired intervals: {destination}")
 
 

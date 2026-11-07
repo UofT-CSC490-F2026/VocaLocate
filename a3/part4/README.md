@@ -78,8 +78,8 @@ distances 128 and 1536. These are inference results; no model was trained.
 ## Rebuild statistics and figures
 
 From `a3/nanochat`, the saved per-trial predictions and training logs are enough
-to recalculate all nine paired confidence intervals and regenerate the report
-figures. Checkpoint weights and a GPU are not needed for this command:
+to recalculate all nine A/B paired confidence intervals and regenerate the
+three A/B report figures. Checkpoint weights and a GPU are not needed:
 
 ```sh
 python -m scripts.part4_analyze
@@ -94,10 +94,21 @@ their approximate 95% paired intervals, and a zero-difference reference line.
 Matplotlib, listed in the nanochat development dependencies, is required for
 plots. Use `--summary-only` to recalculate just the statistics without it.
 
+To also rebuild the baseline comparison JSON and CSV and Figure 4.4
+(`figures/baseline-accuracy-difference.png`), use:
+
+```sh
+python -m scripts.part4_analyze --include-baseline
+```
+
+The added figure shows B minus the Part 2 baseline in all nine four-record
+conditions, with paired intervals calculated from their matched predictions.
+The baseline flag can also be combined with `--summary-only`.
+
 To write a separate copy without replacing the archived outputs:
 
 ```sh
-python -m scripts.part4_analyze --output-dir dev-ignore/part4-rebuilt
+python -m scripts.part4_analyze --include-baseline --output-dir dev-ignore/part4-rebuilt
 ```
 
 ## Saved outputs
@@ -112,8 +123,8 @@ python -m scripts.part4_analyze --output-dir dev-ignore/part4-rebuilt
   code with `unknown` or a different candidate. `no_answer_correct` counts
   selection of the removed original code, not selection of `unknown`.
 - `logs/`: the original training logs for the two stages.
-- `figures/`: the training/validation curves and four-record accuracy figure
-  used in the report.
+- `figures/`: the training/validation curves, four-record accuracy, and paired
+  A/B and B/baseline accuracy differences used in the report.
 
 For each condition, the confidence interval uses paired correctness differences
 `d_i = correct_B_i - correct_A_i`, with values -1, 0, or 1. The estimated gain is
