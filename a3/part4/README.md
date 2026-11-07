@@ -52,6 +52,29 @@ the code replaced by `unknown` or the next candidate. The candidate list stays
 fixed. Removing the code keeps the original expected answer; substituting a
 candidate makes that replacement the expected answer. No model is trained.
 
+## Part 2 baseline reference
+
+Place Tanay's `d12-baseline` files `model_002520.pt` and `meta_002520.json` in
+`a3/nanochat/dev-ignore/part2-baseline/`. This directory is excluded from Git;
+the supplied checkpoint files are not included in the repository. From
+`a3/nanochat`, evaluate the baseline on the same prompts as A and B:
+
+```sh
+python -m scripts.part4_eval --checkpoint-dir dev-ignore/part2-baseline --steps 2520 --trials 128 --batch-size 2 --seed 42 --output ../part4/results/part2-baseline-single-record.json
+python -m scripts.part4_eval --checkpoint-dir dev-ignore/part2-baseline --steps 2520 --trials 128 --batch-size 2 --seed 20261104 --competing-records --output ../part4/results/part2-baseline-four-record-paired.json
+```
+
+This baseline trained at 2048 tokens throughout, with the same 2520 optimizer
+steps and 1,321,205,760 training tokens as B. The single-record output contains
+accuracy totals; the four-record output also contains each prediction.
+`results/part2-baseline-comparison.json` and `.csv` collect A, B, and baseline
+accuracy in all nine conditions, together with B-minus-baseline paired
+intervals. The JSON records the interval formula and source filenames.
+`results/part2-baseline-eval-manifest.json` records the checkpoint and tokenizer
+hashes, evaluation commands, runtime, and output hashes. A runtime cross-check
+reproduced all 256 archived B predictions at input length 2048 and code
+distances 128 and 1536. These are inference results; no model was trained.
+
 ## Rebuild statistics and figures
 
 From `a3/nanochat`, the saved per-trial predictions and training logs are enough

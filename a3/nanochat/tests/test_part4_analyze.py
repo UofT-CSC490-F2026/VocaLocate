@@ -2,6 +2,8 @@
 from copy import deepcopy
 import json
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -56,3 +58,48 @@ def test_training_curves_come_from_the_original_logs():
     assert long["validation"][-1] == (2520, 0.845508)
     assert short["train"][-1] == (1259, 3.172498)
     assert long["train"][-1] == (2519, 2.769035)
+
+
+def baseline_inputs():
+    names = ("passkey-results.json", "passkey-competing-paired.json",
+             "part2-baseline-single-record.json", "part2-baseline-four-record-paired.json")
+    return [json.loads((ROOT / "results" / name).read_text(encoding="utf-8")) for name in names]
+
+
+def test_baseline_comparison_reproduces_all_archived_values():
+    from scripts.part4_analyze import baseline_summary
+
+    actual = baseline_summary(*baseline_inputs())
+    expected = json.loads((ROOT / "results/part2-baseline-comparison.json").read_text(encoding="utf-8"))
+    assert actual == expected
+    assert len(actual["results"]) == 9
+    assert all(r["four_baseline_correct"] > r["four_b_correct"] for r in actual["results"])
+    assert sum(r["ci95_high_pp"] < 0 for r in actual["results"]) == 5
+    assert actual["results"][6]["b_minus_baseline_pp"] == -28.125
+
+
+@pytest.mark.parametrize("change", ["seed", "missing_condition", "total"])
+def test_baseline_comparison_rejects_inconsistent_results(change):
+    from scripts.part4_analyze import baseline_summary
+
+    inputs = baseline_inputs()
+    baseline = inputs[-1]["results"]
+    if change == "seed":
+        baseline[0]["case_results"][0]["seed"] += 1
+    elif change == "missing_condition":
+        baseline.pop()
+    else:
+        baseline[0]["correct"] += 1
+    with pytest.raises(ValueError):
+        baseline_summary(*inputs)
+
+
+def test_baseline_summary_cli_rebuilds_json_and_csv(tmp_path):
+    result = subprocess.run(
+        [sys.executable, "-m", "scripts.part4_analyze", "--include-baseline",
+         "--summary-only", "--output-dir", str(tmp_path)],
+        cwd=ROOT.parent / "nanochat", capture_output=True, text=True, timeout=30,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    for name in ("part2-baseline-comparison.json", "part2-baseline-comparison.csv"):
+        assert (tmp_path / "results" / name).read_bytes() == (ROOT / "results" / name).read_bytes()
