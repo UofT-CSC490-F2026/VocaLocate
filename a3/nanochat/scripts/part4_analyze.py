@@ -9,7 +9,7 @@ import re
 import statistics
 
 
-ROOT = Path(__file__).resolve().parents[2] / "part4"
+ROOT = Path(__file__).resolve().parents[2] / "evaluation"
 METHOD = ("Miller (2024), Section 4.2. Condition-wise paired mean difference B-A and normal "
           "95% confidence interval: mean +/- 1.96 times the sample standard deviation "
           "of paired trial differences divided by sqrt(n).")

@@ -25,6 +25,10 @@
     "python -m scripts.part4_eval --checkpoint-dir dev-ignore/part2-baseline --steps 2520 --trials 128 --batch-size 2 --seed 42 --output ../part4/results/part2-baseline-single-record.json",
     "python -m scripts.part4_eval --checkpoint-dir dev-ignore/part2-baseline --steps 2520 --trials 128 --batch-size 2 --seed 20261104 --competing-records --output ../part4/results/part2-baseline-four-record-paired.json"
   ],
+  "reproduction_commands": [
+    "python -m scripts.part4_eval --checkpoint-dir dev-ignore/part2-baseline --steps 2520 --trials 128 --batch-size 2 --seed 42 --output ../evaluation/results/part2-baseline-single-record.json",
+    "python -m scripts.part4_eval --checkpoint-dir dev-ignore/part2-baseline --steps 2520 --trials 128 --batch-size 2 --seed 20261104 --competing-records --output ../evaluation/results/part2-baseline-four-record-paired.json"
+  ],
   "batch_size": 2,
   "evaluation_sequence_len": 2048,
   "runtime_crosscheck": {
