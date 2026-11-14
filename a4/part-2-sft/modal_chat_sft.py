@@ -14,8 +14,10 @@ passing its CLI arguments through --sft-args.
 import json
 import os
 from pathlib import Path
+import re
 import shlex
 import subprocess
+import tempfile
 import time
 
 import modal
@@ -173,14 +175,121 @@ def train(
     return result
 
 
+CHAT_CATEGORICAL = ("ARC-Easy", "ARC-Challenge", "MMLU")
+CHAT_GENERATIVE = ("GSM8K", "HumanEval")
+
+
+@app.function(cpu=8, timeout=3 * 3600)
+def evaluate_pretrained(base_path: str, model_tag: str, model_step: int, gpus: int, eval_cache_tag: str):
+    """Run the stock chat evaluator with the same task limits as standard SFT."""
+    base_dir = Path("/vol") / base_path
+    checkpoint = base_dir / "base_checkpoints" / model_tag
+    metadata_path = checkpoint / f"meta_{model_step:06d}.json"
+    for path in (
+        metadata_path,
+        checkpoint / f"model_{model_step:06d}.pt",
+        base_dir / "tokenizer" / "tokenizer.pkl",
+    ):
+        if not path.is_file():
+            raise FileNotFoundError(f"Missing evaluation input: {path}")
+    metadata = json.loads(metadata_path.read_text())
+    if metadata["step"] != model_step:
+        raise ValueError("Checkpoint step and metadata disagree.")
+    batch_size = metadata["device_batch_size"]
+
+    launcher = ["python", "-m", "scripts.chat_eval"]
+    if gpus > 1:
+        launcher = [
+            "torchrun", "--standalone", f"--nproc_per_node={gpus}",
+            "-m", "scripts.chat_eval", "--",
+        ]
+    arguments = [
+        "--source", "base", "--model-tag", model_tag, "--step", str(model_step),
+        "--device-type", "cuda", "--batch-size", str(batch_size),
+        "--num-samples", "1", "--temperature", "0", "--max-new-tokens", "512",
+        "--top-k", "50",
+    ]
+    transcript = []
+    scores = {}
+
+    def log(line):
+        transcript.append(line)
+        print(line, end="", flush=True)
+
+    with tempfile.TemporaryDirectory() as directory:
+        scratch = Path(directory)
+        for name in ("base_checkpoints", "tokenizer"):
+            (scratch / name).symlink_to(base_dir / name, target_is_directory=True)
+
+        # Reuse the exact test shards from the original SFT run when cached.
+        # An incomplete or missing cache can be downloaded into local scratch.
+        cached_tasks = base_dir / "sft_runs" / eval_cache_tag / "task_data" if eval_cache_tag else None
+        for dataset in (
+            "allenai--ai2_arc/ARC-Easy/test",
+            "allenai--ai2_arc/ARC-Challenge/test",
+            "cais--mmlu/all/test",
+            "openai--gsm8k/main/test",
+            "openai--openai_humaneval/openai_humaneval/test",
+        ):
+            source = cached_tasks / dataset if cached_tasks is not None else None
+            target = scratch / "task_data" / dataset
+            if source is not None and (source / "manifest.json").is_file():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.symlink_to(source, target_is_directory=True)
+                log(f"Using cached SFT test data: {dataset}\n")
+            else:
+                log(f"Using freshly downloaded test data: {dataset}\n")
+
+        env = dict(
+            os.environ, NANOCHAT_BASE_DIR=str(scratch),
+            PYTHONUNBUFFERED="1", OMP_NUM_THREADS="1",
+        )
+        for tasks, limit_args in (
+            (CHAT_CATEGORICAL, []),
+            (CHAT_GENERATIVE, ["--max-problems", "24"]),
+        ):
+            command = launcher + arguments + ["--task-name", "|".join(tasks)] + limit_args
+            log(f"Launching: {shlex.join(command)}\n")
+            with subprocess.Popen(
+                command, cwd="/root/nanochat", env=env,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, bufsize=1,
+            ) as process:
+                output = []
+                for line in process.stdout:
+                    output.append(line)
+                    log(line)
+                returncode = process.wait()
+            if returncode:
+                return {"transcript": "".join(transcript), "error": f"Evaluator exited with code {returncode}."}
+            counts = re.findall(r"Final: (\d+)/(\d+) \(", "".join(output))
+            if len(counts) != len(tasks) or any(int(total) == 0 for _, total in counts):
+                return {"transcript": "".join(transcript), "error": "Could not read all task counts."}
+            for task, (correct, total) in zip(tasks, counts):
+                scores[task] = (int(correct), int(total))
+
+    log("\nPretrained chat evaluation summary\n")
+    centered = {}
+    for task, (correct, total) in scores.items():
+        accuracy = correct / total
+        chance = 0.25 if task in CHAT_CATEGORICAL else 0.0
+        centered[task] = (accuracy - chance) / (1.0 - chance)
+        log(f"{task}: {correct}/{total} ({accuracy:.2%})\n")
+    chatcore = sum(centered.values()) / len(centered)
+    categorical = sum(centered[task] for task in CHAT_CATEGORICAL) / len(CHAT_CATEGORICAL)
+    log(f"ChatCORE (5 tasks): {chatcore:.4f}\n")
+    log(f"Categorical ChatCORE: {categorical:.4f}\n")
+    return {"transcript": "".join(transcript), "error": None}
+
+
 @app.local_entrypoint()
 def main(
-    volume: str = "a4-nanochat-volume",
-    base_path: str = "a4",
-    model_tag: str = "d20-baseline-8-H100",
-    model_step: int = 9960,
-    output_tag: str = "a4-original-sft",
-    run_name: str = "a4-original-sft",
+    volume: str,
+    base_path: str,
+    model_tag: str,
+    model_step: int,
+    output_tag: str = "",
+    run_name: str = "",
     gpus: int = 8,
     load_optimizer: bool = True,
     sft_args: str = "",
@@ -188,18 +297,47 @@ def main(
     wandb_secret: str = "",
     wandb_project: str = "",
     wandb_entity: str = "",
+    eval_pretrained: bool = False,
+    eval_log: str = "",
+    eval_cache_tag: str = "",
 ):
     if not base_path or Path(base_path).is_absolute() or ".." in Path(base_path).parts:
         raise ValueError("base_path must be a relative path within the volume.")
-    for label, value in (("model_tag", model_tag), ("output_tag", output_tag)):
+    if not volume.strip():
+        raise ValueError("Pass a Modal volume name with --volume.")
+    if not eval_pretrained and not output_tag:
+        raise ValueError("Pass a training output tag with --output-tag.")
+    tags = [("model_tag", model_tag)]
+    if output_tag:
+        tags.append(("output_tag", output_tag))
+    if eval_cache_tag:
+        tags.append(("eval_cache_tag", eval_cache_tag))
+    for label, value in tags:
         if not value or value in {".", ".."} or "/" in value or "\\" in value:
             raise ValueError(f"{label} must be a single directory name.")
     if model_step < 0:
         raise ValueError("model_step must be nonnegative.")
-    if not run_name or run_name == "dummy":
-        raise ValueError("run_name must enable W&B logging.")
     if gpus not in (1, 2, 4, 8):
         raise ValueError("gpus must be 1, 2, 4, or 8.")
+    if eval_pretrained:
+        log_path = Path(eval_log or f"pretrained-chat-eval-{model_tag}-step{model_step}-{time.time_ns()}.log").expanduser()
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("x", encoding="utf-8") as stream:
+            stream.write(f"Checkpoint: {volume}:/{base_path}/base_checkpoints/{model_tag}, step {model_step}\n")
+            stream.flush()
+            result = evaluate_pretrained.with_options(
+                gpu=f"H100!:{gpus}" if gpus > 1 else "H100!",
+                volumes={"/vol": modal.Volume.from_name(volume).with_mount_options(read_only=True)},
+            ).remote(base_path, model_tag, model_step, gpus, eval_cache_tag)
+            stream.write(result["transcript"])
+        print(f"Saved evaluation log to {log_path.resolve()}")
+        if result["error"]:
+            raise RuntimeError(result["error"])
+        return
+    if eval_log or eval_cache_tag:
+        raise ValueError("--eval-log and --eval-cache-tag require --eval-pretrained.")
+    if not run_name or run_name == "dummy":
+        raise ValueError("Pass a W&B run name with --run-name (other than dummy).")
     if wandb_mode not in ("offline", "online"):
         raise ValueError("wandb_mode must be offline or online.")
     if wandb_mode == "online" and not wandb_secret:
