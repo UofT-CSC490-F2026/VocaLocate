@@ -96,10 +96,11 @@ def main():
     ax.plot(x, ema(r), color=OURS, lw=1.8, label=OURS_LABEL + " (EMA 0.9; faint = raw)")
     ax.plot([int(d["step"]) for d in k_rew], [float(d["reward_wandb_smoothed"]) for d in k_rew],
             color=KARP, lw=1.8, ls="--", label=KARP_LABEL + " (W&B-smoothed)")
-    ax.set(xlabel="RL step", ylabel="mean reward (fraction of 256 rollouts correct)", title="Training reward")
+    ax.set(xlabel="RL step", ylabel="mean training reward (256 rollouts)", title="Training reward")
     ax.set_xlim(0, 467)
     finish(fig, ax, out / "fig_rl_reward.png",
-           "Reward = strict GSM8K correctness (#### marker required) on the train split, 16 questions x 16 samples per step.")
+           "Train split, 16 questions x 16 samples per step. With the stock reward (Part 3 and Karpathy) the reward is "
+           "strict GSM8K correctness (#### marker required); shaped-reward runs plot their own reward.")
 
     # 2. pass@1 / pass@8 vs step
     fig, axes = plt.subplots(1, 2, figsize=(10, 4))

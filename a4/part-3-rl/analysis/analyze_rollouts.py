@@ -162,9 +162,14 @@ def main():
     summary = {"train_rollouts": len(tr), "eval_samples": len(ev), "train_steps": n_steps}
 
     # ---- 1. per-step decomposition: reward = P(####) x P(correct | ####), plus length / truncation
+    # Shaped-reward runs (Part 4) log `reward` and `reward_parts` next to the strict `correct`;
+    # Part 3 logs only `correct`, where reward == correct.
+    shaped = "reward" in tr.columns and tr["reward"].notna().any()
+    tr["reward"] = tr["reward"].fillna(tr["correct"]) if shaped else tr["correct"].astype(float)
     g = tr.groupby("step")
     per_step = pd.DataFrame({
-        "reward": g.correct.mean(),
+        "accuracy": g.correct.mean(),
+        "reward": g.reward.mean(),
         "p_marker": g.has_marker.mean(),
         "p_correct_given_marker": g.apply(lambda x: x.correct[x.has_marker].mean() if x.has_marker.any() else 0.0,
                                           include_groups=False),
@@ -172,8 +177,18 @@ def main():
         "mean_tokens": g.ntok.mean(),
         "p_non_ascii": g.non_ascii.mean(),
     })
-    grp = tr.groupby(["step", "qidx"]).correct.agg(["mean", "count"])
-    zs = grp.groupby("step")["mean"].agg(all_wrong=lambda m: (m == 0).mean(), all_right=lambda m: (m == 1).mean())
+    if shaped and "reward_parts" in tr.columns:
+        parts = pd.DataFrame([p if isinstance(p, dict) else {} for p in tr["reward_parts"]], index=tr.index)
+        for c in parts.columns:
+            per_step[f"part_{c}"] = parts[c].groupby(tr["step"]).mean()
+    # Zero advantage = all 16 samples of a question got the same REWARD (advantage = reward - mean).
+    grp = tr.groupby(["step", "qidx"]).agg(acc=("correct", "mean"), n_rewards=("reward", "nunique"))
+    grp["zero_adv"] = grp.n_rewards == 1
+    zs = pd.DataFrame({
+        "all_wrong": (grp.zero_adv & (grp.acc == 0)).groupby("step").mean(),
+        "all_right": (grp.zero_adv & (grp.acc == 1)).groupby("step").mean(),
+        "equal_reward_other": (grp.zero_adv & grp.acc.between(0, 1, inclusive="neither")).groupby("step").mean(),
+    })
     per_step = per_step.join(zs)
     per_step.to_csv(out / "train_per_step.csv")
     roll = lambda s: s.rolling(max(1, n_steps // 30), min_periods=1).mean()
@@ -181,8 +196,10 @@ def main():
     ax = axes[0]
     ax.plot(per_step.index, roll(per_step.p_marker), color=BLUE, lw=2, label="P(writes ####)")
     ax.plot(per_step.index, roll(per_step.p_correct_given_marker), color=ORANGE, lw=2, label="P(correct | ####)")
-    ax.plot(per_step.index, roll(per_step.reward), color=INK, lw=1.5, ls="--", label="reward = product")
-    ax.set(title="Reward decomposition", xlabel="RL step", ylim=(0, 1))
+    ax.plot(per_step.index, roll(per_step.accuracy), color=INK, lw=1.5, ls="--", label="accuracy = product")
+    if shaped:
+        ax.plot(per_step.index, roll(per_step.reward), color=GREEN, lw=1.5, label="shaped training reward")
+    ax.set(title="Accuracy decomposition", xlabel="RL step", ylim=(0, None if shaped else 1))
     ax.legend(fontsize=8)
     ax = axes[1]
     ax.plot(per_step.index, roll(per_step.mean_tokens), color=BLUE, lw=2)
@@ -194,13 +211,15 @@ def main():
     ax.legend(fontsize=8)
     ax = axes[3]
     ax.stackplot(per_step.index, roll(per_step.all_wrong), roll(per_step.all_right),
-                 colors=[GREY, GREEN], labels=["all 16 wrong", "all 16 right"])
+                 roll(per_step.equal_reward_other), colors=[GREY, GREEN, PURPLE],
+                 labels=["all 16 wrong", "all 16 right", "mixed correctness, equal reward"])
     ax.set(title="Zero-advantage questions", xlabel="RL step", ylabel="share of questions", ylim=(0, 1))
     ax.legend(fontsize=8, loc="upper right")
     save(fig, out / "fig_eda_train_dynamics.png",
          f"Rolling means over {max(1, n_steps // 30)} steps. Generated tokens only (the training log's sequence length includes the prompt). "
          "A question whose 16 samples all get the same reward has zero advantage and contributes no gradient.")
-    summary["zero_signal_share_overall"] = float((grp["mean"].isin([0, 1])).mean())
+    summary["shaped_reward"] = bool(shaped)
+    summary["zero_signal_share_overall"] = float(grp.zero_adv.mean())
     summary["marker_rate_first_last_10_steps"] = [float(per_step.p_marker.iloc[:10].mean()),
                                                   float(per_step.p_marker.iloc[-10:].mean())]
 

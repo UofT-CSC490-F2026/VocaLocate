@@ -50,7 +50,7 @@ image = (
 image = image.add_local_dir(
     REPO, "/root/nanochat", ignore=[".venv", ".git", "**/__pycache__", "**/.pytest_cache"]
 ).add_local_file(HERE / "rl_rollout_logger.py", "/root/rl_rollout_logger.py").add_local_file(
-    HERE / "eval_logger.py", "/root/eval_logger.py")
+    HERE / "eval_logger.py", "/root/eval_logger.py").add_local_file(HERE / "rewards.py", "/root/rewards.py")
 app = modal.App("nanochat-a4-rl", image=image)
 
 
@@ -60,7 +60,7 @@ VOLUME_NAME = os.environ.get("RL_VOLUME", "vocalocate-a3")
 @app.function(timeout=12 * 3600, cpu=8, gpu="H100!:8", volumes={"/vol": modal.Volume.from_name(VOLUME_NAME)})
 def train(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step: int,
           output_tag: str, run_name: str, gpus: int, smoke_steps: int, rl_args: tuple,
-          wandb_mode: str, wandb_project: str):
+          wandb_mode: str, wandb_project: str, reward: str = "strict"):
     vol = modal.Volume.from_name(volume)
     base_dir = Path("/vol") / base_path
     sft_dir = base_dir / "sft_runs" / sft_tag
@@ -89,6 +89,12 @@ def train(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step:
             link.symlink_to(target, target_is_directory=True)
     rollout_dir = run_dir / "rollouts"
     rollout_dir.mkdir(exist_ok=True)
+    # A resumed run must keep its reward: refuse to continue a tag under a different RL_REWARD.
+    reward_file = run_dir / "reward.txt"
+    if resume and reward_file.exists() and reward_file.read_text().strip() != reward:
+        raise ValueError(f"{output_tag} was trained with reward {reward_file.read_text().strip()!r}, "
+                         f"not {reward!r}; use a new --output-tag")
+    reward_file.write_text(reward + "\n")
     log_dir = base_dir / "logs"
     log_path = log_dir / f"{output_tag}.log"
     t_offset, kept_log = 0.0, []
@@ -115,6 +121,7 @@ def train(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step:
                PYTHONUNBUFFERED="1", OMP_NUM_THREADS="1")
     if smoke_steps:
         env["RL_SMOKE_STEPS"] = str(smoke_steps)
+    env["RL_REWARD"] = reward  # training reward spec (rewards.py); evaluation always stays strict
     if resume:
         env["RL_RESUME_STEP"] = str(resume)
         run_name = f"{run_name}-resume{resume}"
@@ -146,7 +153,7 @@ def train(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step:
         rc = proc.wait()
     stop.set()
     result = {"command": command, "input_checkpoint": str(ckpt), "output_dir": str(out_dir),
-              "resumed_at_step": resume or None,
+              "resumed_at_step": resume or None, "reward": reward,
               "rollout_dir": str(rollout_dir), "gpus": gpus, "smoke_steps": smoke_steps,
               "wandb_mode": wandb_mode, "wandb_project": wandb_project, "returncode": rc,
               "elapsed_seconds": time.time() - started, "log_path": str(log_path)}
@@ -207,7 +214,8 @@ def kickoff(*args, fn: str = "train"):
 @app.local_entrypoint()
 def main(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step: int,
          output_tag: str, run_name: str, gpus: int = 8, smoke_steps: int = 0, rl_args: str = "",
-         wandb_mode: str = "offline", wandb_project: str = "a4-rl", final_eval: str = ""):
+         wandb_mode: str = "offline", wandb_project: str = "a4-rl", final_eval: str = "",
+         reward: str = "strict"):
     if final_eval:
         # e.g. --final-eval sft:932,rl:466  (same protocol for every checkpoint)
         ckpts = tuple((s.split(":")[0], int(s.split(":")[1])) for s in final_eval.split(","))
@@ -228,6 +236,10 @@ def main(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step: 
     extra = tuple(shlex.split(rl_args))
     if any(a.split("=", 1)[0] in ("--run", "--model-tag", "--model-step") for a in extra):
         raise ValueError("Pass run/checkpoint options through the named launcher arguments")
+    import sys
+    sys.path.insert(0, str(HERE))
+    import rewards  # validate the reward spec locally before paying for GPUs
+    rewards.parse_spec(reward)
     call_id = kickoff.remote(volume, base_path, sft_tag, model_tag, model_step, output_tag, run_name, gpus,
-                             smoke_steps, extra, wandb_mode, wandb_project)
+                             smoke_steps, extra, wandb_mode, wandb_project, reward)
     print(f"Spawned training call {call_id}. Follow /{base_path}/logs/{output_tag}.log on the volume.")

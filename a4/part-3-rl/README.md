@@ -181,6 +181,8 @@ end without `####`. For SFT the largest group was ending without the marker (50%
 |---|---|
 | `modal_chat_rl.py` | Modal launcher: training (with auto-resume after preemption), and `--final-eval` for the report-card evaluation |
 | `rl_rollout_logger.py` | runs the stock `chat_rl.py` and logs every rollout; resume edits are applied in memory only |
+| `rewards.py` | Part 4 hook: training-reward components selected with `--reward` (default `strict` = stock); evaluation stays strict |
+| `PART4_HANDOFF.md` | what Part 4 needs from Part 3 |
 | `eval_logger.py` | runs the stock `chat_eval.py` and logs every GSM8K completion |
 | `analysis/digitize_karpathy.py` | digitizes the W&B screenshot |
 | `analysis/plot_curves.py` | reward and eval curves vs Karpathy |

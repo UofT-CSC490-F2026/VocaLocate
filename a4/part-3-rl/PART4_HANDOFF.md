@@ -60,20 +60,34 @@ NANOCHAT_REPO=/path/to/a3-archive/a3/nanochat modal run --detach modal_chat_rl.p
 - The launcher starts the GPU job inside Modal and returns. Follow progress in
   `/a3/logs/<output-tag>.log` on the volume, which is saved every 5 minutes.
 
-## 4. The one code change Part 4 needs (important)
+## 4. Adding a reward (the hook is ready)
 
-The reward lives in `tasks/gsm8k.py` (`GSM8K.reward`, which just calls `evaluate`). `rl_rollout_logger.py`
-already wraps `GSM8K.reward`, so that is the natural place to swap in a new reward without editing
-nanochat. **But the logger currently writes the reward value into the `correct` field.** With a shaped
-reward (for example 0.3 for format), `correct` would then be wrong, and every analysis would be wrong.
+Rewards are plugged in through `rewards.py`; nanochat itself is not edited.
 
-When adding a reward, change `_patched_reward` in `rl_rollout_logger.py` so that it:
-1. computes `correct = _orig_evaluate(self, conversation, response)` (the strict 0/1 answer check);
-2. computes the new `reward` from your reward function, chosen for example by an environment variable such as `RL_REWARD=format|partial|...`;
-3. logs both, `correct` and `reward`, and returns `reward`.
+1. Write a function in `rewards.py` and register it:
+   ```python
+   @register("my_format")
+   def my_format(conversation, response, ctx):
+       return float(ctx["pred"] is not None)  # ctx also has "correct", "ref", "ref_solution_parts"
+   ```
+2. Pick the training reward with `--reward` on the launcher. Components are summed, with optional weights:
+   `--reward strict` (default, identical to run #1), `--reward strict,my_format:0.2`, `--reward my_partial`.
+   An unknown name fails on your laptop before any GPU starts.
 
-Keep `evaluate` itself unchanged. The in-training pass@k and the final eval must stay strict, so runs stay
-comparable to run #1 and to Karpathy.
+What the hook guarantees:
+- **Only the training reward changes.** `GSM8K.evaluate` is untouched, so the in-training pass@k and the
+  final `--final-eval` stay strict and comparable to run #1 and to Karpathy.
+- **Logs keep both values.** Every training rollout records `correct` (the strict 0/1 check), `reward`
+  (the shaped total) and `reward_parts` (each weighted component).
+- **A run keeps its reward.** The reward spec is saved as `reward.txt` in the run folder, and an automatic
+  resume refuses to continue a tag under a different `--reward`.
+- `analysis/analyze_rollouts.py` reads the new fields. Its per-step table gains `accuracy` (strict),
+  `reward` (shaped) and one `part_<name>` column per component. Zero-advantage groups are counted on the
+  shaped reward, because the advantage is computed from it. The training-reward curve from
+  `plot_curves.py` shows the shaped reward.
+
+`example_has_marker` in `rewards.py` only shows the function shape and was used to test the hook. It is
+not a proposed Part 4 reward.
 
 ## 5. What Part 3 found (the basis for the new rewards)
 
@@ -100,8 +114,7 @@ each one. The categories are identical, so the CSVs (`train_failure_mix_by_phase
 `eval_failure_mix_by_step.csv`, `fulltest_sft_vs_rl.csv`) can be put side by side.
 
 What is not built yet: a single plot that overlays several runs. `analysis/plot_curves.py` currently
-plots one run against Karpathy. It needs a small extension to accept several logs, and
-`analyze_rollouts.py` will need to read the new `reward` field once you log it.
+plots one run against Karpathy and needs a small extension to accept several logs.
 
 ## 7. Cost, time and gotchas
 
@@ -119,4 +132,7 @@ plots one run against Karpathy. It needs a small extension to accept several log
 - **One seed:** run #1 collapsed and recovered on its own. Without repeated seeds we cannot tell how much
   run-to-run variation there is. Treat small differences between runs carefully.
 - **Same configuration:** keep every `chat_rl.py` default (467 steps, 16 × 16 samples, LRs, temperature,
-  256 new tokens). Only the reward should change.
+  256 new tokens). Only `--reward` should change.
+- **Reward scale:** the advantage is reward minus the group mean, with no normalization. Adding components
+  changes the size of the updates, so a reward that can reach 1.5 effectively raises the step size. Keep the
+  total in a similar range to the strict reward (0–1), or say in the write-up that you did not.

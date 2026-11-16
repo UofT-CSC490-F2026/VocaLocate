@@ -5,7 +5,9 @@ The training math is untouched. This wrapper only:
     sampled completion (training rollouts and in-training pass@k eval samples);
   * redirects the hardcoded W&B project ("nanochat-rl") to $WANDB_PROJECT;
   * optionally truncates the GSM8K train split to RL_SMOKE_STEPS * examples_per_step
-    questions for a short smoke test (num_steps is derived from the split length).
+    questions for a short smoke test (num_steps is derived from the split length);
+  * optionally replaces the TRAINING reward with a sum of components from rewards.py
+    (RL_REWARD, default "strict" = the stock reward). Evaluation stays strict.
 
 Usage (inside the container, cwd = nanochat repo):
     torchrun --standalone --nproc_per_node=8 /root/rl_rollout_logger.py -- --run=NAME ...
@@ -13,6 +15,7 @@ Environment:
     RL_ROLLOUT_DIR   directory for rank{N}.jsonl files (required)
     RL_SMOKE_STEPS   optional int; limit training to this many steps
     WANDB_PROJECT    optional W&B project override
+    RL_REWARD        optional reward spec for training, e.g. "strict,my_format:0.2" (see rewards.py)
 """
 
 import json
@@ -25,6 +28,12 @@ sys.path.insert(0, os.getcwd())
 
 import wandb  # noqa: E402
 import tasks.gsm8k as gsm8k  # noqa: E402
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # rewards.py sits next to this file
+import rewards  # noqa: E402
+
+REWARD_SPEC = rewards.parse_spec(os.environ.get("RL_REWARD", "strict"))  # fail fast on a typo
+IS_STOCK_REWARD = REWARD_SPEC == [("strict", 1.0)]
 
 RANK = int(os.environ.get("RANK", "0"))
 ROLLOUT_DIR = os.environ["RL_ROLLOUT_DIR"]
@@ -68,7 +77,7 @@ def _current_step():
     return getattr(main, "step", None) if main is not None else None
 
 
-def _record(self, kind, conversation, response, correct):
+def _record(self, kind, conversation, response, correct, reward=None, parts=None):
     question = conversation["messages"][0]["content"]
     ref = gsm8k.extract_answer(conversation["messages"][-1]["content"][-1]["text"])
     _out.write(json.dumps({
@@ -79,7 +88,8 @@ def _record(self, kind, conversation, response, correct):
         "qidx": self._qidx.get(question),
         "ref": ref,
         "pred": gsm8k.extract_answer(response),
-        "correct": int(correct),
+        "correct": int(correct),           # always the strict 0/1 answer check
+        **({"reward": reward, "reward_parts": parts} if reward is not None else {}),  # train only
         "completion": response,
     }) + "\n")
 
@@ -92,9 +102,16 @@ def _patched_evaluate(self, conversation, assistant_response):
 
 
 def _patched_reward(self, conversation, assistant_response):
-    r = _orig_reward(self, conversation, assistant_response)
-    _record(self, "train", conversation, assistant_response, r)
-    return r
+    correct = _orig_evaluate(self, conversation, assistant_response)  # strict check, as stock reward() does
+    if IS_STOCK_REWARD:
+        r, parts = float(correct), {"strict": float(correct)}
+    else:
+        ctx = {"correct": correct, "pred": gsm8k.extract_answer(assistant_response),
+               "ref": gsm8k.extract_answer(conversation["messages"][-1]["content"][-1]["text"]),
+               "ref_solution_parts": conversation["messages"][-1]["content"]}
+        r, parts = rewards.compute(REWARD_SPEC, conversation, assistant_response, ctx)
+    _record(self, "train", conversation, assistant_response, correct, float(r), parts)
+    return float(r)
 
 
 gsm8k.GSM8K.__init__ = _patched_init
