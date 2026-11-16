@@ -37,16 +37,17 @@ All numbers and tables are in `results/` (`final_eval_rl.json`, `final_eval_sft.
 
 **Code:**
 - Everything in this folder (`a4/part-3-rl/`).
-- The **nanochat copy** to mount is `a3/nanochat` at commit `cd53e62` (on branch `a3-archive`), pointed
-  to with `NANOCHAT_REPO`. Do **not** use `a3/nanochat` from `main`: its `gpt.py`, `chat_rl.py` and
-  `checkpoint_manager.py` differ, and it may not load the baseline-long checkpoints the same way.
+- **nanochat** is the repo's own `a3/nanochat` on `main`: upstream karpathy/nanochat plus all of our A3
+  changes. The launcher uses it by default, so `NANOCHAT_REPO` is only needed to point at another copy.
+  This needs PR #44 merged: before #44, `main`'s copy could not load the baseline-long checkpoints. With
+  #44, every checkpoint we trained loads with identical outputs (max logit difference 0.0).
 
 ## 3. How to launch a run
 
 From `a4/part-3-rl/`, with the Modal CLI:
 
 ```bash
-NANOCHAT_REPO=/path/to/a3-archive/a3/nanochat modal run --detach modal_chat_rl.py \
+modal run --detach modal_chat_rl.py \
   --volume vocalocate-a3 --base-path a3 \
   --sft-tag d20-baseline-long-sft --model-tag d20-baseline-long --model-step 932 \
   --output-tag d20-baseline-long-rl-<name> --run-name d20-baseline-long-rl-<name>

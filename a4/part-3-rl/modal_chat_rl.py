@@ -5,8 +5,8 @@ Based on Carmen's a4/part-2-sft/modal_chat_sft.py (same image and volume layout)
   * periodic volume commits so logs/checkpoints survive a crash;
   * --smoke-steps N to run only N optimisation steps for timing.
 
-Example (full run):
-    NANOCHAT_REPO=/path/to/a3/nanochat modal run --detach modal_chat_rl.py \
+Example (full run; uses the repo's a3/nanochat, or set NANOCHAT_REPO to another checkout):
+    modal run --detach modal_chat_rl.py \
         --volume vocalocate-a3 --base-path a3 \
         --sft-tag d20-baseline-long-sft --model-tag d20-baseline-long --model-step 932 \
         --output-tag d20-baseline-long-rl --run-name d20-baseline-long-rl \
