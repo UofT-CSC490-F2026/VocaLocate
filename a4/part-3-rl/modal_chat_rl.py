@@ -3,7 +3,9 @@
 Based on Carmen's a4/part-2-sft/modal_chat_sft.py (same image and volume layout), with:
   * per-rollout jsonl logging through rl_rollout_logger.py (no edits to chat_rl.py);
   * periodic volume commits so logs/checkpoints survive a crash;
-  * --smoke-steps N to run only N optimisation steps for timing.
+  * --smoke-steps N to run only N optimisation steps for timing;
+  * --script chat_distill to run Part 5's on-policy distillation trainer (a4/part-5-distill/chat_distill.py)
+    instead of the stock chat_rl.py, with its options passed through --rl-args.
 
 Example (full run; uses the repo's a3/nanochat, or set NANOCHAT_REPO to another checkout):
     modal run --detach modal_chat_rl.py \
@@ -32,7 +34,9 @@ SCRIPT_PATH = Path(__file__).resolve()
 HERE = SCRIPT_PATH.parent
 if HERE == Path("/root"):
     REPO = Path("/root/nanochat")
+    DISTILL_SCRIPT = REPO / "scripts" / "chat_distill.py"
 else:
+    DISTILL_SCRIPT = HERE.parent / "part-5-distill" / "chat_distill.py"
     REPO = Path(os.environ.get("NANOCHAT_REPO", HERE.parents[1] / "a3" / "nanochat")).expanduser().resolve()
     if not (REPO / "scripts" / "chat_rl.py").is_file():
         raise FileNotFoundError(f"Set NANOCHAT_REPO to a nanochat checkout: {REPO}")
@@ -51,6 +55,9 @@ image = image.add_local_dir(
     REPO, "/root/nanochat", ignore=[".venv", ".git", "**/__pycache__", "**/.pytest_cache"]
 ).add_local_file(HERE / "rl_rollout_logger.py", "/root/rl_rollout_logger.py").add_local_file(
     HERE / "eval_logger.py", "/root/eval_logger.py").add_local_file(HERE / "rewards.py", "/root/rewards.py")
+if DISTILL_SCRIPT.is_file():
+    image = image.add_local_file(DISTILL_SCRIPT, "/root/nanochat/scripts/chat_distill.py")
+SCRIPTS = ("chat_rl", "chat_distill")
 app = modal.App("nanochat-a4-rl", image=image)
 
 
@@ -60,7 +67,7 @@ VOLUME_NAME = os.environ.get("RL_VOLUME", "vocalocate-a3")
 @app.function(timeout=12 * 3600, cpu=8, gpu="H100!:8", volumes={"/vol": modal.Volume.from_name(VOLUME_NAME)})
 def train(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step: int,
           output_tag: str, run_name: str, gpus: int, smoke_steps: int, rl_args: tuple,
-          wandb_mode: str, wandb_project: str, reward: str = "strict"):
+          wandb_mode: str, wandb_project: str, reward: str = "strict", script: str = "chat_rl"):
     vol = modal.Volume.from_name(volume)
     base_dir = Path("/vol") / base_path
     sft_dir = base_dir / "sft_runs" / sft_tag
@@ -122,6 +129,7 @@ def train(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step:
     if smoke_steps:
         env["RL_SMOKE_STEPS"] = str(smoke_steps)
     env["RL_REWARD"] = reward  # training reward spec (rewards.py); evaluation always stays strict
+    env["RL_SCRIPT"] = script  # chat_rl (stock RL) or chat_distill (Part 5)
     if resume:
         env["RL_RESUME_STEP"] = str(resume)
         run_name = f"{run_name}-resume{resume}"
@@ -153,7 +161,7 @@ def train(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step:
         rc = proc.wait()
     stop.set()
     result = {"command": command, "input_checkpoint": str(ckpt), "output_dir": str(out_dir),
-              "resumed_at_step": resume or None, "reward": reward,
+              "resumed_at_step": resume or None, "reward": reward, "script": script,
               "rollout_dir": str(rollout_dir), "gpus": gpus, "smoke_steps": smoke_steps,
               "wandb_mode": wandb_mode, "wandb_project": wandb_project, "returncode": rc,
               "elapsed_seconds": time.time() - started, "log_path": str(log_path)}
@@ -215,7 +223,9 @@ def kickoff(*args, fn: str = "train"):
 def main(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step: int,
          output_tag: str, run_name: str, gpus: int = 8, smoke_steps: int = 0, rl_args: str = "",
          wandb_mode: str = "offline", wandb_project: str = "a4-rl", final_eval: str = "",
-         reward: str = "strict"):
+         reward: str = "strict", script: str = "chat_rl"):
+    if script not in SCRIPTS:
+        raise ValueError(f"--script must be one of {SCRIPTS}")
     if final_eval:
         # e.g. --final-eval sft:932,rl:466  (same protocol for every checkpoint)
         ckpts = tuple((s.split(":")[0], int(s.split(":")[1])) for s in final_eval.split(","))
@@ -241,5 +251,5 @@ def main(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step: 
     import rewards  # validate the reward spec locally before paying for GPUs
     rewards.parse_spec(reward)
     call_id = kickoff.remote(volume, base_path, sft_tag, model_tag, model_step, output_tag, run_name, gpus,
-                             smoke_steps, extra, wandb_mode, wandb_project, reward)
+                             smoke_steps, extra, wandb_mode, wandb_project, reward, script)
     print(f"Spawned training call {call_id}. Follow /{base_path}/logs/{output_tag}.log on the volume.")
