@@ -173,20 +173,27 @@ def train(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step:
 
 
 @app.function(timeout=4 * 3600, cpu=8, gpu="H100!:8", volumes={"/vol": modal.Volume.from_name(VOLUME_NAME)})
-def final_eval(volume: str, base_path: str, output_tag: str, model_tag: str, checkpoints: tuple):
+def final_eval(volume: str, base_path: str, output_tag: str, model_tag: str, checkpoints: tuple, gpus: int = 8):
     """Stock chat_eval (all 5 tasks, full test sets, greedy, 512 new tokens: Karpathy's report-card
     protocol) on each (source, step) in `checkpoints`, logging every GSM8K completion."""
     vol = modal.Volume.from_name(volume)
     run_dir = Path("/vol") / base_path / "rl_runs" / output_tag
     eval_dir = run_dir / "final_eval"
     eval_dir.mkdir(parents=True, exist_ok=True)
+    # A run folder copied from another volume lacks the links train() makes; recreate them for chat_eval.
+    base_dir = Path("/vol") / base_path
+    cached = sorted(base_dir.glob("sft_runs/*/task_data"))
+    for name, target in (("tokenizer", base_dir / "tokenizer"), ("task_data", cached[0] if cached else None)):
+        link = run_dir / name
+        if target is not None and not link.exists():
+            link.symlink_to(target, target_is_directory=True)
     env = dict(os.environ, NANOCHAT_BASE_DIR=str(run_dir), EVAL_LOG_DIR=str(eval_dir),
                PYTHONUNBUFFERED="1", OMP_NUM_THREADS="1")
     summary = {}
     for source, step in checkpoints:
         name = f"{source}_step{step:06d}"
         env["EVAL_LOG_NAME"] = f"gsm8k_{name}"
-        cmd = ["torchrun", "--standalone", "--nproc_per_node=8", "/root/eval_logger.py", "--",
+        cmd = ["torchrun", "--standalone", f"--nproc_per_node={gpus}", "/root/eval_logger.py", "--",
                "-i", source, "-g", model_tag, "-s", str(step)]
         print("Launching:", shlex.join(cmd), flush=True)
         log_path = eval_dir / f"chat_eval_{name}.log"
@@ -211,11 +218,15 @@ def final_eval(volume: str, base_path: str, output_tag: str, model_tag: str, che
 
 
 @app.function(timeout=600, volumes={"/vol": modal.Volume.from_name(VOLUME_NAME)})
-def kickoff(*args, fn: str = "train"):
+def kickoff(*args, fn: str = "train", eval_gpus: int = 8):
     """Spawn the GPU job from inside Modal and return at once. A detached app whose client drops
     mid-call can stop that call (it did once, on a laptop DNS failure); a call spawned by a
     container is not tied to the laptop at all."""
-    call = {"train": train, "final_eval": final_eval}[fn].spawn(*args)
+    if fn == "final_eval" and eval_gpus != 8:
+        # fewer GPUs so an evaluation can run next to an 8-GPU training job under the workspace GPU limit
+        call = final_eval.with_options(gpu=f"H100!:{eval_gpus}").spawn(*args, eval_gpus)
+    else:
+        call = {"train": train, "final_eval": final_eval}[fn].spawn(*args)
     return call.object_id
 
 
@@ -223,7 +234,7 @@ def kickoff(*args, fn: str = "train"):
 def main(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step: int,
          output_tag: str, run_name: str, gpus: int = 8, smoke_steps: int = 0, rl_args: str = "",
          wandb_mode: str = "offline", wandb_project: str = "a4-rl", final_eval: str = "",
-         reward: str = "strict", script: str = "chat_rl"):
+         reward: str = "strict", script: str = "chat_rl", eval_gpus: int = 8):
     if script not in SCRIPTS:
         raise ValueError(f"--script must be one of {SCRIPTS}")
     if final_eval:
@@ -231,7 +242,9 @@ def main(volume: str, base_path: str, sft_tag: str, model_tag: str, model_step: 
         ckpts = tuple((s.split(":")[0], int(s.split(":")[1])) for s in final_eval.split(","))
         if any(src not in ("sft", "rl") for src, _ in ckpts):
             raise ValueError("--final-eval entries must be sft:<step> or rl:<step>")
-        call_id = kickoff.remote(volume, base_path, output_tag, model_tag, ckpts, fn="final_eval")
+        if eval_gpus not in (1, 2, 4, 8):
+            raise ValueError("--eval-gpus must be 1, 2, 4 or 8")
+        call_id = kickoff.remote(volume, base_path, output_tag, model_tag, ckpts, fn="final_eval", eval_gpus=eval_gpus)
         print(f"Spawned final-eval call {call_id}. Results: /{base_path}/rl_runs/{output_tag}/final_eval/")
         return
     if volume != VOLUME_NAME:
