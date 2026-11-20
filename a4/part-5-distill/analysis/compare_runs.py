@@ -33,8 +33,10 @@ RUNS = {  # tag -> (label, teacher description); order = plotting order
     "a4-p5-d01-sdpo": ("D01", "self + reference solution (EMA 0.05)"),
     "a4-p5-d02-rl120": ("D02", "RL step 120"),
     "a4-p5-d03-rl466-reward": ("D03", "RL step 466 + reward"),
+    # exploratory, not pre-registered: the SDPO paper's small-model fix, run after D01 collapsed
+    "a4-p5-d01b-sdpo-grpo-v2": ("D01b", "frozen self + reference, 0.9 reward + 0.1 distill (exploratory)"),
 }
-COLORS = {"RL": "#4d4d4d", "D00": "#2f6fb3", "D01": "#7b5ea7", "D02": "#2e8b57", "D03": "#d1652a"}
+COLORS = {"RL": "#4d4d4d", "D00": "#2f6fb3", "D01": "#7b5ea7", "D01b": "#c9a227", "D02": "#2e8b57", "D03": "#d1652a"}
 STAMP = r"^\[\s*([\d.]+)s\]\s*"
 STEP_RE = re.compile(STAMP + r"Step (\d+)/\d+ \| Average reward: ([\d.eE+-]+) \| Average sequence length: ([\d.]+)"
                      r" \| Reverse KL: ([\d.eE+-]+|nan) \| Log-ratio std: ([\d.eE+-]+|nan) \| Clip frac: ([\d.]+)", re.M)
