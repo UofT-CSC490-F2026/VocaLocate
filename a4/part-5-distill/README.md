@@ -41,6 +41,11 @@ with the LR decaying linearly to zero over 200 steps.
 | D01 | `a4-p5-d01-sdpo` | self-teacher with the reference solution, EMA 0.05 |
 | D02 | `a4-p5-d02-rl120` | RL step 120, distillation only |
 | D03 | `a4-p5-d03-rl466-reward` | RL step 466, distillation plus `(r − mean r)` |
+| D01b (exploratory, added after D01 collapsed) | `a4-p5-d01b-sdpo-grpo-v2` | frozen self-teacher with the reference solution, `0.9 (r − mean r) + 0.1 ×` log-ratio |
+
+Results: [`REPORT.md`](REPORT.md) and `results/` (`p5_summary.csv`, `p5_per_step.csv`, `p5_fulltest.csv`,
+figures). W&B project: `riyadvaliyev/a4-distill`. Teacher evaluations (RL steps 466 and 120) are in
+`a3/rl_runs/d20-baseline-long-rl/final_eval/` on the volume.
 
 The runs used volume `vocalocate-a4-p5` in the `riyadvaliyev` Modal workspace. It holds copies of the
 files they need from `vocalocate-a3` (Tanay's workspace), in the same layout: the SFT checkpoint (step
@@ -63,10 +68,12 @@ modal run --detach modal_chat_rl.py $COMMON --output-tag a4-p5-d02-rl120 --run-n
   --rl-args="--teacher-dir=$RL_CKPT --teacher-step=120"
 modal run --detach modal_chat_rl.py $COMMON --output-tag a4-p5-d03-rl466-reward --run-name a4-p5-d03-rl466-reward \
   --rl-args="--teacher-dir=$RL_CKPT --teacher-step=466 --reward-coef=1.0"
+modal run --detach modal_chat_rl.py $COMMON --output-tag a4-p5-d01b-sdpo-grpo-v2 --run-name a4-p5-d01b-sdpo-grpo-v2 \
+  --rl-args="--teacher=self --teacher-ema=0 --reward-coef=0.9 --distill-coef=0.1"
 
 # Final evaluation (full test sets, greedy, 512 tokens), same protocol as Parts 3 and 4
 modal run --detach modal_chat_rl.py --volume vocalocate-a4-p5 --base-path a3 --sft-tag d20-baseline-long-sft \
-  --model-tag d20-baseline-long --model-step 932 --output-tag a4-p5-d00-rl466 --run-name eval --final-eval rl:199
+  --model-tag d20-baseline-long --model-step 932 --output-tag a4-p5-d00-rl466 --run-name eval --final-eval rl:199 --eval-gpus 2   # 2 GPUs fit next to an 8-GPU training job
 ```
 
 ## Tests

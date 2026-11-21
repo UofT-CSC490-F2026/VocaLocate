@@ -166,5 +166,33 @@
     "vs_rl_lost": 89.0,
     "vs_rl_mcnemar_p": 0.052,
     "mean_tokens_test": 89.2646
+  },
+  "D01b": {
+    "teacher": "frozen self + reference, 0.9 reward + 0.1 distill (exploratory)",
+    "steps": 200,
+    "gsm8k": 0.0076,
+    "ARC-Easy": 0.5909,
+    "ARC-Challenge": 0.4693,
+    "MMLU": 0.358,
+    "HumanEval": 0.122,
+    "ChatCORE": 0.2041,
+    "max_non_ascii_train": 0.1211,
+    "marker_rate_test": 0.1842,
+    "wrong: truncated (hit the token limit)": 0.1513,
+    "wrong: no ####: ended, right number last": 0.0359,
+    "wrong: no ####: ended without marker": 0.6348,
+    "wrong: #### = a reference intermediate": 0.0115,
+    "wrong: #### = one of its own calc results": 0.0,
+    "wrong: #### within 10%": 0.0084,
+    "wrong: #### off by x10/x100/x60": 0.0023,
+    "wrong: #### other wrong": 0.1558,
+    "train_minutes": 51.405,
+    "reverse_kl_first10": 0.1048,
+    "reverse_kl_last10": 0.0615,
+    "pass@1_step60": 0.01,
+    "vs_rl_gained": 8.0,
+    "vs_rl_lost": 263.0,
+    "vs_rl_mcnemar_p": 0.0,
+    "mean_tokens_test": 182.3859
   }
 }
