@@ -43,8 +43,18 @@ with the LR decaying linearly to zero over 200 steps.
 | D03 | `a4-p5-d03-rl466-reward` | RL step 466, distillation plus `(r − mean r)` |
 | D01b (exploratory, added after D01 collapsed) | `a4-p5-d01b-sdpo-grpo-v2` | frozen self-teacher with the reference solution, `0.9 (r − mean r) + 0.1 ×` log-ratio |
 
-Results: [`REPORT.md`](REPORT.md) and `results/` (`p5_summary.csv`, `p5_per_step.csv`, `p5_fulltest.csv`,
-figures). W&B project: `riyadvaliyev/a4-distill`. Teacher evaluations (RL steps 466 and 120) are in
+Results: [`REPORT.md`](REPORT.md) and `results/`. `analysis/compare_runs.py` writes `p5_summary.csv`,
+`p5_per_step.csv`, `p5_fulltest.csv` and the pass@k, training and full-test figures;
+`analysis/extra_figures.py` then writes `p5_answers.csv` (every model's answer to each test question),
+`p5_agreement.csv`, `p5_collapse.csv`, `p5_by_length.csv` and the collapse, solution-length and teacher
+figures. Both read run folders fetched with `../part-3-rl/analysis/fetch_run.py`; `extra_figures.py` also
+needs the RL run's `final_eval/` folder (below) in `<runs>/rl-teacher/final_eval`:
+
+```bash
+python analysis/compare_runs.py --runs <runs> --gsm8k <task_data>/openai--gsm8k/main --tokenizer <tokenizer.pkl> --out results
+python analysis/extra_figures.py --runs <runs> --results results
+```
+ W&B project: `riyadvaliyev/a4-distill`. Teacher evaluations (RL steps 466 and 120) are in
 `a3/rl_runs/d20-baseline-long-rl/final_eval/` on the volume.
 
 The runs used volume `vocalocate-a4-p5` in the `riyadvaliyev` Modal workspace. It holds copies of the

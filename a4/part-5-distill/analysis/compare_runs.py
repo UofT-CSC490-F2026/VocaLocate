@@ -28,6 +28,8 @@ sys.path.insert(0, str(PART3 / "analysis"))
 from analyze_rollouts import (FAIL_COLORS, FAIL_ORDER, GREY, failure_category, load_split,  # noqa: E402
                               plt, question_features, save)
 
+plt.rcParams["axes.axisbelow"] = True  # gridlines behind bars
+
 RUNS = {  # tag -> (label, teacher description); order = plotting order
     "a4-p5-d00-rl466": ("D00", "RL step 466"),
     "a4-p5-d01-sdpo": ("D01", "self + reference solution (EMA 0.05)"),
@@ -36,7 +38,8 @@ RUNS = {  # tag -> (label, teacher description); order = plotting order
     # exploratory, not pre-registered: the SDPO paper's small-model fix, run after D01 collapsed
     "a4-p5-d01b-sdpo-grpo-v2": ("D01b", "frozen self + reference, 0.9 reward + 0.1 distill (exploratory)"),
 }
-COLORS = {"RL": "#4d4d4d", "D00": "#2f6fb3", "D01": "#7b5ea7", "D01b": "#c9a227", "D02": "#2e8b57", "D03": "#d1652a"}
+# categorical slots 1-5 of a palette checked for colour-blind separation; RL stays neutral grey
+COLORS = {"RL": "#4d4d4d", "D00": "#2a78d6", "D01": "#eb6834", "D02": "#1baf7a", "D03": "#eda100", "D01b": "#e87ba4"}
 STAMP = r"^\[\s*([\d.]+)s\]\s*"
 STEP_RE = re.compile(STAMP + r"Step (\d+)/\d+ \| Average reward: ([\d.eE+-]+) \| Average sequence length: ([\d.]+)"
                      r" \| Reverse KL: ([\d.eE+-]+|nan) \| Log-ratio std: ([\d.eE+-]+|nan) \| Clip frac: ([\d.]+)", re.M)
@@ -162,21 +165,27 @@ def main():
     save(fig, out / "fig_p5_passk.png", "Distillation runs stop at step 199 (dotted line); RL runs 467 steps with a "
                                         "longer LR decay, so equal steps are not equal learning rates.")
 
-    # ---- Figure 2: training dynamics
-    fig, axes = plt.subplots(1, 3, figsize=(15, 3.8))
-    roll = lambda s: s.rolling(10, min_periods=1).mean()  # noqa: E731
+    # ---- Figure 2: training dynamics (15-step means, as in Part 3's Figure 13)
+    fig, axes = plt.subplots(2, 2, figsize=(11, 7))
+    axes = axes.ravel()
+    roll = lambda s: s.rolling(15, min_periods=1).mean()  # noqa: E731
     for label, (st, _) in curves.items():
-        kw = dict(color=COLORS[label], lw=1.8, label=label, ls="--" if label == "RL" else "-")
+        kw = dict(color=COLORS[label], lw=1.8, label="RL (Part 3)" if label == "RL" else label, ls="--" if label == "RL" else "-")
         axes[0].plot(st.index, roll(st.reward), **kw)
-        axes[2].plot(st.index, roll(st.p_non_ascii), **kw)
         if label != "RL":
             axes[1].plot(st.index, roll(st.reverse_kl), **kw)
-    axes[0].set(xlabel="step", ylabel="strict correctness of rollouts", title="Training accuracy (10-step mean)")
-    axes[1].set(xlabel="step", ylabel="nats per token", title="Reverse KL to the teacher (10-step mean)")
-    axes[2].set(xlabel="step", ylabel="share of rollouts", title="Rollouts containing non-ASCII junk")
-    axes[0].legend(fontsize=8)
-    save(fig, out / "fig_p5_training.png", "D01's KL is to its own reference-conditioned copy, so its scale is "
-                                           "not comparable with the checkpoint-teacher runs.")
+        axes[2].plot(st.index, roll(st.p_marker), **kw)
+        axes[3].plot(st.index, roll(st.p_non_ascii), **kw)
+    axes[0].set(ylabel="share of rollouts correct", title="Training accuracy")
+    axes[1].set(ylabel="nats per token", title="Reverse KL to the teacher")
+    axes[2].set(ylabel="share of rollouts", title="Rollouts that write ####", ylim=(0, 1.02))
+    axes[3].set(ylabel="share of rollouts", title="Rollouts containing non-ASCII junk")
+    for ax in axes:
+        ax.set_xlabel("step")
+        ax.set_xlim(0, 210)
+    axes[0].legend(fontsize=8, ncol=2)
+    save(fig, out / "fig_p5_training.png", "15-step trailing means; RL is shown for its first 210 steps. D01 and D01b measure "
+                                           "KL to their own reference-conditioned copy, a different scale from the checkpoint teachers.")
 
     # ---- Figure 3: full test accuracy and why answers are wrong
     if fulltests:
