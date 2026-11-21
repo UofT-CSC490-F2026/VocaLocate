@@ -106,10 +106,17 @@ with the same defaults, so it is not unique to our model.
 our whole loop took 69 minutes. Our completions got short fast (175 → about 78 generated tokens), which
 makes sampling cheaper.
 
-**Preemption.** Modal preempted the run at step 262. The launcher resumed from the step-240 checkpoint
+**Preemption.** Modal preempted the run after step 276. The launcher resumed from the step-240 checkpoint
 at step 241, with the same LR schedule and data position. `chat_rl.py` does not save optimizer state,
-so the optimizer restarted at step 241; the training reward shows no visible discontinuity there. The
-redone steps 241–261 from the first attempt were removed from the logs.
+so the optimizer restarted at step 241; the training reward shows no visible discontinuity there.
+Everything the first attempt logged after step 240 is excluded from the analysis. (The copy of the log
+on the Modal volume stops at step 261 because the volume is committed every 5 minutes; the W&B record
+of the first attempt reaches step 276.)
+
+**W&B.** The runs are in project
+[`a4-rl`](https://wandb.ai/tanayjyot-university-of-toronto/a4-rl): `d20-baseline-long-rl` (steps 0–276,
+superseded after 240), `d20-baseline-long-rl-resume241` (steps 241–466) and
+`d20-baseline-long-rl-smoke`. They were logged offline on Modal and synced afterwards.
 
 ## 2. Which problems it gets right and wrong
 
