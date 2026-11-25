@@ -1,0 +1,10 @@
+[run]
+source =
+    vocalocate_pipeline
+    vocalocate_demo
+omit =
+    */vocalocate_demo/efficientat/*
+
+[report]
+precision = 2
+show_missing = True
