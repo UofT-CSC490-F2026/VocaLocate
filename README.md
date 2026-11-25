@@ -6,6 +6,17 @@ imitating it with their voice ("pshhh", "bonk"), optionally adding a short text 
 the search model, the AWS infrastructure that runs it, and the model experiments and local search
 app built on top.
 
+## Code coverage
+
+<!-- coverage:start -->
+The coverage table populates after the first successful coverage run on `main`.
+<!-- coverage:end -->
+
+GitHub Actions runs both pytest suites, combines the line coverage of
+`vocalocate_pipeline` and `vocalocate_demo`, and posts the result on pull requests.
+It excludes the vendored EfficientAT encoder. The `code-coverage` artifact includes
+the line-by-line report, and the workflow summary also shows the totals for fork PRs.
+
 ## Where each assignment part lives
 
 | A2 part | What it is | Where |
@@ -169,8 +180,7 @@ One line per file. Paths are relative to the folder in each heading.
 
 | File | What it does |
 | --- | --- |
-| `pipeline-tests.yml` | Runs the pipeline tests on every push that touches `pipeline/` |
-| `demo-tests.yml` | Runs the demo tests (with CPU PyTorch) when `demo/` or `pipeline/` changes |
+| `coverage.yml` | Runs both Python test suites and publishes coverage to the README and pull requests |
 | `infra.yml` | `terraform fmt`, `validate` and module tests on `infra/` changes; `plan` against dev on main |
 | `pipeline-image.yml` | Builds the pipeline image; when run by hand, pushes it to an environment's ECR |
 
