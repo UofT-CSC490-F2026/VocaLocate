@@ -12,10 +12,18 @@ app built on top.
 The coverage table populates after the first successful coverage run on `main`.
 <!-- coverage:end -->
 
-GitHub Actions runs both pytest suites, combines the line coverage of
-`vocalocate_pipeline` and `vocalocate_demo`, and posts the result on pull requests.
-It excludes the vendored EfficientAT encoder. The `code-coverage` artifact includes
-the line-by-line report, and the workflow summary also shows the totals for fork PRs.
+GitHub Actions runs both pytest suites, then combines their line coverage for
+`pipeline/vocalocate_pipeline/`, `demo/src/vocalocate_demo/`, and the Modal training
+entry point in `demo/modal/`. The report includes Python files that the tests never
+execute, so an untested script counts against the combined percentage.
+
+The Python report excludes vendored EfficientAT and the separate A3/A4 Nanochat
+experiments. The search UI’s browser JavaScript is part of VocaLocate and its
+coverage is currently unmeasured. The independent [infra workflow](.github/workflows/infra.yml)
+runs `terraform validate` and `terraform test` for the project’s AWS deployment.
+
+The `code-coverage` artifact includes per-file results. Same-repository PRs get a
+coverage comment, and the Actions summary also shows the totals for fork PRs.
 
 ## Where each assignment part lives
 
