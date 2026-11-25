@@ -86,7 +86,6 @@ class AppState:
         self.libraries: dict[str, Library] = {}
         self.models: dict[str, tuple] = {}
         self.query_cache: dict[tuple[str, str], np.ndarray] = {}
-        self.text_cache: dict[tuple[str, str, str], np.ndarray] = {}
         fusion = model_dir(cfg, source) / "fusion.json"
         self.alphas = json.loads(fusion.read_text(encoding="utf-8"))["alpha"] if fusion.exists() else {}
         self.examples = _load_examples(examples) if examples else []
@@ -179,11 +178,11 @@ class AppState:
         if text:
             if self.clap is None:
                 raise ValueError("text hints need CLAP: start the app with --text")
-            key = (library, model_name, text.lower())
-            scores_text = self.text_cache.get(key)
+            key = text.lower()
+            scores_text = idx.text_score_cache.get(key)
             if scores_text is None:
                 scores_text = text_scores(self.cfg, library, idx, text, self.clap)
-                self.text_cache[key] = scores_text
+                idx.text_score_cache[key] = scores_text
             else:
                 reused.append("text scores")
             alpha = float(self.alphas.get(model_name, 0.5))

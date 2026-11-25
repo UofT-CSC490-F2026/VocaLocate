@@ -22,7 +22,7 @@ negatives at training time.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
@@ -60,6 +60,8 @@ class LibraryIndex:
     projects: list[str | None]
     vectors: np.ndarray
     n_embedded: int  # how many clips were embedded now (the rest came from the cache)
+    # Each score vector follows this index's clip order, including during re-indexing.
+    text_score_cache: dict[str, np.ndarray] = field(default_factory=dict, init=False, repr=False, compare=False)
 
 
 def _sql_str(value: str) -> str:
