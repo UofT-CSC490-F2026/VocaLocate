@@ -15,6 +15,8 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      VOCALOCATE_REPO_ROOT: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -51,17 +53,24 @@ jobs:
           for label, prefix in (
               ("Pipeline", "pipeline/vocalocate_pipeline/"),
               ("Demo", "demo/src/vocalocate_demo/"),
+              ("Modal training", "demo/modal/"),
           ):
               files = [
                   entry["summary"] for name, entry in report["files"].items()
                   if name.startswith(prefix)
               ]
               total = sum(entry["num_statements"] for entry in files)
+              if not total:
+                  raise SystemExit(f"No executable Python lines found for {label}.")
               covered = sum(entry["covered_lines"] for entry in files)
               print(f"| {label} | {covered} | {total} | {100 * covered / total:.2f}% |")
           total = report["totals"]
           print(f'| **Combined** | {total["covered_lines"]} | {total["num_statements"]} | '
                 f'**{total["percent_covered_display"]}%** |')
+          print()
+          print("Scope: first-party VocaLocate Python code. Frontend JavaScript coverage is unmeasured. "
+                "Terraform is checked separately by the infra workflow. "
+                "Vendored EfficientAT and the A3/A4 Nanochat experiments are excluded.")
           PY
           cat coverage.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
