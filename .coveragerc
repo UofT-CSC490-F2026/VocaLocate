@@ -2,6 +2,7 @@
 source =
     vocalocate_pipeline
     vocalocate_demo
+    ${VOCALOCATE_REPO_ROOT-.}/demo/modal
 omit =
     */vocalocate_demo/efficientat/*
 
