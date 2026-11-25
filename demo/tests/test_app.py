@@ -7,7 +7,10 @@ import time
 import urllib.error
 import urllib.request
 
+import numpy as np
+
 from vocalocate_pipeline.config import PipelineConfig, SplitConfig
+from vocalocate_demo import app
 from vocalocate_demo.app import AppState, serve
 from vocalocate_demo.demo_flow import run_demo
 from vocalocate_demo.mining import MiningConfig
@@ -25,6 +28,49 @@ def _call(base, path, body=None):
             return r.status, (json.loads(raw) if r.headers.get_content_type() == "application/json" else raw)
     except urllib.error.HTTPError as e:
         return e.code, json.loads(e.read())
+
+
+def test_text_scores_follow_reindexed_library(tmp_path, monkeypatch):
+    cfg = PipelineConfig(lake_root=tmp_path / "lake")
+    state = AppState(cfg, "sfx_meta", clap=object())
+    library = app.Library("demo", [str(tmp_path)])
+    state.libraries[library.name] = library
+    model = "metadata"
+    state.models[model] = (None, None, "test-model")
+    monkeypatch.setattr(state, "available_models", lambda: [model])
+    monkeypatch.setattr(app, "embed_query", lambda *_: np.ones(1))
+
+    snapshots = [("a", "b"), ("a", "b", "c"), ("a", "c", "d")]
+    clip_ids_by_scan = iter(snapshots)
+    clap_scores = {"a": 0.1, "b": 0.2, "c": 0.3, "d": 0.4}
+
+    def index_library(*args, **kwargs):
+        clip_ids = list(next(clip_ids_by_scan))
+        return app.LibraryIndex(
+            clip_ids=clip_ids,
+            paths=[f"{clip_id}.wav" for clip_id in clip_ids],
+            projects=[None] * len(clip_ids),
+            vectors=np.ones((len(clip_ids), 1)),
+            n_embedded=0,
+        )
+
+    def text_scores(cfg, library, index, text, clap):
+        return np.array([clap_scores[clip_id] for clip_id in index.clip_ids])
+
+    monkeypatch.setattr(app, "index_library", index_library)
+    monkeypatch.setattr(app, "text_scores", text_scores)
+
+    for clip_ids in snapshots:
+        state._index(library)
+        assert library.state == "ready", library.message
+        result = state.search(library.name, model, b"imitation", "metallic", k=3)
+        assert "text scores" not in result["reused"]
+        assert {hit["name"]: hit["text_score"] for hit in result["results"]} == {
+            f"{clip_id}.wav": clap_scores[clip_id] for clip_id in clip_ids
+        }
+        repeated = state.search(library.name, model, b"imitation", "metallic", k=3)
+        assert "text scores" in repeated["reused"]
+        assert repeated["results"] == result["results"]
 
 
 def test_app_api_end_to_end(tmp_path, monkeypatch):
