@@ -48,8 +48,9 @@ log = logging.getLogger(__name__)
 
 UI_DIR = Path(__file__).parent / "ui"
 # Order shown in the UI; the first one present is the default. `shared` is the recipe's shared
-# encoder + augmentation (no mining), the model chosen for the app: it beat the QVIM 2025 winners'
-# released model on QVIM DEV and EVAL (demo/README.md, "Choosing the app's model").
+# encoder + augmentation (no mining), the model chosen for the app: it ties the QVIM 2025 winners'
+# released model on QVIM DEV and EVAL and, unlike it, can be retrained (demo/README.md, "Choosing
+# the app's model").
 UI_MODELS = ("shared", "metadata", "retrieval", "baseline", "random")
 MODEL_LABELS = {**MODEL_NAMES, "shared": "VocaLocate: shared encoder + augmentation (recommended)"}
 HINT_SUGGESTIONS = ("metallic", "wooden", "short", "long", "high-pitched", "low-pitched", "distant", "electronic")
