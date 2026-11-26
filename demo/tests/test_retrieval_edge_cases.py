@@ -26,7 +26,7 @@ def test_existing_warehouse_without_unpaired_view_can_still_load_pairs(tmp_path)
                 'train' AS split, 'features/voice.npy' AS imitation_feature_path,
                 'features/sound.npy' AS reference_feature_path;
             CREATE TABLE v_sfx_candidates AS SELECT
-                'vis' AS source, 'sound' AS clip_id, 'features/sound.npy' AS feature_path;
+                'vis' AS source, 'sound' AS clip_id, 'reference' AS role, 'features/sound.npy' AS feature_path;
             CREATE TABLE queries AS SELECT 'vis' AS source, 'voice' AS imitation_clip_id, 'bark' AS text_hint;
         """)
     dataset = load_dataset(cfg, ["vis"])
