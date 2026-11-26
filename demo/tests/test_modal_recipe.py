@@ -83,7 +83,7 @@ def test_training_reports_metrics_and_skips_completed_run(recipe_app, monkeypatc
 
     run = Mock(side_effect=train)
     monkeypatch.setattr(cli, "main", run)
-    job = ("vis", "shared", 490, 8, 2, "qvim_dev", "qvim_eval")
+    job = ("vis", "shared", 490, 8, 2, "qvim_dev", "qvim_eval", "vis=2")
     result = recipe_app.train_one(*job)
     assert isinstance(result.pop("wall_sec"), int)
     assert result == {
@@ -97,7 +97,7 @@ def test_training_reports_metrics_and_skips_completed_run(recipe_app, monkeypatc
         "--lake", recipe_app.LAKE, "-v", "recipe", "--source", "vis", "--models", "shared",
         "--seed", "490", "--encoder", "mobilenetv3", "--device", "cuda", "--frames", "1000",
         "--batch-size", "8", "--bench", "qvim_dev", "--no-results-file", "--preload",
-        "--extra-bench", "qvim_eval", "--recipe-epochs", "2",
+        "--extra-bench", "qvim_eval", "--recipe-epochs", "2", "--oversample", "vis=2",
     ])
 
     assert recipe_app.train_one(*job) == {"seed": 490, "name": "shared", "status": "already done"}
@@ -113,6 +113,7 @@ def test_failed_training_does_not_commit_recipe_output(recipe_app, monkeypatch):
         recipe_app.train_one("vis", "shared", 490, 8, 0, "qvim_dev")
 
     assert "--recipe-epochs" not in run.call_args.args[0]
+    assert "--oversample" not in run.call_args.args[0]
     recipe_app.lake.commit.assert_not_called()
 
 
@@ -147,7 +148,7 @@ def test_launcher_collects_only_complete_seeds(recipe_app, monkeypatch, sync_ena
     }.items():
         monkeypatch.setattr(recipe_app, name, replacement)
 
-    kwargs = dict(seeds="490, 491,", models="greif, shared, ", epochs=2, sync=sync_enabled)
+    kwargs = dict(seeds="490, 491,", models="greif, shared, ", epochs=2, sync=sync_enabled, oversample="vis=2")
     if fail_first:
         with pytest.raises(SystemExit, match="1 trainings failed"):
             recipe_app.main(**kwargs)
@@ -155,7 +156,8 @@ def test_launcher_collects_only_complete_seeds(recipe_app, monkeypatch, sync_ena
         recipe_app.main(**kwargs)
 
     train.assert_called_once_with(
-        [("vis", model, seed, 64, 2, "qvim_dev", "") for seed in (490, 491) for model in ("greif", "shared")],
+        [("vis", model, seed, 64, 2, "qvim_dev", "", "vis=2")
+         for seed in (490, 491) for model in ("greif", "shared")],
         return_exceptions=True, order_outputs=True,
     )
     completed_seeds = (491,) if fail_first else (490, 491)
