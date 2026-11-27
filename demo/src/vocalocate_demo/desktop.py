@@ -90,7 +90,10 @@ def gpu_info() -> dict:
             name = None
     _gpu_cache = {"available": available, "name": name}
     return _gpu_cache
+
+
 PACKAGED_CONFIG = Path(__file__).parent / "configs" / "demo.toml"
+MAC_APPLICATIONS = Path("/Applications")  # where macOS browsers are looked up
 
 
 # -- data dir and files -------------------------------------------------------------------------
@@ -283,7 +286,7 @@ def _browser_candidates() -> list[str]:
                     found.append(str(Path(base) / rel))
     elif sys.platform == "darwin":
         for app in ("Microsoft Edge", "Google Chrome", "Chromium"):
-            p = Path("/Applications") / f"{app}.app" / "Contents" / "MacOS" / app
+            p = MAC_APPLICATIONS / f"{app}.app" / "Contents" / "MacOS" / app
             if p.exists():
                 found.append(str(p))
     for name in ("msedge", "microsoft-edge", "google-chrome", "chrome", "chromium", "chromium-browser"):
@@ -538,6 +541,7 @@ def serve_main(home_dir: Path | None = None, port: int | None = None, host: str 
     existing = running_port(home_dir)
     if existing:
         log.info("VocaLocate is already running on port %d", existing)
+        instance_lock.close()
         return 0
     hid_gpu = False
     if resolve_device(load_settings(home_dir)) == "cpu" and "CUDA_VISIBLE_DEVICES" not in os.environ:

@@ -697,6 +697,8 @@ def _load_examples(folder: Path) -> list[dict]:
 class _FolderPicker:
     """Native folder dialog. One long-lived thread owns every Tk call; None when there is no GUI."""
 
+    timeout = 600.0  # seconds a request waits for the dialog before answering None
+
     def __init__(self):
         self._lock = threading.Lock()
         self._jobs: queue.Queue = queue.Queue()
@@ -714,7 +716,7 @@ class _FolderPicker:
             reply: queue.Queue = queue.Queue()
             self._jobs.put((title, reply))
         try:  # outside the lock: a dialog left open must not block later requests forever
-            return reply.get(timeout=600)
+            return reply.get(timeout=self.timeout)
         except queue.Empty:
             return None
 
