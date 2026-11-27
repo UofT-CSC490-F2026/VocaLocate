@@ -1,4 +1,7 @@
 [run]
+# Measure branches as well as lines: an `if` whose False side never runs is untested logic,
+# even when every line in it executes.
+branch = True
 source =
     vocalocate_pipeline
     vocalocate_demo

@@ -71,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
             print(*row, sep="\t")
     elif args.command == "sync":
         print(sync(args.src, args.dst, args.only))
-    elif args.command == "remote":
+    elif args.command == "remote":  # pragma: no branch  (argparse requires a known subcommand, so no else)
         if args.action == "ingest":
             if not args.source:
                 raise SystemExit("remote ingest needs --source")

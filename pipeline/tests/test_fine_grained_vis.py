@@ -40,6 +40,13 @@ def test_flow_puts_everything_in_train_and_builds_pairs(cfg, fgvis_dir):
     assert rows == [("Animal_Domestic animals_pets_Cat_Hiss",)]
 
 
+def test_finds_the_release_folder_past_an_unrelated_sibling(fgvis_dir):
+    (fgvis_dir / "Docs").mkdir()  # sorts before Fine-grained_VocalImitationSet and has no metadata
+    (fgvis_dir / "Docs" / "readme.txt").write_text("notes", encoding="utf-8")
+    result = ingest("fgvis", fgvis_dir)
+    assert len([f for f in result.files if f.role == "reference"]) == 4
+
+
 def test_with_vimsketch_a_class_shares_one_category(cfg, fgvis_dir, vimsketch_release):
     run_dataset_flow("vimsketch", vimsketch_release, cfg)
     run_dataset_flow("fgvis", fgvis_dir, cfg)

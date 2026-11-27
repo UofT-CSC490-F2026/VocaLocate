@@ -49,6 +49,20 @@ def test_app_uses_workdir_and_indexes_explicit_library(tmp_path, monkeypatch):
     server.serve_forever.assert_called_once_with()
 
 
+def test_app_without_workdir_or_root_starts_with_no_library(tmp_path, monkeypatch):
+    create_state = Mock()
+    server = Mock()
+    server.serve_forever.side_effect = KeyboardInterrupt
+    monkeypatch.setattr(app, "AppState", create_state)
+    monkeypatch.setattr(app, "serve", Mock(return_value=server))
+
+    assert main(["--lake", str(tmp_path / "lake"), "app"]) == 0
+
+    assert create_state.call_args.kwargs["examples"] is None
+    assert create_state.call_args.kwargs["clap"] is None
+    create_state.return_value.add_library.assert_not_called()
+
+
 def test_search_reports_missing_checkpoint(tmp_path):
     lake = tmp_path / "lake"
     with pytest.raises(SystemExit, match=r"no trained model.*baseline\.pt"):
@@ -157,6 +171,20 @@ def test_run_cli_uses_small_defaults_and_prints_report(tmp_path, monkeypatch, ca
     assert main(["run", "--workdir", str(workdir), "--small", "--sweep", "--n-neg", "4",
                  "--text-branch", "--clap-backend", "fake"]) == 0
     assert "# Small demo" in capsys.readouterr().out
+
+
+def test_run_cli_keeps_explicit_epochs_with_small(tmp_path, monkeypatch, capsys):
+    workdir = tmp_path / "run"
+    workdir.mkdir()
+
+    def run(workdir, cfg, train_cfg, mining_cfg, *, small, sweep, clap):
+        assert small and not sweep and clap is None
+        assert (train_cfg.epochs, train_cfg.ft_epochs) == (2, 1)
+        (workdir / "report.md").write_text("# Two epochs\n", encoding="utf-8")
+
+    monkeypatch.setattr(demo_flow, "run_demo", run)
+    assert main(["run", "--workdir", str(workdir), "--small", "--epochs", "2", "--ft-epochs", "1"]) == 0
+    assert "# Two epochs" in capsys.readouterr().out
 
 
 def test_train_cli_reads_explicit_config_and_writes_sweep_report(tmp_path, monkeypatch, capsys):

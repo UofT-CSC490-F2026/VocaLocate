@@ -22,3 +22,12 @@ def test_captdure_flow_holds_everything_out_and_builds_caption_view(cfg, captdur
     assert warehouse.query(cfg, "SELECT DISTINCT split FROM v_sfx_candidates WHERE source = 'captdure'") == [("test",)]
     rows = warehouse.query(cfg, "SELECT category, count(*) FROM v_captions GROUP BY ALL ORDER BY ALL")
     assert rows == [("clock", 3), ("fan", 1)]
+
+
+def test_captdure_reads_a_plain_unquoted_header(captdure_dir):
+    captions = captdure_dir / "single_source_caption.csv"
+    lines = captions.read_text(encoding="utf-8-sig").splitlines()
+    captions.write_text("\n".join([lines[0].strip('"'), *lines[1:]]) + "\n", encoding="utf-8")
+    result = ingest("captdure", captdure_dir)
+    assert len(result.captions) == 4
+    assert result.missing == ["fan/fan_09_009.wav"]

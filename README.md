@@ -1,5 +1,9 @@
 # VocaLocate
 
+<!-- coverage-badge:start -->
+[![Coverage](https://img.shields.io/badge/coverage-updated%20on%20main-lightgrey)](#code-coverage)
+<!-- coverage-badge:end -->
+
 VocaLocate lets a video editor or sound designer find a sound effect in their own library by
 imitating it with their voice ("pshhh", "bonk"), optionally adding a short text hint such as
 "metallic". This repository holds the CSC490 project: the data pipeline that prepares audio for
@@ -19,15 +23,24 @@ app built on top.
 Scope: first-party VocaLocate Python code. Frontend JavaScript coverage is unmeasured. Terraform is checked separately by the infra workflow. Vendored EfficientAT and the A3/A4 Nanochat experiments are excluded.
 <!-- coverage:end -->
 
-GitHub Actions runs both pytest suites, then combines their line coverage for
+GitHub Actions runs both pytest suites, then combines their line **and branch** coverage for
 `pipeline/vocalocate_pipeline/`, `demo/src/vocalocate_demo/`, and the Modal training
-entry point in `demo/modal/`. The report includes Python files that the tests never
-execute, so an untested script counts against the combined percentage.
+entry point in `demo/modal/`. Branch coverage counts both outcomes of every `if` and loop,
+so an `if` whose False side never runs is reported even when every line executes. The
+report includes Python files that the tests never execute, so an untested script counts
+against the combined percentage.
 
-The Python report excludes vendored EfficientAT and the separate A3/A4 Nanochat
-experiments. The search UI’s browser JavaScript is part of VocaLocate and its
-coverage is currently unmeasured. The independent [infra workflow](.github/workflows/infra.yml)
-runs `terraform validate` and `terraform test` for the project’s AWS deployment.
+The `gate` job fails the check if line or branch coverage drops below 100%. It runs as a
+separate job, so the PR comment and this table still update and show where the gap is.
+
+What the Python report does not cover, and why:
+
+| Excluded | Why |
+| --- | --- |
+| `demo/src/vocalocate_demo/efficientat/` | Vendored third-party code (the EfficientAT MobileNet), kept unchanged from upstream |
+| A3/A4 Nanochat experiments (`a3/`, `a4/`) | Separate course assignments with their own tests, not part of VocaLocate |
+| Search UI JavaScript (`demo/src/vocalocate_demo/ui/`) | Browser code: recording, drag and drop and page rendering need a browser test harness, which is not set up yet. The HTTP API it calls is covered by `demo/tests/test_app.py` |
+| Terraform (`infra/`) | Not Python. The [infra workflow](.github/workflows/infra.yml) runs `terraform validate` and `terraform test` |
 
 The `code-coverage` artifact includes per-file results. Same-repository PRs get a
 coverage comment, and the Actions summary also shows the totals for fork PRs.

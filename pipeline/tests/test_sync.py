@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import io
 import os
 import shutil
 
+import pyarrow as pa
+import pyarrow.fs as pafs
 import pyarrow.parquet as pq
 
 from vocalocate_pipeline import remote
@@ -151,3 +154,61 @@ def test_s3_from_web_identity_uses_temporary_credentials(monkeypatch):
     assert isinstance(fs, pafs.S3FileSystem) and fs.region == "ca-central-1"
     assert calls == {"RoleArn": "arn:aws:iam::123456789012:role/modal", "RoleSessionName": "test",
                      "WebIdentityToken": "jwt"}
+
+
+class _ObjectStore(pafs.FileSystemHandler):
+    """A flat in-memory bucket, like S3 without folders, that reports no modification times."""
+
+    def __init__(self):
+        self.objects: dict[str, bytes] = {}
+
+    def get_type_name(self):
+        return "object-store"
+
+    def normalize_path(self, path):
+        return path
+
+    def get_file_info(self, paths):
+        return [pafs.FileInfo(p, pafs.FileType.File, size=len(self.objects[p])) if p in self.objects
+                else pafs.FileInfo(p, pafs.FileType.NotFound) for p in paths]
+
+    def get_file_info_selector(self, selector):
+        base = selector.base_dir.rstrip("/") + "/"
+        return [pafs.FileInfo(p, pafs.FileType.File, size=len(b)) for p, b in self.objects.items() if p.startswith(base)]
+
+    def open_input_stream(self, path):
+        return pa.BufferReader(self.objects[path])
+
+    def open_output_stream(self, path, metadata):
+        objects = self.objects
+
+        class Upload(io.BytesIO):
+            def close(self):
+                objects[path] = self.getvalue()
+                super().close()
+
+        return pa.PythonFile(Upload(), mode="w")
+
+    def _unused(self, *args):
+        raise NotImplementedError
+
+    create_dir = delete_dir = delete_dir_contents = delete_root_dir_contents = delete_file = _unused
+    move = copy_file = open_input_file = open_append_stream = _unused
+
+
+def test_sync_pushes_to_and_pulls_from_an_object_store_without_folders_or_times(tmp_path):
+    store = _ObjectStore()
+    s3 = pafs.PyFileSystem(store)
+    local = tmp_path / "local"
+    (local / "warehouse").mkdir(parents=True)
+    (local / "warehouse" / "vocalocate.duckdb").write_bytes(b"db")
+
+    assert sync(local, "s3://lake", s3=s3).copied == 1
+    # Written straight to its key: no folder objects and no temporary upload left behind.
+    assert store.objects == {"lake/warehouse/vocalocate.duckdb": b"db"}
+
+    fresh = tmp_path / "fresh"
+    assert sync("s3://lake", fresh, s3=s3).copied == 1
+    assert (fresh / "warehouse" / "vocalocate.duckdb").read_bytes() == b"db"
+    # With no source time to copy, the pulled file keeps its own; equal sizes then mean nothing to do.
+    assert sync("s3://lake", fresh, s3=s3).copied == 0

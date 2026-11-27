@@ -47,3 +47,12 @@ def test_summarize_cli_renders_benchmarks_text_and_sweep_results(tmp_path, capsy
 def test_summarize_requires_at_least_one_result(tmp_path):
     with pytest.raises(ValueError, match="no results.json found"):
         summarize([tmp_path])
+
+
+def test_summarize_cli_without_out_only_prints(tmp_path, capsys):
+    folder = tmp_path / "run-490"
+    folder.mkdir()
+    (folder / "results.json").write_text(json.dumps(_run(490, 0.5)), encoding="utf-8")
+    assert main(["summarize", str(folder)]) == 0
+    assert "mining demo: 1 seeds (490)" in capsys.readouterr().out
+    assert [p.name for p in tmp_path.iterdir()] == ["run-490"]

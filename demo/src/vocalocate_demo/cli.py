@@ -359,7 +359,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.out:
             args.out.write_text(text, encoding="utf-8")
         print(text)
-    elif args.command == "search":
+    elif args.command == "search":  # pragma: no branch  (argparse requires a known subcommand, so no else)
         from . import train as T
         from .experiment import model_dir
         from .search import embed_query, index_library, search, text_scores
