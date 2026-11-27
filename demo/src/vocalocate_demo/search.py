@@ -193,10 +193,18 @@ def text_scores(cfg: PipelineConfig, library: str, index: LibraryIndex, text: st
             f"SELECT clip_id, clean_path FROM clips WHERE source = {_sql_str('library_' + library)} AND status = 'ok'",
         )
     clean = dict(rows)
-    audio = cached_audio_embeddings(
-        cfg, f"library_{library}__clap", index.clip_ids, [clean[c] for c in index.clip_ids], clap
-    )
-    return audio @ clap.embed_text([text])[0]
+    # While a re-index runs, the index may still hold clips the new scan dropped (deleted files): score
+    # only the clips that are still in the warehouse and give the rest the lowest score (finite, so the
+    # z-normalised fusion stays well defined).
+    present = [i for i, c in enumerate(index.clip_ids) if c in clean]
+    ids = [index.clip_ids[i] for i in present]
+    scores = np.zeros(len(index.clip_ids), dtype=np.float32)
+    if ids:
+        audio = cached_audio_embeddings(cfg, f"library_{library}__clap", ids, [clean[c] for c in ids], clap)
+        got = audio @ clap.embed_text([text])[0]
+        scores[:] = got.min()
+        scores[present] = got
+    return scores
 
 
 def search(

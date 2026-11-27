@@ -176,12 +176,15 @@ class AppState:
                  autostart_dir: Path | None = None):
         self.cfg, self.source, self.clap = cfg, source, clap
         self.models_dir = Path(models) if models else model_dir(cfg, source)
+        self.models_explicit = bool(models)  # --models: a folder we serve from but never write into
         self.home = Path(home) if home is not None else None
         self.autostart_dir = autostart_dir  # tests point this at a fake Startup folder
         self.lock = threading.RLock()  # libraries dict and index swaps
         self.model_lock = threading.RLock()  # model construction (ours and CLAP's)
         self.index_lock = threading.Lock()  # one indexing job at a time (the pipeline writes shared lake parts)
         self.wh_lock = threading.RLock()  # warehouse reads vs the warehouse rebuild after a scan
+        self.settings_lock = threading.RLock()  # settings read-modify-write from request threads
+        self.clap_lock = threading.Lock()  # at most one CLAP load starts
         self.libraries: dict[str, Library] = {}
         self.models: dict[str, tuple] = {}
         self.query_cache: dict[tuple[str, str], np.ndarray] = {}
@@ -253,9 +256,16 @@ class AppState:
                 lib.indexes[name] = idx
 
     def _maybe_load_clap(self) -> None:
-        if self.text_auto and self.clap is None and self.text_state == "off" and not self.text_error:
+        if self.text_auto and not self.text_error:
+            self._start_clap(("off",))
+
+    def _start_clap(self, from_states: tuple[str, ...]) -> None:
+        """Start one background CLAP load if none is running (text_state flips to loading before the thread)."""
+        with self.clap_lock:
+            if self.clap is not None or self.text_state not in from_states:
+                return
             self.text_state = "loading"
-            threading.Thread(target=self._load_clap, name="vocalocate-clap", daemon=True).start()
+        threading.Thread(target=self._load_clap, name="vocalocate-clap", daemon=True).start()
 
     def _load_clap(self) -> None:
         if self.clap is not None:
@@ -285,10 +295,11 @@ class AppState:
     def _persist_library(self, lib: Library) -> None:
         if self.home is None:
             return
-        libs = [e for e in self.settings["libraries"] if e["name"] != lib.name]
-        libs.append({"name": lib.name, "roots": lib.roots})
-        self.settings["libraries"] = libs
-        self._save_settings()
+        with self.settings_lock:
+            libs = [e for e in self.settings["libraries"] if e["name"] != lib.name]
+            libs.append({"name": lib.name, "roots": lib.roots})
+            self.settings["libraries"] = libs
+            self._save_settings()
         lib.saved = True
 
     def autostart_supported(self) -> bool:
@@ -310,30 +321,34 @@ class AppState:
         }
 
     def update_settings(self, body: dict) -> dict:
-        if "model" in body:
-            if body["model"] not in UI_MODELS:
-                raise ValueError(f"unknown model {body['model']!r}; choose one of {', '.join(UI_MODELS)}")
-            self.settings["model"] = body["model"]
-        if "autostart" in body:
-            if not self.autostart_supported():
-                raise ValueError("starting at sign-in is only available in the Windows desktop app (vocalocate)")
-            if body["autostart"]:
-                desktop.enable_autostart(self.home, self.autostart_dir)
-            else:
-                desktop.disable_autostart(self.autostart_dir)
-            self.settings["autostart"] = bool(body["autostart"])
+        # Validate everything first so a rejected request changes nothing.
+        if "model" in body and body["model"] not in UI_MODELS:
+            raise ValueError(f"unknown model {body['model']!r}; choose one of {', '.join(UI_MODELS)}")
+        if "autostart" in body and not self.autostart_supported():
+            raise ValueError("starting at sign-in is only available in the Windows desktop app (vocalocate)")
+        dev = None
         if "device" in body:
             dev = desktop.normalize_device(body["device"])
             if dev is None:
                 raise ValueError("device must be 'cpu' or 'gpu'")
             if dev == "auto" and not desktop.gpu_info()["available"]:
                 raise ValueError("no GPU was found on this computer, so VocaLocate keeps using the CPU")
-            self.settings["device"] = dev
-        if "text" in body:
-            self.settings["text"] = bool(body["text"])
-            if self.settings["text"] and self.clap is None and self.text_state in ("off", "error"):
-                threading.Thread(target=self._load_clap, name="vocalocate-clap", daemon=True).start()
-        self._save_settings()
+        with self.settings_lock:
+            if "model" in body:
+                self.settings["model"] = body["model"]
+            if "autostart" in body:
+                if body["autostart"]:
+                    desktop.enable_autostart(self.home, self.autostart_dir)
+                else:
+                    desktop.disable_autostart(self.autostart_dir)
+                self.settings["autostart"] = bool(body["autostart"])
+            if dev is not None:
+                self.settings["device"] = dev
+            if "text" in body:
+                self.settings["text"] = bool(body["text"])
+            self._save_settings()
+        if body.get("text"):
+            self._start_clap(("off", "error"))
         return self.public_settings()
 
     # -- models -------------------------------------------------------------
@@ -371,6 +386,10 @@ class AppState:
 
     def import_models(self, folder: str) -> dict:
         """Copy *.pt (+ fusion.json) from a folder into this app's model dir, load them, re-index libraries."""
+        if self.models_explicit:
+            # e.g. a recipe run's output: importing would overwrite its checkpoints and fusion.json.
+            raise ValueError(f"this app serves the models in {self.models_dir} (--models) and does not change them; "
+                             "restart it with --models pointing at the folder you want")
         src = Path(str(folder)).expanduser()
         if not src.is_dir():
             raise ValueError(f"not a folder on this machine: {folder}")
@@ -383,22 +402,28 @@ class AppState:
         dest = self.models_dir
         dest.mkdir(parents=True, exist_ok=True)
         same = dest.resolve() == src.resolve()
-        changed = []
-        for name in found:
-            target = dest / f"{name}.pt"
-            if not same:
-                tmp = dest / f".{name}.pt.importing"
-                shutil.copyfile(src / f"{name}.pt", tmp)
-                try:
-                    with self.model_lock:
-                        _, _, ckpt = _train().load(tmp, device="cpu")
-                    if "model_version" not in ckpt:
-                        raise ValueError("no model_version")
-                except Exception as exc:
+        changed = list(found)
+        if not same:
+            # Validate every checkpoint before replacing any, so a bad file leaves the installed models untouched.
+            staged = []
+            try:
+                for name in found:
+                    tmp = dest / f".{name}.pt.importing"
+                    staged.append(tmp)
+                    shutil.copyfile(src / f"{name}.pt", tmp)
+                    try:
+                        with self.model_lock:
+                            _, _, ckpt = _train().load(tmp, device="cpu")
+                        if "model_version" not in ckpt:
+                            raise ValueError("no model_version")
+                    except Exception as exc:
+                        raise ValueError(f"{src / (name + '.pt')} is not a VocaLocate model checkpoint ({exc})") from exc
+            except BaseException:
+                for tmp in staged:
                     tmp.unlink(missing_ok=True)
-                    raise ValueError(f"{src / (name + '.pt')} is not a VocaLocate model checkpoint ({exc})") from exc
-                os.replace(tmp, target)
-            changed.append(name)
+                raise
+            for name, tmp in zip(found, staged):
+                os.replace(tmp, dest / f"{name}.pt")
         if (src / "fusion.json").is_file() and not same:
             shutil.copyfile(src / "fusion.json", dest / ".fusion.json.importing")
             os.replace(dest / ".fusion.json.importing", dest / "fusion.json")
@@ -450,8 +475,9 @@ class AppState:
                 raise KeyError(f"unknown library {name!r}")
             self.text_cache = {k: v for k, v in self.text_cache.items() if k[0] != name}
         if self.home is not None:
-            self.settings["libraries"] = [e for e in self.settings["libraries"] if e["name"] != name]
-            self._save_settings()
+            with self.settings_lock:
+                self.settings["libraries"] = [e for e in self.settings["libraries"] if e["name"] != name]
+                self._save_settings()
 
     def rescan(self, name: str) -> Library:
         lib = self.libraries.get(name)
@@ -529,8 +555,10 @@ class AppState:
                 lib.state, lib.message, lib.finished = "error", f"{type(exc).__name__}: {exc}", time.time()
 
     def default_library(self) -> str:
-        if "default" in self.libraries or len(self.libraries) != 1:
+        if "default" in self.libraries or not self.libraries:
             return "default"
+        if len(self.libraries) > 1:
+            raise ValueError(f"choose a library to search: {', '.join(sorted(self.libraries))}")
         return next(iter(self.libraries))
 
     # -- search -------------------------------------------------------------
@@ -685,7 +713,10 @@ class _FolderPicker:
                 self._thread.start()
             reply: queue.Queue = queue.Queue()
             self._jobs.put((title, reply))
-            return reply.get()
+        try:  # outside the lock: a dialog left open must not block later requests forever
+            return reply.get(timeout=600)
+        except queue.Empty:
+            return None
 
     def _run(self) -> None:
         try:
@@ -718,7 +749,7 @@ def _pick_folder_macos(title: str) -> str | None:
     script = f'POSIX path of (choose folder with prompt "{title.replace(chr(34), "")}")'
     try:
         out = subprocess.run(["osascript", "-e", script], capture_output=True, text=True, timeout=600)
-        return out.stdout.strip() or None if out.returncode == 0 else None
+        return (out.stdout.strip() or None) if out.returncode == 0 else None
     except Exception:
         return None
 

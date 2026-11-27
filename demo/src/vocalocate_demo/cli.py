@@ -195,12 +195,13 @@ def _parser() -> argparse.ArgumentParser:
 def _default_config(args) -> Path | None:
     if args.config:
         return args.config
-    # Bundled with the package so an installed copy uses the settings the checkpoints were trained with.
-    packaged = Path(__file__).resolve().parent / "configs" / "demo.toml"
-    if packaged.exists():
-        return packaged
+    # In a source checkout, demo/configs/demo.toml is the one developers edit. An installed copy has no
+    # such file and uses the bundled one (the settings the checkpoints were trained with).
     here = Path(__file__).resolve().parents[2] / "configs" / "demo.toml"
-    return here if here.exists() else None
+    if here.exists():
+        return here
+    packaged = Path(__file__).resolve().parent / "configs" / "demo.toml"
+    return packaged if packaged.exists() else None
 
 
 def main(argv: list[str] | None = None) -> int:

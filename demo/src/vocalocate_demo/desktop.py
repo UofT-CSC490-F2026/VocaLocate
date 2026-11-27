@@ -183,6 +183,29 @@ def running_port(home_dir: Path) -> int | None:
     return port if probe(port) else None
 
 
+def acquire_instance_lock(home_dir: Path):
+    """Hold an exclusive lock on <home>/server.lock for this process's lifetime; None if another backend has it.
+
+    Closes the gap between checking server.json and binding a port, where two backends started at the
+    same moment would otherwise both run against the same lake.
+    """
+    f = open(Path(home_dir) / "server.lock", "a+b")
+    try:
+        if sys.platform == "win32":
+            import msvcrt
+
+            f.seek(0)
+            msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        f.close()
+        return None
+    return f
+
+
 def port_free(port: int, host: str = "127.0.0.1") -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         if sys.platform == "win32" and hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
@@ -242,7 +265,7 @@ def ensure_backend(home_dir: Path, timeout: float = 180.0) -> int:
         port = running_port(home_dir)
         if port:
             return port
-        if proc.poll() is not None:
+        if proc.poll() is not None and proc.returncode != 0:  # exit 0: another backend holds the lock
             raise RuntimeError(f"the VocaLocate backend exited (code {proc.returncode}); see {home_dir / 'logs' / 'server.log'}")
         time.sleep(0.25)
     raise RuntimeError(f"the VocaLocate backend did not start in {timeout:.0f} s; see {home_dir / 'logs' / 'server.log'}")
@@ -508,6 +531,10 @@ def serve_main(home_dir: Path | None = None, port: int | None = None, host: str 
     handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
     logging.basicConfig(level=logging.INFO, handlers=[handler], force=True)
 
+    instance_lock = acquire_instance_lock(home_dir)
+    if instance_lock is None:
+        log.info("another VocaLocate backend is already running for %s", home_dir)
+        return 0
     existing = running_port(home_dir)
     if existing:
         log.info("VocaLocate is already running on port %d", existing)
@@ -539,6 +566,7 @@ def serve_main(home_dir: Path | None = None, port: int | None = None, host: str 
     finally:
         clear_server_info(home_dir)
         server.server_close()
+        instance_lock.close()  # released before a restart starts the new backend, which takes it
     if restart.is_set():
         if hid_gpu:
             os.environ.pop("CUDA_VISIBLE_DEVICES", None)  # the new server decides for itself

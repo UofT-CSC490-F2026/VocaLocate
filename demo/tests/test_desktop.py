@@ -109,7 +109,7 @@ def test_packaged_config_matches_source_checkout():
     source = Path(__file__).resolve().parents[1] / "configs" / "demo.toml"
     assert desktop.PACKAGED_CONFIG.read_bytes() == source.read_bytes()
     args = _parser().parse_args(["generate", "--out", "x"])
-    assert _default_config(args) == desktop.PACKAGED_CONFIG.resolve()
+    assert _default_config(args) == source  # a checkout uses the file developers edit
 
 
 def test_autostart_with_fake_startup_dir(tmp_path):
