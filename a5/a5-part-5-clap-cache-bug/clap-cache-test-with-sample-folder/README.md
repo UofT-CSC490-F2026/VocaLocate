@@ -24,3 +24,5 @@ To compare the current local `main` commit with the current `HEAD` commit withou
 Add `--scenario remove` (or `add` or `replace`) to run one scenario. The launcher prints both commit IDs, extracts only their tracked Python packages to temporary directories, and removes them afterwards. It does not fetch remote updates or include uncommitted code changes. If `main` later contains the fix, both versions may pass. Failures on main should be inspected: a failed run can have causes other than the cache bug. The command exits nonzero if an after scenario fails or setup fails.
 
 Each scenario lists the original samples folder, temporary library folder, starting sounds, and changed files. A NumPy shape error reports the current voice scores first and the stale text scores second, following the actual calculation; its order is not chronological.
+
+The add case adds the church bell; the remove case removes the dog bark; the replacement case removes the dog bark and adds the church bell. Each case starts from a fresh temporary library.

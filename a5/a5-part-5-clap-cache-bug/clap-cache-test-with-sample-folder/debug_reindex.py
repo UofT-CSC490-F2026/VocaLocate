@@ -103,8 +103,8 @@ def main():
     no_dog = tuple(i for i in range(len(samples)) if i != dog)
     no_bell = tuple(i for i in range(len(samples)) if i != bell)
     for name, before, after in [
-        ("Add", (0, 1, 2, 3), (0, 1, 2, 3, 4)),
-        ("Remove", (0, 1, 2, 3, 4), (0, 1, 2, 3)),
+        ("Add", no_bell, tuple(range(len(samples)))),
+        ("Remove", tuple(range(len(samples))), no_dog),
         ("Replace", no_bell, no_dog),
     ]:
         if args.scenario in ("all", name.lower()):
