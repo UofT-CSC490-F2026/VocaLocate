@@ -26,7 +26,7 @@ aws = ["boto3>=1.34"]
 vocalocate-pipeline = "vocalocate_pipeline.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+include = ["vocalocate_pipeline*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

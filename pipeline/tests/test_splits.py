@@ -1,7 +1,7 @@
 from collections import Counter
 
 from vocalocate_pipeline.config import SplitConfig
-from vocalocate_pipeline.splits import assign_splits, split_for_group
+from vocalocate_pipeline.flow_functions.splits import assign_splits, split_for_group
 
 
 def _clip(i, group, source="vimsketch", status="ok"):

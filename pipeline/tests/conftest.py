@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -47,6 +48,22 @@ def esc50_dir(tmp_path) -> Path:
             write(root / "audio" / name, x, sr)
             w.writerow([name, name[0], i, cat, "False", src, take])
         w.writerow(["5-500-A-4.wav", 5, 4, "frog", "False", "500", "A"])  # listed but missing
+    return root
+
+
+@pytest.fixture
+def esc50_voice_dir(tmp_path, esc50_dir) -> Path:
+    """ESC-50-Voice with ESC-50 unpacked inside: two speakers imitate both takes of upload 100 and 2-200-A-1."""
+    root = tmp_path / "ESC-50-Voice"
+    shutil.copytree(esc50_dir, root / "ESC-50")
+    names = {
+        "000": ["1-100-A-0_000.wav", "1-100-B-0_000.wav", "2-200-A-1_000.wav"],
+        "001": ["1-100-A-0_001.wav", "1-100-B-0.wav_001.wav",  # the release also uses <target>.wav_<speaker>.wav
+                "5-500-A-4_001.wav"],  # its ESC-50 clip is listed but missing
+    }
+    for i, (speaker, files) in enumerate(names.items()):
+        for j, name in enumerate(files):
+            write(root / "vocal_imitation" / speaker / name, tone(200 + 70 * i + 30 * j, 1.5, 48_000), 48_000)
     return root
 
 
@@ -111,6 +128,8 @@ def vimsketch_release(tmp_path) -> Path:
         for i, row in enumerate(rows):
             sub = "included" if row[3] == "True" else "excluded"
             write(vs / folder / sub / row[1], tone(600 + 40 * i, 1, 44_100), 44_100)
+    _survey(vs / "participant_survey.csv", [("p1", "20", "3.0", "4.0"), ("p3", "20", "1.0", "0.0")])
+    _survey(vs / "participant_survey_set2.csv", [("p4", "40", "10.0", "0.0")], index=True)
     return root
 
 
@@ -199,7 +218,26 @@ def vis_dir(tmp_path) -> Path:
             folder = "included" if inc == "True" else "excluded"
             write(root / "vocal_imitations" / folder / name, tone(250 + 60 * i, 1.2, 16_000), 16_000)
             w.writerow([i, name, i, ref, inc, "False", "False", pid, desc])
+    _survey(root / "participant_survey.csv", [("p1", "19", "2.0", "0.0"), ("p3", "30", "72.0", "5.0"),
+                                              ("listener", "25", "1.0", "1.0")], index=True)
     return root
+
+
+SURVEY_COLUMNS = ["participant_id", "age", "gender", "hearing_problems", "speech_problems",
+                  "years_actively_using_music_tech", "frequency_using_music_tech", "years_actively_making_music",
+                  "frequency_making_music", "years_actively_singing", "frequency_singing"]
+
+
+def _survey(path: Path, rows: list[tuple[str, str, str, str]], index: bool = False) -> None:
+    """A participant survey as released: (participant_id, age, years using music tech, years making music).
+
+    The Vocal Imitation Set's copy has an unnamed index column first.
+    """
+    with open(_mk(path), "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow([""] * index + SURVEY_COLUMNS)
+        for i, (pid, age, tech, music) in enumerate(rows):
+            w.writerow([i] * index + [pid, age, "f", "False", "False", tech, "Never", music, "Never", "0.0", "Never"])
 
 
 @pytest.fixture
@@ -219,4 +257,39 @@ def captdure_dir(tmp_path) -> Path:
     header = '"worker ID\twavfile\tcaption (ja)\tcaption (en)"'
     body = "\n".join("\t".join(r) for r in rows)
     (root / "single_source_caption.csv").write_text("﻿" + header + "\n" + body + "\n", encoding="utf-8")
+    return root
+
+
+@pytest.fixture
+def fgvis_dir(tmp_path) -> Path:
+    """Fine-grained Vocal Imitation Set, unzipped as released: 2 classes x 2 recordings, 5 imitations."""
+    root = tmp_path / "fgvis"
+    fg = root / "Fine-grained_VocalImitationSet"
+    classes = {"001Animal_Domestic animals_ pets_Cat_Hiss": ("hiss_a.wav", "hiss_b.wav"),
+               "021Animal_Wild animals_Bird_Crow_Caw": ("caw_a.wav", "caw_b.wav")}
+    for i, (cls, files) in enumerate((c, f) for c, fs in classes.items() for f in fs):
+        write(fg / "original_recordings" / cls / files, tone(300 + 90 * i, 1.5, 44_100), 44_100)
+    with open(_mk(fg / "original_recordings_license.csv"), "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["filename", "username", "user_url", "file_url", "freesound_id"])
+        for i, name in enumerate(n for fs in classes.values() for n in fs):
+            w.writerow([name, "u", "", "", str(2000 + i)])
+    imits = [
+        # imitation, reference, included, participant, description
+        ("001Animal_Domestic animals_ pets_Cat_Hiss-1.wav", "hiss_a.wav", "True", "7", "air leaking"),
+        ("001Animal_Domestic animals_ pets_Cat_Hiss-2.wav", "hiss_b.wav", "True", "8", ""),
+        ("001Animal_Domestic animals_ pets_Cat_Hiss-3.wav", "hiss_b.wav", "False", "9", "practice"),
+        ("021Animal_Wild animals_Bird_Crow_Caw-1.wav", "caw_a.wav", "True", "7", "a crow"),
+        ("021Animal_Wild animals_Bird_Crow_Caw-2.wav", "caw_b.wav", "True", "8", "nan"),
+    ]
+    with open(_mk(fg / "vocal_imitations.txt"), "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f, delimiter="\t")
+        w.writerow(["", "imitation_filename", "category_index", "category_d1", "category_d2", "category_d3",
+                    "category_d4", "category_d5", "category_d6", "reference_filename", "included", "draft",
+                    "training", "participant_id", "satisfaction", "participants_sound_recording_description",
+                    "participants_sound_recording_description_confidence"])
+        for i, (name, ref, inc, pid, desc) in enumerate(imits):
+            folder = "included" if inc == "True" else "excluded"
+            write(fg / "vocal_imitations" / folder / name, tone(250 + 70 * i, 1.2, 16_000), 16_000)
+            w.writerow([i, name, 2, "Animal", "", "", "", "", "", ref, inc, "False", "False", pid, "", desc, ""])
     return root

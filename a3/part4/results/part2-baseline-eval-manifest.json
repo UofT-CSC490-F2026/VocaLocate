@@ -1,0 +1,55 @@
+{
+  "model_tag": "d12-baseline",
+  "checkpoint_step": 2520,
+  "checkpoint_files": [
+    {
+      "name": "model_002520.pt",
+      "bytes": 792761399,
+      "sha256": "6afeed077daa10de16091682089f3ee93d67320838ee05ee97d1df80b46e99e4"
+    },
+    {
+      "name": "meta_002520.json",
+      "bytes": 1677,
+      "sha256": "f4be6357f25f2cd04e588a72290a4d9a0995650b3d2fe39e5f17fbb08ae9b16e"
+    }
+  ],
+  "checkpoint_directory": "a3/nanochat/dev-ignore/part2-baseline (excluded from Git)",
+  "code_commit": "77df78fc5e52f479df89c6a5ab3de915e53f1e40",
+  "evaluator_sha256": "985104229d7f023c6ca1a8b5ef32173dba832dea5b72572dd39759e4b76c70ab",
+  "tokenizer_sha256": {
+    "tokenizer.pkl": "46a1a55e1154ec68b217dde7deffbfeb1f754e911982d9d7f53a7523b356ab89",
+    "token_bytes.pt": "42317d1460274d9f175fe3532d0cc6a04d06396ed06d3338ce3f733c9f986665"
+  },
+  "working_directory": "a3/nanochat",
+  "commands": [
+    "python -m scripts.part4_eval --checkpoint-dir dev-ignore/part2-baseline --steps 2520 --trials 128 --batch-size 2 --seed 42 --output ../part4/results/part2-baseline-single-record.json",
+    "python -m scripts.part4_eval --checkpoint-dir dev-ignore/part2-baseline --steps 2520 --trials 128 --batch-size 2 --seed 20261104 --competing-records --output ../part4/results/part2-baseline-four-record-paired.json"
+  ],
+  "batch_size": 2,
+  "evaluation_sequence_len": 2048,
+  "runtime_crosscheck": {
+    "torch_version": "2.11.0+cu128",
+    "device": "cuda",
+    "checks": [
+      {
+        "input_tokens": 2048,
+        "distance_tokens": 128,
+        "matching_predictions": 128,
+        "correct": 85
+      },
+      {
+        "input_tokens": 2048,
+        "distance_tokens": 1536,
+        "matching_predictions": 128,
+        "correct": 31
+      }
+    ]
+  },
+  "validation": "All 1152 baseline four-record cases match the archived paired candidate IDs, expected answers and trial seeds. All 256 rerun B predictions at input 2048 and distances 128/1536 match the archived predictions.",
+  "output_sha256": {
+    "part2-baseline-single-record.json": "014dc03cb406bdfbd66a105f7e9d4252a0befd57004d1f63f5a0fc560beadb07",
+    "part2-baseline-four-record-paired.json": "60851393e6942abb3729d4b0d483b52f14e78b24de691dace798fc49e377ec05",
+    "part2-baseline-comparison.json": "1b3d945dd3cee146a60e374a6e7c26e461c4fa20ceb608a92a28a663e45d6f3a",
+    "part2-baseline-comparison.csv": "d41b3cb09702cc7e047d696bb84f6ae89bb0a67f1467934d9ab1ff501d53b260"
+  }
+}
