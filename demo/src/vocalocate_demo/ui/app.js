@@ -28,6 +28,8 @@ const S = {
   spaceHandled: false,
   missing: new Set(),   // contract routes this server does not have
   pollT: null, hintT: null,
+  rescans: new Set(),  // libraries whose requested rescan has not finished
+  statusGeneration: 0, // invalidate status requests started before a rescan was accepted
   busyFolder: null,     // "drawer" | "models" | "library" while a native picker is open
   fallback: {},         // context -> true when the path text field is shown
   confirmRemove: null,
@@ -139,10 +141,13 @@ function anyBusy(st) {
 async function poll() {
   clearTimeout(S.pollT);
   if (!S.online) return;
+  const generation = S.statusGeneration;
   try {
     const st = normalize(await api("/api/status"));
+    if (generation !== S.statusGeneration) return pollSoon();
     applyStatus(st);
   } catch (e) {
+    if (generation !== S.statusGeneration) return pollSoon();
     if (e.offline) return goOffline();
   }
   S.pollT = setTimeout(poll, anyBusy(S.status) ? POLL_BUSY_MS : POLL_IDLE_MS);
@@ -191,7 +196,20 @@ function applyStatus(st) {
   if (S.restartNotice === "pending" && st.boot && st.boot.state !== "ready") S.restartNotice = "booting";
   if (S.restartNotice === "booting" && st.boot && st.boot.state === "ready") { S.restartNotice = false; showNotice(""); }
   const textNow = textReady(), textBefore = prev ? prev.text_state === "ready" || (prev.text && !prev.text_state) : false;
-  if (S.waiting && canSearch()) requestSearch();
+  // A rescan may complete before the first poll, so also track requests explicitly.
+  let refreshSearch = false;
+  for (const name of S.rescans) if (!st.libraries.some((lib) => lib.name === name)) S.rescans.delete(name);
+  for (const lib of st.libraries) {
+    if (!S.rescans.has(lib.name) || (lib.state !== "ready" && lib.state !== "error")) continue;
+    if (lib.state === "ready" && lib.name === S.lib && S.query && !canSearch()) continue;
+    S.rescans.delete(lib.name);
+    if (lib.name === S.lib && lib.state === "ready" && S.query && canSearch()) refreshSearch = true;
+  }
+  if (refreshSearch) {
+    // The query hasn't changed, but its candidate index has; bypass signature deduplication.
+    S.lastSig = null;
+    requestSearch();
+  } else if (S.waiting && canSearch()) requestSearch();
   else if (textNow && !textBefore && S.hint.trim() && S.query) requestSearch();
 }
 
@@ -403,12 +421,16 @@ async function rescan(lib) {
     S.missing.add("rescan");
     await api("/api/libraries", { body: { name: lib.name, roots: lib.roots } });
   }
+  S.rescans.add(lib.name);
+  S.statusGeneration++;
+  S.statusKey = ""; // observe even an unchanged status when a quick rescan finishes between polls
   announce(`Rescanning ${lib.name}.`);
   pollSoon();
 }
 async function removeLib(lib) {
   try {
     await api(`/api/libraries/${encodeURIComponent(lib.name)}`, { method: "DELETE" });
+    S.rescans.delete(lib.name);
     announce(`Removed ${lib.name} from VocaLocate. Your files are untouched.`);
     if (S.lib === lib.name) { S.lib = ""; clearResults(); }
     S.statusKey = "";
@@ -861,8 +883,8 @@ async function doSearch() {
   $("#r-busy").hidden = false;
   try {
     const res = await api("/api/search", { body });
-    const stillCurrent = S.query === q && S.lib === lib.name && (textReady() ? S.hint.trim() : "") === text;
-    if (stillCurrent || !S.pending) {
+    // When another search is queued, never flash the superseded result in the UI.
+    if (!S.pending) {
       showNotice("");
       S.results = res;
       S.resultsQuery = q;
