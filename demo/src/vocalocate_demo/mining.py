@@ -31,10 +31,16 @@ Metadata is only used here, at training time. The deployed search never reads it
 
 Tests and edge cases (A5 Part 4)
 --------------------------------
-This is our most complex module: three strategies, a semi-hard band with strict edges, two
-false-negative filters, three metadata tiers and two fallbacks, all driven by a seeded RNG. A
-wrong negative here does not crash anything. It quietly trains the model to push away a sound
-that should match, so the edge cases are mostly about choosing the *wrong* negative silently.
+Why this module. `mine` has cyclomatic complexity 40 (radon), the highest of any algorithmic
+function in pipeline/ and demo/: train_recipe is 30, run_library_flow 25, and every other
+function is 26 or less. Only two functions score higher, and both are flat branch chains:
+cli.main (77) dispatches command-line arguments and summarize (55) formats the report.
+recipe.py has the largest module total (115, against 78 here before Part 4), but it is spread
+over 13 orchestration functions. Here, 40 decision points sit in one function: three strategies,
+a semi-hard band with strict edges, two false-negative filters, three metadata tiers and two
+fallbacks, all driven by a seeded RNG. And a wrong negative here does not crash anything. It
+quietly trains the model to push away a sound that should match, so the edge cases are mostly
+about choosing the *wrong* negative silently.
 
 Each case below is tagged [En] next to the code it guards and in the name of its test in
 demo/tests/test_mining_edge_cases.py. The happy path of each strategy is in
