@@ -123,7 +123,7 @@ plots one run against Karpathy and needs a small extension to accept several log
   final eval adds about 15 minutes, about $8.
 - **Part 4 needs at least 3 new runs** (all rewards together, plus each reward alone): budget roughly
   **$150–180**. Part 3 itself cost about $90–100, because of a preemption and an aborted attempt.
-- **Preemption:** Modal stopped run #1 at step 262. The launcher now resumes from the latest checkpoint
+- **Preemption:** Modal stopped run #1 after step 276. The launcher now resumes from the latest checkpoint
   (saved every 60 steps), but `chat_rl.py` never saves optimizer state, so a resume restarts the optimizer.
   Mention it in the write-up if it happens.
 - **GPU capacity:** a resume once waited about 11 minutes for 8 free H100s.
