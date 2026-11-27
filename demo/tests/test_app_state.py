@@ -288,6 +288,68 @@ def test_text_scores_tolerate_clips_the_new_scan_dropped(monkeypatch):
     assert np.allclose(search.text_scores(None, "sfx", idx, "boom", clap), 0.0)
 
 
+def _idx(ids):
+    n = len(ids)
+    return search.LibraryIndex(clip_ids=list(ids), paths=list(ids), projects=[None] * n,
+                               vectors=np.zeros((n, 2), np.float32), n_embedded=0)
+
+
+def test_hint_clip_vectors_are_computed_once_and_shared(tmp_path, monkeypatch):
+    calls, release = [], threading.Event()
+
+    def slow_pass(cfg, library, idx, clap, lock=None, progress=None):
+        calls.append(library)
+        release.wait(5)
+        return np.arange(len(idx.clip_ids)), np.ones((len(idx.clip_ids), 2), np.float32)
+
+    monkeypatch.setattr(app_mod, "clap_audio_for_index", slow_pass)
+    state = _state(tmp_path)
+    state.clap = types.SimpleNamespace(version="clap:fake")
+    state.libraries["lib"] = Library(name="lib", roots=[], state="ready")
+    idx = _idx(["a", "b", "c"])
+    for _ in range(3):  # searches and the end of indexing all ask; one background pass is queued
+        state._ensure_hints("lib", idx)
+    got = []
+    waiter = threading.Thread(target=lambda: got.append(state._hint_audio("lib", idx)))
+    waiter.start()
+    assert _wait(lambda: len(calls) == 1, 5)
+    assert "lib" in state.hint_prep and state._hint_entry("lib", idx) is None  # searches answer by voice meanwhile
+    release.set()
+    waiter.join(5)
+    assert calls == ["lib"] and got and got[0][1].shape == (3, 2)  # the waiter shared the pass
+    assert _wait(lambda: "lib" not in state.hint_prep, 5)
+    state._ensure_hints("lib", idx)
+    assert state._hint_audio("lib", idx)[1] is got[0][1]
+    assert calls == ["lib"]  # later hints reuse the vectors in memory
+    state._hint_audio("lib", _idx(["a", "c"]))  # the library changed: vectors are rebuilt for the new index
+    assert calls == ["lib", "lib"]
+    state.delete_library("lib")
+    assert "lib" not in state.hint_vectors
+
+
+def test_clap_cache_is_only_rewritten_when_it_changes(tmp_path, monkeypatch):
+    from vocalocate_demo import text
+
+    paths = []
+    for i in range(3):
+        p = tmp_path / f"c{i}.wav"
+        sf.write(p, np.zeros(4_800, np.float32), 48_000)
+        paths.append(str(p))
+    cfg = PipelineConfig(lake_root=tmp_path / "lake", workers=1)
+    clap = text.ClapScorer(backend="fake")
+    writes = []
+    real_write = Lake.write
+    monkeypatch.setattr(Lake, "write", lambda self, *a, **k: (writes.append(a[1]), real_write(self, *a, **k))[1])
+    seen = []
+    first = text.cached_audio_embeddings(cfg, "lib__clap", ["a", "b", "c"], paths, clap,
+                                         progress=lambda d, t: seen.append((d, t)))
+    assert len(writes) == 1 and seen[-1] == (3, 3)
+    again = text.cached_audio_embeddings(cfg, "lib__clap", ["a", "b", "c"], paths, clap)
+    assert len(writes) == 1 and np.allclose(first, again)  # nothing new: no rewrite
+    text.cached_audio_embeddings(cfg, "lib__clap", ["a", "c"], [paths[0], paths[2]], clap)
+    assert len(writes) == 2  # a clip left the library: the part is rewritten without it
+
+
 # -- cached indexes (search.py) -----------------------------------------------------------------------------
 def test_cached_index_needs_a_scan_and_a_complete_cache(tmp_path, monkeypatch):
     cfg = PipelineConfig(lake_root=tmp_path / "lake", workers=1)

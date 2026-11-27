@@ -260,6 +260,50 @@ def test_onboarding_import_index_search_and_manage(tmp_path, models_dir, sounds)
         server.shutdown()
 
 
+def test_hints_answer_by_voice_while_the_library_is_prepared(tmp_path, models_dir, sounds, monkeypatch):
+    from vocalocate_demo.text import ClapScorer
+
+    real_pass, release = app_mod.clap_audio_for_index, threading.Event()
+
+    def slow_pass(*args, **kwargs):  # a big library on a CPU: CLAP takes minutes
+        release.wait(30)
+        return real_pass(*args, **kwargs)
+
+    monkeypatch.setattr(app_mod, "clap_audio_for_index", slow_pass)
+    monkeypatch.setattr(app_mod, "HINT_WAIT_SEC", 0.2)
+    home = tmp_path / "home"
+    state = _state(home, clap=ClapScorer(backend="fake"))
+    server, base = _start(state)
+    try:
+        assert _call(base, "/api/models/import", {"path": str(models_dir)})[0] == 200
+        _call(base, "/api/libraries", {"name": "lib", "roots": [str(sounds)]})
+        _wait_ready(base, "lib")
+        wav = base64.b64encode(next(sounds.rglob("*.wav")).read_bytes()).decode()
+        t0 = time.time()
+        status, res = _call(base, "/api/search", {"library": "lib", "audio": wav, "text": "metallic"})
+        assert status == 200 and time.time() - t0 < 10 and res["results"]  # did not wait for the whole pass
+        assert "preparing text hints" in res["text_ignored"] and "text_score" not in res["results"][0]
+        release.set()
+        assert _wait(lambda: "lib" not in state.hint_prep and state.hint_vectors.get("lib"), 30)
+        status, res = _call(base, "/api/search", {"library": "lib", "audio": wav, "text": "metallic"})
+        assert status == 200 and "text_ignored" not in res and "text_score" in res["results"][0]
+        assert "clip text vectors" in res["reused"]
+        status, res = _call(base, "/api/search", {"library": "lib", "audio": wav, "text": "wooden"})
+        assert "clip text vectors" in res["reused"] and "text_score" in res["results"][0]
+    finally:
+        release.set()
+        server.shutdown()
+
+
+def _wait(cond, timeout):
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if cond():
+            return True
+        time.sleep(0.05)
+    return False
+
+
 def test_restore_on_boot_searches_before_rescan(tmp_path, models_dir, sounds, monkeypatch):
     home = tmp_path / "home"
     first = _state(home)

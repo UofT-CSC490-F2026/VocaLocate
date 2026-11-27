@@ -118,8 +118,14 @@ def search(*args, **kwargs):
     return fn(*args, **kwargs)
 
 
-def text_scores(*args, **kwargs):
-    from .search import text_scores as fn
+def clap_audio_for_index(*args, **kwargs):
+    from .search import clap_audio_for_index as fn
+
+    return fn(*args, **kwargs)
+
+
+def hint_scores(*args, **kwargs):
+    from .search import hint_scores as fn
 
     return fn(*args, **kwargs)
 
@@ -130,6 +136,7 @@ UI_DIR = Path(__file__).parent / "ui"
 # the app's model").
 UI_MODELS = ("shared", "metadata", "retrieval", "baseline", "random")
 MODEL_LABELS = {**MODEL_NAMES, "shared": "VocaLocate: shared encoder + augmentation (recommended)"}
+HINT_WAIT_SEC = 1.5  # how long a hinted search waits for the library's CLAP vectors before answering by voice
 HINT_SUGGESTIONS = ("metallic", "wooden", "short", "long", "high-pitched", "low-pitched", "distant", "electronic")
 
 
@@ -189,6 +196,11 @@ class AppState:
         self.models: dict[str, tuple] = {}
         self.query_cache: dict[tuple[str, str], np.ndarray] = {}
         self.text_cache: dict[tuple[str, str, str], np.ndarray] = {}
+        # Text hints: per library, the CLAP vector of every clip, kept in memory so a new hint only embeds
+        # its text. key = (clip ids of the index it was built for, CLAP version).
+        self.hint_vectors: dict[str, tuple[tuple, np.ndarray, np.ndarray]] = {}  # lib -> (key, present, audio)
+        self.hint_locks: dict[str, threading.Lock] = {}  # one CLAP pass per library at a time
+        self.hint_prep: dict[str, dict] = {}  # lib -> {"done", "total"} while its clips go through CLAP
         self.alphas = self._read_alphas()
         self.examples = _load_examples(examples) if examples else []
         self.settings = desktop.load_settings(self.home) if self.home else dict(desktop.DEFAULT_SETTINGS)
@@ -286,6 +298,76 @@ class AppState:
         except Exception as exc:
             log.exception("loading CLAP failed")
             self.text_state, self.text_error = "error", f"{type(exc).__name__}: {exc}"
+            return
+        for lib in list(self.libraries.values()):  # libraries indexed before CLAP was up
+            if lib.indexes:
+                self._prepare_hints_async(lib)
+
+    # -- text hints ---------------------------------------------------------
+    def _hint_key(self, idx: LibraryIndex) -> tuple:
+        return (tuple(idx.clip_ids), getattr(self.clap, "version", None))
+
+    def _hint_entry(self, library: str, idx: LibraryIndex) -> tuple[np.ndarray, np.ndarray] | None:
+        hit = self.hint_vectors.get(library)
+        return (hit[1], hit[2]) if hit is not None and hit[0] == self._hint_key(idx) else None
+
+    def _hint_audio(self, library: str, idx: LibraryIndex) -> tuple[np.ndarray, np.ndarray]:
+        """CLAP vectors for every clip of `idx`, computed at most once at a time per library: a second
+        caller waits for the pass already running instead of repeating it."""
+        hit = self._hint_entry(library, idx)
+        if hit is not None:
+            return hit
+        with self.lock:
+            lock = self.hint_locks.setdefault(library, threading.Lock())
+        lock.acquire()
+        try:
+            hit = self._hint_entry(library, idx)
+            if hit is not None:
+                return hit
+            lib = self.libraries.get(library)
+
+            def progress(done, total):
+                self.hint_prep[library] = {"done": done, "total": total}
+                if lib is not None and lib.state == "ready":
+                    lib.message = f"Ready to search; preparing text hints: {done:,} of {total:,} clips"
+
+            self.hint_prep[library] = {"done": 0, "total": len(idx.clip_ids)}
+            try:
+                present, audio = clap_audio_for_index(self.cfg, library, idx, self.clap, lock=self.wh_lock,
+                                                      progress=progress)
+            finally:
+                self.hint_prep.pop(library, None)
+                if lib is not None and lib.state == "ready" and lib.message.startswith("Ready to search; preparing"):
+                    lib.message = "Ready to search"
+            if self.libraries.get(library) is lib:  # not deleted meanwhile
+                self.hint_vectors[library] = (self._hint_key(idx), present, audio)
+            return present, audio
+        finally:
+            lock.release()
+
+    def _prepare_hints(self, library: str, idx: LibraryIndex) -> None:
+        try:
+            self._hint_audio(library, idx)
+        except Exception:
+            log.exception("preparing text hints for %s failed", library)
+        finally:
+            self.hint_prep.pop(library, None)
+
+    def _ensure_hints(self, library: str, idx: LibraryIndex) -> None:
+        """Start a background CLAP pass for `idx` unless its vectors are ready or a pass is already queued."""
+        if self.clap is None or self._hint_entry(library, idx) is not None:
+            return
+        with self.lock:
+            if library in self.hint_prep:
+                return
+            self.hint_prep[library] = {"done": 0, "total": len(idx.clip_ids)}
+        threading.Thread(target=self._prepare_hints, args=(library, idx), name=f"vocalocate-hints-{library}",
+                         daemon=True).start()
+
+    def _prepare_hints_async(self, lib: Library) -> None:
+        if lib.indexes and self.libraries.get(lib.name) is lib:
+            # Every model's index of a library has the same path-ordered clip ids, so any one will do.
+            self._ensure_hints(lib.name, next(iter(lib.indexes.values())))
 
     # -- settings -----------------------------------------------------------
     def _save_settings(self) -> None:
@@ -474,6 +556,7 @@ class AppState:
             if self.libraries.pop(name, None) is None:
                 raise KeyError(f"unknown library {name!r}")
             self.text_cache = {k: v for k, v in self.text_cache.items() if k[0] != name}
+            self.hint_vectors.pop(name, None)
         if self.home is not None:
             with self.settings_lock:
                 self.settings["libraries"] = [e for e in self.settings["libraries"] if e["name"] != name]
@@ -549,6 +632,7 @@ class AppState:
                     lib.indexes = fresh
                     self.text_cache = {k: v for k, v in self.text_cache.items() if k[0] != lib.name}
                 lib.state, lib.message, lib.finished = "ready", "Ready to search", time.time()
+                self._prepare_hints_async(lib)  # so the first hint does not wait for CLAP to see every clip
             except Exception as exc:  # report to the UI instead of killing the thread silently
                 log.exception("indexing %s failed", lib.name)
                 lib.progress = None
@@ -603,12 +687,31 @@ class AppState:
         elif text:
             key = (library, model_name, text.lower())
             scores_text = self.text_cache.get(key)
-            if scores_text is None or len(scores_text) != len(idx.clip_ids):
-                scores_text = text_scores(self.cfg, library, idx, text, self.clap, lock=self.wh_lock)
-                self.text_cache[key] = scores_text
-            else:
+            if scores_text is not None and len(scores_text) == len(idx.clip_ids):
                 reused.append("text scores")
-            alpha = float(self.alphas.get(model_name, 0.5))
+            else:
+                scores_text = None
+                got = self._hint_entry(library, idx)
+                if got is not None:
+                    reused.append("clip text vectors")
+                else:
+                    # The library's clips go through CLAP in the background (minutes on a CPU for a big
+                    # library). Wait briefly (enough for a small or already-cached library), then answer by
+                    # voice instead of holding the search for the whole pass.
+                    self._ensure_hints(library, idx)
+                    deadline = time.time() + HINT_WAIT_SEC
+                    while got is None and time.time() < deadline:
+                        time.sleep(0.02)
+                        got = self._hint_entry(library, idx)
+                if got is None:
+                    prep = self.hint_prep.get(library) or {"done": 0, "total": len(idx.clip_ids)}
+                    ignored = (f"preparing text hints for this library ({prep['done']:,} of {prep['total']:,} "
+                               "clips); showing voice-only results")
+                else:
+                    scores_text = hint_scores(len(idx.clip_ids), got[0], got[1], text, self.clap)
+                    self.text_cache[key] = scores_text
+            if scores_text is not None:
+                alpha = float(self.alphas.get(model_name, 0.5))
         hits = search(idx, vec, k=min(k, len(idx.clip_ids)), text=scores_text, alpha=alpha if alpha is not None else 0.5)
         position = {p: i for i, p in enumerate(idx.paths)}
         voice = idx.vectors @ vec
