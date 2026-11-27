@@ -40,8 +40,16 @@ def test_text_scores_follow_reindexed_library(tmp_path, monkeypatch):
     monkeypatch.setattr(state, "available_models", lambda: [model])
     monkeypatch.setattr(app, "embed_query", lambda *_: np.ones(1))
 
-    snapshots = [("a", "b"), ("a", "b", "c"), ("a", "c", "d")]
+    # Each snapshot is a library index after re-indexing; a, b, c and d are synthetic SFX IDs.
+    snapshots = [
+        ("a", "b"),       # Start with a and b (fixed sample CLAP text similarity scores: 0.1 and 0.2 respectively).
+        ("a", "b", "c"),  # Add c: the library grows.
+        ("a", "c", "d"),  # Replace b with d: the library stays the same size.
+        ("c", "d"),       # Remove a: the library shrinks.
+        ("c",),           # Remove d: the library shrinks again.
+    ]
     clip_ids_by_scan = iter(snapshots)
+    # Fixed text similarity scores returned by the stand-in for CLAP
     clap_scores = {"a": 0.1, "b": 0.2, "c": 0.3, "d": 0.4}
 
     def index_library(*args, **kwargs):
@@ -60,6 +68,7 @@ def test_text_scores_follow_reindexed_library(tmp_path, monkeypatch):
     monkeypatch.setattr(app, "index_library", index_library)
     monkeypatch.setattr(app, "text_scores", text_scores)
 
+    # A changed index needs fresh scores; a repeated search on that index should reuse them.
     for clip_ids in snapshots:
         state._index(library)
         assert library.state == "ready", library.message
