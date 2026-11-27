@@ -1,28 +1,32 @@
-# Re-indexing cache debugging demo
+# CLAP cache bug demo
 
-This standalone script is for the A5 walkthrough and is not included in the GitHub CI tests. Justin's automated regression test remains in `demo/tests/test_app.py`.
+This standalone A5 demo reproduces stale text scores after a library changes. It is not run in CI; the automated regression test is in `demo/tests/test_app.py`.
 
-It copies the five VimSketch SFX into temporary folders, runs the real library-indexing pipeline, then searches after adding, removing, or replacing a file. It checks that scores are recomputed for the current index and reused on an unchanged index. Original sample files are not changed.
+## Run
 
-Voice embeddings and CLAP scores are stand-ins. Fake CLAP is deterministic but its scores do not measure semantic similarity; the vocal imitation and UI are not exercised. No model checkpoints are needed. Requires the repository Python dependencies installed.
-
-From the repository root:
-
-```bash
-.venv/bin/python a5/a5-part-5-clap-cache-bug/clap-cache-test-with-sample-folder/debug_reindex.py
-.venv/bin/python a5/a5-part-5-clap-cache-bug/clap-cache-test-with-sample-folder/debug_reindex.py --scenario remove
-```
-
-Run one scenario at a time when demonstrating the old implementation, because an expected failure stops the script. On the fixed branch all three should pass. The script prints filenames and simulated text scores; inspect the error or assertion on the old branch rather than treating the fake scores as retrieval quality.
-
-To compare the current local `main` commit with the current `HEAD` commit without changing branches:
+From the repository root, with the project dependencies installed:
 
 ```bash
 .venv/bin/python a5/a5-part-5-clap-cache-bug/clap-cache-test-with-sample-folder/cache_bug_before_and_after.py
 ```
 
-Add `--scenario remove` (or `add` or `replace`) to run one scenario. The launcher prints both commit IDs, extracts only their tracked Python packages to temporary directories, and removes them afterwards. It does not fetch remote updates or include uncommitted code changes. If `main` later contains the fix, both versions may pass. Failures on main should be inspected: a failed run can have causes other than the cache bug. The command exits nonzero if an after scenario fails or setup fails.
+Add `--scenario add`, `remove`, `replace`, or `reorder` to run one case. The launcher compares committed local `main` with committed `HEAD` without switching branches. It prints the commit IDs, uses temporary source copies, and does not fetch updates or include uncommitted changes. If `main` gains the fix, both versions may pass. It exits nonzero if setup or an after case fails; inspect before failures rather than assuming their cause.
 
-Each scenario lists the original samples folder, temporary library folder, starting sounds, and changed files. A NumPy shape error reports the current voice scores first and the stale text scores second, following the actual calculation; its order is not chronological.
+To run only the current checkout, use `debug_reindex.py` in the same folder with the same optional `--scenario` argument.
 
-The add case adds the church bell; the remove case removes the dog bark; the replacement case removes the dog bark and adds the church bell. Each case starts from a fresh temporary library.
+## Scenarios
+
+Each case starts independently with thunder, church bell, waterfall and door slam, and the text hint “metallic ringing.”
+
+- **Add:** add dog bark (4 → 5).
+- **Remove:** remove church bell (4 → 3).
+- **Replace:** replace church bell with dog bark (4 → 4).
+- **Reorder:** simulate a different order for the same four indexed sounds. The app sorts by path; rearranging Finder icons does not change the index.
+
+## What the demo measures
+
+The script copies real VimSketch SFX into temporary libraries and runs the real indexing and cache logic. It leaves the original files untouched. The vocal imitation, voice embeddings and CLAP outputs are simulated; the UI is not tested, and the fake scores do not measure sound similarity. No model checkpoints are needed.
+
+When a search returns results, the demo compares the fake CLAP audio embeddings behind its scores and the scores themselves against a fresh calculation for the current files.
+
+For a size mismatch, NumPy reports the current voice-score shape first and the stale text-score shape second; that order is not chronological.

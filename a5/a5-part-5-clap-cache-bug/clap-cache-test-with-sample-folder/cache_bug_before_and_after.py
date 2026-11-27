@@ -28,9 +28,9 @@ def snapshot(ref, destination):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--scenario", choices=("add", "remove", "replace", "all"), default="all")
+    parser.add_argument("--scenario", choices=("add", "remove", "replace", "reorder", "all"), default="all")
     args = parser.parse_args()
-    scenarios = ("add", "remove", "replace") if args.scenario == "all" else (args.scenario,)
+    scenarios = ("add", "remove", "replace", "reorder") if args.scenario == "all" else (args.scenario,)
     results = {}
     with tempfile.TemporaryDirectory(prefix="vocalocate-compare-") as tmp:
         # Local main is the before version; HEAD is the current branch's committed version.

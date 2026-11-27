@@ -37,7 +37,8 @@ def _call(base, path, body=None):
         return e.code, json.loads(e.read())
 
 
-def test_text_scores_follow_reindexed_library(tmp_path, monkeypatch):
+@pytest.mark.parametrize("change", ["add", "remove", "replace", "reorder"])
+def test_text_scores_follow_reindexed_library(tmp_path, monkeypatch, change):
     cfg = PipelineConfig(lake_root=tmp_path / "lake")
     state = AppState(cfg, "sfx_meta", clap=object())
     library = app.Library("demo", [str(tmp_path)])
@@ -47,17 +48,19 @@ def test_text_scores_follow_reindexed_library(tmp_path, monkeypatch):
     monkeypatch.setattr(state, "available_models", lambda: [model])
     monkeypatch.setattr(app, "embed_query", lambda *_: np.ones(1))
 
-    # Each snapshot is a library index after re-indexing; a, b, c and d are synthetic SFX IDs.
-    snapshots = [
-        ("a", "b"),       # Start with a and b (fixed sample CLAP text similarity scores: 0.1 and 0.2 respectively).
-        ("a", "b", "c"),  # Add c: the library grows.
-        ("a", "c", "d"),  # Replace b with d: the library stays the same size.
-        ("c", "d"),       # Remove a: the library shrinks.
-        ("c",),           # Remove d: the library shrinks again.
-    ]
+    # Each case starts from the same synthetic library and changes only its index.
+    *baseline, new_clip = [f"sfx-{i}" for i in range(6)]
+    updated = {
+        "add": [*baseline, new_clip],
+        "remove": baseline[1:],
+        "replace": [*baseline[1:], new_clip],
+        "reorder": [*baseline[2:], *baseline[:2]],
+    }[change]
+    snapshots = [baseline, updated]
     clip_ids_by_scan = iter(snapshots)
-    # Fixed text similarity scores returned by the stand-in for CLAP
-    clap_scores = {"a": 0.1, "b": 0.2, "c": 0.3, "d": 0.4}
+    # Distinct scores expose incorrect position-based reuse in same-size indexes.
+    clap_scores = {clip_id: i / 10 for i, clip_id in enumerate([*baseline, new_clip], 1)}
+    hint = f"hint for {library.name}"
 
     def index_library(*args, **kwargs):
         clip_ids = list(next(clip_ids_by_scan))
@@ -73,20 +76,22 @@ def test_text_scores_follow_reindexed_library(tmp_path, monkeypatch):
         return np.array([clap_scores[clip_id] for clip_id in index.clip_ids])
 
     monkeypatch.setattr(app, "index_library", index_library)
-    monkeypatch.setattr(app, "text_scores", text_scores)
+    score_text = Mock(side_effect=text_scores)
+    monkeypatch.setattr(app, "text_scores", score_text)
 
     # A changed index needs fresh scores; a repeated search on that index should reuse them.
-    for clip_ids in snapshots:
+    for scans, clip_ids in enumerate(snapshots, 1):
         state._index(library)
         assert library.state == "ready", library.message
-        result = state.search(library.name, model, b"imitation", "metallic", k=3)
+        result = state.search(library.name, model, b"imitation", hint, k=len(clip_ids))
         assert "text scores" not in result["reused"]
         assert {hit["name"]: hit["text_score"] for hit in result["results"]} == {
             f"{clip_id}.wav": clap_scores[clip_id] for clip_id in clip_ids
         }
-        repeated = state.search(library.name, model, b"imitation", "metallic", k=3)
+        repeated = state.search(library.name, model, b"imitation", hint, k=len(clip_ids))
         assert "text scores" in repeated["reused"]
         assert repeated["results"] == result["results"]
+        assert score_text.call_count == scans
 
 
 def _tiny_demo(tmp_path, monkeypatch):
