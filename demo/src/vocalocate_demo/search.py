@@ -183,8 +183,13 @@ def embed_query(path: Path, model: DualEncoder, tcfg: TrainConfig, cfg: Pipeline
     return model.embed_imitation(torch.from_numpy(mel[None]).to(device)).cpu().numpy()[0]
 
 
-def text_scores(cfg: PipelineConfig, library: str, index: LibraryIndex, text: str, clap, lock=None) -> np.ndarray:
-    """CLAP text-hint scores for every library clip (step 4 of the product flow). Audio embeddings are cached."""
+def clap_audio_for_index(cfg: PipelineConfig, library: str, index: LibraryIndex, clap, lock=None,
+                         progress=None) -> tuple[np.ndarray, np.ndarray]:
+    """CLAP audio vectors for a library index: (positions in the index that have one, their vectors).
+
+    This is the expensive part of a text hint (every clip through CLAP once, then cached in the lake);
+    the app keeps the result in memory so each new hint only embeds its text.
+    """
     from .text import cached_audio_embeddings
 
     with lock if lock is not None else nullcontext():
@@ -193,18 +198,32 @@ def text_scores(cfg: PipelineConfig, library: str, index: LibraryIndex, text: st
             f"SELECT clip_id, clean_path FROM clips WHERE source = {_sql_str('library_' + library)} AND status = 'ok'",
         )
     clean = dict(rows)
-    # While a re-index runs, the index may still hold clips the new scan dropped (deleted files): score
-    # only the clips that are still in the warehouse and give the rest the lowest score (finite, so the
-    # z-normalised fusion stays well defined).
-    present = [i for i, c in enumerate(index.clip_ids) if c in clean]
+    # While a re-index runs, the index may still hold clips the new scan dropped (deleted files): only
+    # clips still in the warehouse get a vector.
+    present = np.array([i for i, c in enumerate(index.clip_ids) if c in clean], dtype=np.int64)
     ids = [index.clip_ids[i] for i in present]
-    scores = np.zeros(len(index.clip_ids), dtype=np.float32)
-    if ids:
-        audio = cached_audio_embeddings(cfg, f"library_{library}__clap", ids, [clean[c] for c in ids], clap)
+    if not ids:
+        return present, np.zeros((0, 0), dtype=np.float32)
+    extra = {"progress": progress} if progress is not None else {}
+    audio = cached_audio_embeddings(cfg, f"library_{library}__clap", ids, [clean[c] for c in ids], clap, **extra)
+    return present, audio
+
+
+def hint_scores(n_clips: int, present: np.ndarray, audio: np.ndarray, text: str, clap) -> np.ndarray:
+    """Score every clip against a hint; clips without a CLAP vector get the lowest score (finite, so the
+    z-normalised fusion stays well defined)."""
+    scores = np.zeros(n_clips, dtype=np.float32)
+    if len(present):
         got = audio @ clap.embed_text([text])[0]
         scores[:] = got.min()
         scores[present] = got
     return scores
+
+
+def text_scores(cfg: PipelineConfig, library: str, index: LibraryIndex, text: str, clap, lock=None) -> np.ndarray:
+    """CLAP text-hint scores for every library clip (step 4 of the product flow). Audio embeddings are cached."""
+    present, audio = clap_audio_for_index(cfg, library, index, clap, lock=lock)
+    return hint_scores(len(index.clip_ids), present, audio, text, clap)
 
 
 def search(

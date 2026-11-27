@@ -78,12 +78,17 @@ class ClapScorer:
         return _normalize(np.concatenate(out)) if out else np.zeros((0, 512), np.float32)
 
     # -- audio --------------------------------------------------------------
-    def embed_audio(self, paths: list[str]) -> np.ndarray:
+    def embed_audio(self, paths: list[str], progress=None) -> np.ndarray:
+        """`progress(done, total)` is called after each batch."""
         if self.backend == "fake":
+            if progress:
+                progress(len(paths), len(paths))
             return _normalize(np.stack([_fake_audio(p) for p in paths])) if paths else np.zeros((0, 64), np.float32)
         out = []
         with self.torch.no_grad():
             for i in range(0, len(paths), self.batch_size):
+                if progress:
+                    progress(i, len(paths))
                 waves = [_load_48k(p) for p in paths[i : i + self.batch_size]]
                 # Fused CLAP models take 4-channel "fusion" input; unfused ones take one channel. Clips are cut
                 # to 10 s above, so rand_trunc never actually truncates and embeddings stay deterministic.
@@ -124,11 +129,12 @@ def _fake_audio(path: str) -> np.ndarray:
     return np.random.default_rng(seed).standard_normal(_FAKE_DIM)
 
 
-def cached_audio_embeddings(cfg, part: str, clip_ids: list[str], paths: list[str], clap: ClapScorer) -> np.ndarray:
+def cached_audio_embeddings(cfg, part: str, clip_ids: list[str], paths: list[str], clap: ClapScorer,
+                            progress=None) -> np.ndarray:
     """CLAP audio embeddings for clips, cached in the lake's gold `embeddings` table (tower "clap_audio").
 
-    Only clips without a cached vector for this CLAP version are embedded; the part
-    is rewritten with exactly `clip_ids`, so clips that left a library drop out.
+    Only clips without a cached vector for this CLAP version are embedded. The part is rewritten
+    with exactly `clip_ids` (so clips that left a library drop out), but only when that changes it.
     """
     from vocalocate_pipeline.lake import Lake
     from vocalocate_pipeline.schemas import to_table
@@ -140,15 +146,18 @@ def cached_audio_embeddings(cfg, part: str, clip_ids: list[str], paths: list[str
         for r in (cached.to_pylist() if cached is not None else [])
         if r["model_version"] == clap.version
     }
+    stored = cached.num_rows if cached is not None else 0
     missing = [(cid, p) for cid, p in zip(clip_ids, paths) if cid not in known]
     if missing:
         log.info("CLAP: embedding %d clips (%d cached)", len(missing), len(clip_ids) - len(missing))
-        for (cid, _), vec in zip(missing, clap.embed_audio([p for _, p in missing])):
+        for (cid, _), vec in zip(missing, clap.embed_audio([p for _, p in missing], progress=progress)):
             known[cid] = vec.tolist()
-    rows = [
-        {"clip_id": cid, "source": part.split("__")[0], "model_version": clap.version, "tower": "clap_audio",
-         "vector": known[cid]}
-        for cid in dict.fromkeys(clip_ids)
-    ]
-    lake.write("embeddings", part, to_table("embeddings", rows))
+    unique = list(dict.fromkeys(clip_ids))
+    if missing or stored != len(unique) or len(known) != len(unique):
+        rows = [
+            {"clip_id": cid, "source": part.split("__")[0], "model_version": clap.version, "tower": "clap_audio",
+             "vector": known[cid]}
+            for cid in unique
+        ]
+        lake.write("embeddings", part, to_table("embeddings", rows))
     return np.array([known[cid] for cid in clip_ids], dtype=np.float32).reshape(len(clip_ids), -1)
