@@ -1,6 +1,8 @@
+import csv
+
 import pytest
 
-from vocalocate_pipeline.ingest import captdure, esc50_voice, qvim_dev, sfx_meta, team, vimsketch
+from vocalocate_pipeline.ingest import captdure, esc50_voice, fine_grained_vis, qvim_dev, sfx_meta, team, vimsketch
 from vocalocate_pipeline.ingest import vocal_imitation_set as vis
 
 
@@ -96,3 +98,26 @@ def test_vis_handles_unparseable_survey_fields_and_equivalent_numeric_ids():
     assert profiles[0]["imitator_id"] == "12.3"
     assert profiles[0]["music_training"] is True
     assert profiles[0]["years_experience"] is None
+
+
+def test_fine_grained_vis_accepts_dataset_root_and_ignores_missing_reference(fgvis_dir):
+    root = fgvis_dir / "Fine-grained_VocalImitationSet"
+    before = fine_grained_vis.ingest(root)
+    index = root / "vocal_imitations.txt"
+    with index.open(newline="", encoding="utf-8") as stream:
+        reader = csv.DictReader(stream, delimiter="\t")
+        fields = reader.fieldnames
+        imitation = next(reader)
+    with index.open("a", newline="", encoding="utf-8") as stream:
+        writer = csv.DictWriter(stream, fieldnames=fields, delimiter="\t")
+        writer.writerow({**imitation, "imitation_filename": "orphan.wav", "reference_filename": "unknown.wav"})
+
+    after = fine_grained_vis.ingest(root)
+    assert {f.source_key for f in after.files} == {f.source_key for f in before.files}
+    assert len(after.files) == 9
+    assert after.missing == []
+
+
+def test_fine_grained_vis_reports_missing_manifest(tmp_path):
+    with pytest.raises(FileNotFoundError, match=r"Fine-grained Vocal Imitation Set .*not found"):
+        fine_grained_vis.ingest(tmp_path)
