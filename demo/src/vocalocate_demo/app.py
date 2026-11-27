@@ -189,6 +189,10 @@ class AppState:
         self.alphas = self._read_alphas()
         self.examples = _load_examples(examples) if examples else []
         self.settings = desktop.load_settings(self.home) if self.home else dict(desktop.DEFAULT_SETTINGS)
+        # The desktop app runs on the CPU unless settings/VOCALOCATE_DEVICE ask for a GPU; plain
+        # (dev/test) states keep "auto".
+        self.device = desktop.resolve_device(self.settings) if self.home else "auto"
+        self.restart_server = None  # set by desktop.serve_main: stop and start a fresh server
         self.text_state = "ready" if clap is not None else "off"
         self.text_error = ""
         # Load CLAP in the background only for the desktop app (or when asked), never in plain tests.
@@ -267,7 +271,7 @@ class AppState:
             # transformers builds models with a process-wide "empty weights" patch; building one of our
             # checkpoints at the same time would get meta tensors. Model construction is serialized.
             with self.model_lock:
-                self.clap = ClapScorer()
+                self.clap = ClapScorer(device=self.device)
             self.text_state, self.text_error = "ready", ""
         except Exception as exc:
             log.exception("loading CLAP failed")
@@ -297,6 +301,12 @@ class AppState:
             "text": bool(self.settings.get("text")),
             "autostart": supported and desktop.autostart_enabled(self.autostart_dir),
             "autostart_supported": supported,
+            # Hardware acceleration: the saved choice, what this server runs on, and whether a GPU exists.
+            "device": desktop.normalize_device(self.settings.get("device")) or "cpu",
+            "device_active": self.device,
+            "device_locked": desktop.device_locked(),
+            "gpu": desktop.gpu_info(),
+            "restart_supported": self.restart_server is not None,
         }
 
     def update_settings(self, body: dict) -> dict:
@@ -312,6 +322,13 @@ class AppState:
             else:
                 desktop.disable_autostart(self.autostart_dir)
             self.settings["autostart"] = bool(body["autostart"])
+        if "device" in body:
+            dev = desktop.normalize_device(body["device"])
+            if dev is None:
+                raise ValueError("device must be 'cpu' or 'gpu'")
+            if dev == "auto" and not desktop.gpu_info()["available"]:
+                raise ValueError("no GPU was found on this computer, so VocaLocate keeps using the CPU")
+            self.settings["device"] = dev
         if "text" in body:
             self.settings["text"] = bool(body["text"])
             if self.settings["text"] and self.clap is None and self.text_state in ("off", "error"):
@@ -345,7 +362,7 @@ class AppState:
                 path = self.models_dir / f"{name}.pt"
                 if not path.exists():
                     raise KeyError(f"no trained model {name!r} in {path.parent}")
-                model, tcfg, ckpt = _train().load(path)
+                model, tcfg, ckpt = _train().load(path, device=self.device)
                 self.models[name] = (model, tcfg, ckpt["model_version"])
             return self.models[name]
 
@@ -871,6 +888,12 @@ def make_handler(state: AppState):
                     return self._json(state.import_models(body["path"]))
                 if url.path == "/api/settings":
                     return self._json(state.update_settings(body))
+                if url.path == "/api/restart":
+                    if state.restart_server is None:
+                        raise ValueError("this server can't restart itself; start VocaLocate again to apply the change")
+                    self._json({"restarting": True}, 202)
+                    state.restart_server()
+                    return None
                 if url.path == "/api/reveal":
                     path = state.library_file(str(body.get("library") or ""), int(body.get("id")))
                     state.reveal_file(path)

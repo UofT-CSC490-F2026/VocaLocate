@@ -420,6 +420,9 @@ input[type="text"]:disabled { opacity: 0.5; cursor: not-allowed; }
 .model.off { opacity: 0.55; }
 .toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
 .toggle input { width: 18px; height: 18px; accent-color: var(--signal-ink); }
+.toggle-2 { display: grid; grid-template-columns: 18px 1fr; column-gap: 10px; row-gap: 2px; padding: 6px 0; }
+.toggle-2 .note { grid-column: 2; }
+.toggle input:disabled + span { color: var(--ink-dim); }
 .about { margin: 0; padding-top: 12px; border-top: 1px solid var(--rule-soft); display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 0.75rem; color: var(--ink-faint); }
 .about dt { color: var(--ink-dim); }
 .about dd { margin: 0; font-family: var(--f-mono); overflow-wrap: anywhere; }

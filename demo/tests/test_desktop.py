@@ -425,3 +425,45 @@ def test_install_and_remove_shortcut_in_a_fake_programs_dir(tmp_path):
     assert out.stdout.strip().lower() == f"{exe}|{args}".lower()
     assert desktop.remove_shortcut(folder) is True and not path.exists()
     assert desktop.remove_shortcut(folder) is False
+
+
+def test_device_defaults_to_cpu_with_gpu_opt_in(tmp_path, monkeypatch):
+    monkeypatch.delenv("VOCALOCATE_DEVICE", raising=False)
+    assert desktop.resolve_device(desktop.load_settings(tmp_path)) == "cpu"
+    assert desktop.resolve_device({"device": "gpu"}) == "auto"
+    assert desktop.resolve_device({"device": "nonsense"}) == "cpu"
+    monkeypatch.setenv("VOCALOCATE_DEVICE", "cuda")
+    assert desktop.resolve_device({"device": "cpu"}) == "auto"
+
+
+def test_hardware_acceleration_setting_and_restart(tmp_path, monkeypatch):
+    monkeypatch.delenv("VOCALOCATE_DEVICE", raising=False)
+    state = _state(tmp_path)
+    server, base = _start(state)
+    try:
+        monkeypatch.setattr(desktop, "_gpu_cache", {"available": False, "name": None})
+        st = _call(base, "/api/status")[1]["settings"]
+        assert st["device"] == "cpu" and st["device_active"] == "cpu" and st["gpu"]["available"] is False
+        status, err = _call(base, "/api/settings", {"device": "gpu"})
+        assert status == 400 and "no GPU" in err["error"]
+        assert _call(base, "/api/settings", {"device": "turbo"})[0] == 400
+
+        monkeypatch.setattr(desktop, "_gpu_cache", {"available": True, "name": "Test GPU"})
+        status, st = _call(base, "/api/settings", {"device": "gpu"})
+        assert status == 200 and st["device"] == "auto" and st["device_active"] == "cpu"  # applies on restart
+        assert desktop.load_settings(tmp_path)["device"] == "auto"
+        assert desktop.resolve_device(desktop.load_settings(tmp_path)) == "auto"
+
+        assert _call(base, "/api/restart", {})[0] == 400  # no restart hook outside serve_main
+        calls = []
+        state.restart_server = lambda: calls.append(1)
+        assert _call(base, "/api/status")[1]["settings"]["restart_supported"] is True
+        assert _call(base, "/api/restart", {})[0] == 202
+        # The reply goes out first, then the handler calls the hook (so the reply survives a shutdown).
+        for _ in range(100):
+            if calls:
+                break
+            time.sleep(0.02)
+        assert calls == [1]
+    finally:
+        server.shutdown()

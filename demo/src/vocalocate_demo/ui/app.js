@@ -186,6 +186,10 @@ function applyStatus(st) {
   if (st.settings.model && !S.missing.has("settings")) S.model = st.settings.model;
   if (!st.models.some((m) => m.name === S.model)) S.model = st.models.length ? st.models[0].name : "";
   render();
+  // The restart notice from the hardware-acceleration toggle ends when the new engine is ready.
+  // (Wait until the new engine was seen booting, so a last answer from the old one doesn't clear it early.)
+  if (S.restartNotice === "pending" && st.boot && st.boot.state !== "ready") S.restartNotice = "booting";
+  if (S.restartNotice === "booting" && st.boot && st.boot.state === "ready") { S.restartNotice = false; showNotice(""); }
   const textNow = textReady(), textBefore = prev ? prev.text_state === "ready" || (prev.text && !prev.text_state) : false;
   if (S.waiting && canSearch()) requestSearch();
   else if (textNow && !textBefore && S.hint.trim() && S.query) requestSearch();
@@ -454,8 +458,11 @@ function renderConsole() {
   const st = S.status;
   // hint availability
   const hint = $("#hint"), note = $("#hint-note");
-  hint.disabled = st.text_state === "off" || st.text_state === "error";
-  if (st.text_state === "off") { note.hidden = false; note.textContent = "Text hints are off in this setup."; }
+  // While the engine boots, a text model that is switched on hasn't started loading yet: that's "loading", not "off".
+  const textPending = st.text_state === "off" && st.settings && st.settings.text && st.boot && st.boot.state !== "ready";
+  hint.disabled = (st.text_state === "off" && !textPending) || st.text_state === "error";
+  if (textPending) { note.hidden = false; note.textContent = "The text model loads right after the voice models. Your hint applies as soon as it's ready."; }
+  else if (st.text_state === "off") { note.hidden = false; note.textContent = "Text hints are off in this setup."; }
   else if (st.text_state === "error") { note.hidden = false; note.textContent = "The text model failed to load, so hints are unavailable. Voice search still works."; }
   else if (st.text_state === "loading") { note.hidden = false; note.textContent = "The text model is still loading. Your hint applies as soon as it's ready."; }
   else note.hidden = true;
@@ -1133,6 +1140,7 @@ function renderSettings() {
   const row = $("#autostart-row");
   row.hidden = !st.settings.autostart_supported || S.missing.has("settings");
   $("#autostart").checked = !!st.settings.autostart;
+  renderAccel(st.settings);
   const about = [
     ["Data folder", st.home], ["Lake", st.lake], ["Models from", st.source],
     ["Text model", st.text_state === "ready" ? (st.clap || "ready") : st.text_state],
@@ -1148,6 +1156,44 @@ async function setModel(name) {
     catch (e) { if (e.missing) S.missing.add("settings"); else setErr("#set-err", e.message); }
   }
   if (S.query) requestSearch();
+}
+// Hardware acceleration: run the models on the GPU. Needs a restart of the engine, which the
+// server does itself; the reconnecting state covers the few seconds it is away.
+function renderAccel(set) {
+  const gpu = set.gpu || {};
+  const row = $("#accel-row");
+  row.hidden = !gpu.available || S.missing.has("settings");
+  if (row.hidden) return;
+  const want = set.device === "auto", active = set.device_active === "auto";
+  const box = $("#accel");
+  if (!S.accelBusy) box.checked = want;
+  box.disabled = !!set.device_locked || !!S.accelBusy;
+  const name = gpu.name ? `Uses ${gpu.name}.` : "Uses this computer's GPU.";
+  $("#accel-note").textContent = set.device_locked
+    ? "Set by the VOCALOCATE_DEVICE environment variable."
+    : S.accelBusy ? "Restarting the engine…"
+    : want !== active ? "Applies when VocaLocate restarts."
+    : want ? `${name} Faster first-time indexing and hints.` : "Off: everything runs on the CPU, no GPU needed.";
+}
+async function setAccel(on) {
+  setErr("#set-err", "");
+  const set = (S.status && S.status.settings) || {};
+  S.accelBusy = true; renderAccel(set);
+  try {
+    await api("/api/settings", { body: { device: on ? "gpu" : "cpu" } });
+    if (set.restart_supported) {
+      await api("/api/restart", { body: {} });
+      showNotice(on ? "Restarting VocaLocate with hardware acceleration…" : "Restarting VocaLocate on the CPU…", "info");
+      S.restartNotice = "pending";
+      setTimeout(() => { if (S.restartNotice) { S.restartNotice = false; showNotice(""); } }, 90000);
+    }
+  } catch (e) {
+    $("#accel").checked = !on;
+    setErr("#set-err", e.missing ? "This engine can't change hardware acceleration." : e.message);
+  } finally {
+    // Clear once the restarted engine answers again (or right away if nothing restarted).
+    setTimeout(() => { S.accelBusy = false; S.statusKey = ""; pollSoon(); }, set.restart_supported ? 2500 : 0);
+  }
 }
 async function setAutostart(on) {
   setErr("#set-err", "");
@@ -1184,6 +1230,7 @@ function bind() {
   $("#drawer-path").addEventListener("submit", (e) => { e.preventDefault(); usePath("drawer", $("#drawer-path-in").value.trim()); });
   $("#set-btn").addEventListener("click", () => ($("#settings").hidden ? openSettings() : closeSettings(true)));
   $("#autostart").addEventListener("change", (e) => setAutostart(e.target.checked));
+  $("#accel").addEventListener("change", (e) => setAccel(e.target.checked));
   document.addEventListener("pointerdown", (e) => {
     const s = $("#settings");
     if (!s.hidden && !s.contains(e.target) && !$("#set-btn").contains(e.target)) closeSettings();

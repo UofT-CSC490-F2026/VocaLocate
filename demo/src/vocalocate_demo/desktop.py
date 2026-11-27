@@ -28,6 +28,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import urllib.request
 from pathlib import Path
@@ -39,7 +40,56 @@ log = logging.getLogger(__name__)
 APP_NAME = "VocaLocate"
 SOURCE = "installed"  # models live in lake/models/installed
 DEFAULT_PORT = 8765
-DEFAULT_SETTINGS = {"libraries": [], "model": "shared", "text": True, "autostart": False}
+DEFAULT_SETTINGS = {"libraries": [], "model": "shared", "text": True, "autostart": False, "device": "cpu"}
+DEVICES = ("cpu", "auto")  # "auto" = a GPU if torch can see one, else the CPU
+
+
+def normalize_device(value) -> str | None:
+    """'cpu' or 'auto' (GPU if available) for a user-facing value; None if it isn't one."""
+    return {"cpu": "cpu", "auto": "auto", "gpu": "auto", "cuda": "auto"}.get(str(value or "").strip().lower())
+
+
+def resolve_device(settings: dict) -> str:
+    """The device the models run on: VOCALOCATE_DEVICE overrides settings.json; default CPU (no GPU needed)."""
+    return normalize_device(os.environ.get("VOCALOCATE_DEVICE")) or normalize_device(settings.get("device")) or "cpu"
+
+
+def device_locked() -> bool:
+    """True when VOCALOCATE_DEVICE pins the device, so the settings toggle can't change it."""
+    return normalize_device(os.environ.get("VOCALOCATE_DEVICE")) is not None
+
+
+_gpu_cache: dict | None = None
+
+
+def gpu_info() -> dict:
+    """Is there a GPU torch could use? Checked without importing torch (the server may have hidden it).
+
+    NVIDIA: the CUDA driver library is installed (nvcuda.dll / libcuda.so.1); the name comes from
+    nvidia-smi when it answers. Apple Silicon: Metal (MPS) is always there.
+    """
+    global _gpu_cache
+    if _gpu_cache is not None:
+        return _gpu_cache
+    import ctypes.util
+    import platform
+
+    available, name = False, None
+    if sys.platform == "win32":
+        available = (Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" / "nvcuda.dll").exists()
+    elif sys.platform == "darwin":
+        available, name = platform.machine() == "arm64", "Apple GPU (Metal)"
+    else:
+        available = ctypes.util.find_library("cuda") is not None or Path("/proc/driver/nvidia/version").exists()
+    if available and name is None and shutil.which("nvidia-smi"):
+        try:
+            out = subprocess.run(["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"], capture_output=True,
+                                 text=True, timeout=5, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            name = out.stdout.strip().splitlines()[0] if out.returncode == 0 and out.stdout.strip() else None
+        except (OSError, subprocess.SubprocessError, IndexError):
+            name = None
+    _gpu_cache = {"available": available, "name": name}
+    return _gpu_cache
 PACKAGED_CONFIG = Path(__file__).parent / "configs" / "demo.toml"
 
 
@@ -462,11 +512,25 @@ def serve_main(home_dir: Path | None = None, port: int | None = None, host: str 
     if existing:
         log.info("VocaLocate is already running on port %d", existing)
         return 0
+    hid_gpu = False
+    if resolve_device(load_settings(home_dir)) == "cpu" and "CUDA_VISIBLE_DEVICES" not in os.environ:
+        # Hide every GPU before torch is imported (the engine loads lazily), so the server never
+        # creates a CUDA context or touches VRAM.
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+        hid_gpu = True
     state = build_state(home_dir)
     server = serve_free(state, host, port or DEFAULT_PORT)
     bound = server.server_address[1]
+    restart = threading.Event()
+
+    def request_restart() -> None:
+        """Stop serving; the finally block below starts a fresh server (e.g. after the device changed)."""
+        restart.set()
+        threading.Thread(target=server.shutdown, daemon=True).start()
+
+    state.restart_server = request_restart
     write_server_info(home_dir, bound)
-    log.info("VocaLocate %s serving %s on http://%s:%d", __version__, home_dir, host, bound)
+    log.info("VocaLocate %s serving %s on http://%s:%d (device %s)", __version__, home_dir, host, bound, state.device)
     state.start()
     try:
         server.serve_forever()
@@ -475,6 +539,13 @@ def serve_main(home_dir: Path | None = None, port: int | None = None, host: str 
     finally:
         clear_server_info(home_dir)
         server.server_close()
+    if restart.is_set():
+        if hid_gpu:
+            os.environ.pop("CUDA_VISIBLE_DEVICES", None)  # the new server decides for itself
+        log.info("restarting VocaLocate")
+        start_backend(home_dir)
+        logging.shutdown()
+        os._exit(0)  # don't wait for boot/indexing threads or pipeline workers of this server
     return 0
 
 
