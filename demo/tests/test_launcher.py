@@ -250,8 +250,10 @@ def test_ensure_backend_reports_a_crash_and_a_timeout(monkeypatch, tmp_path):
 
 # -- app window -----------------------------------------------------------------------------------------
 def test_browser_candidates_windows_mac_and_path(monkeypatch, tmp_path):
-    edge = tmp_path / "pf86" / "Microsoft" / "Edge" / "Application" / "msedge.exe"
-    chrome = tmp_path / "local" / "Google" / "Chrome" / "Application" / "chrome.exe"
+    # Built exactly as desktop.py joins them (backslash-separated): nested folders on Windows, and
+    # one file whose name contains backslashes elsewhere.
+    edge = tmp_path / "pf86" / r"Microsoft\Edge\Application\msedge.exe"
+    chrome = tmp_path / "local" / r"Google\Chrome\Application\chrome.exe"
     for exe in (edge, chrome):
         exe.parent.mkdir(parents=True)
         exe.write_bytes(b"")
