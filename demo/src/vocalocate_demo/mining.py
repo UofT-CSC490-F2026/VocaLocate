@@ -249,8 +249,9 @@ def _check_inputs(q_emb, q_ids, pos_ids, pool_emb, pool_ids) -> None:
         )
     if len(pool_ids) != pool_emb.shape[0]:
         raise ValueError(f"{len(pool_ids)} pool_ids for {pool_emb.shape[0]} pool embedding rows")
-    # [E11] Both towers must embed into the same space.
-    if q_emb.shape[0] and pool_emb.shape[0] and q_emb.shape[1] != pool_emb.shape[1]:
+    # [E11] Both towers must embed into the same space. Checked even when one side has no rows:
+    # matmul still compares the dimensions then (found by the random-input check in a5/).
+    if q_emb.shape[1] != pool_emb.shape[1]:
         raise ValueError(f"imitation dim {q_emb.shape[1]} != pool dim {pool_emb.shape[1]}")
     # [E12] NaN or inf (e.g. from a diverged checkpoint) made every comparison False: retrieval
     # quietly mined nothing while metadata and random mined negatives with NaN scores.

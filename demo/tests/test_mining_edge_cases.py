@@ -172,6 +172,9 @@ def test_e11_embedding_dimensions_must_match():
     """[E11] Imitation and SFX towers from different checkpoints: a clear error, not a matmul error."""
     with pytest.raises(ValueError, match="imitation dim 3 != pool dim 2"):
         mine("retrieval", np.ones((1, 3), np.float32), ["q"], ["pos"], _pool([0.75]), ["pos"], {}, _cfg(), "v", "r")
+    # No queries, but still the wrong size: matmul compares dimensions even with zero rows.
+    with pytest.raises(ValueError, match="imitation dim 3 != pool dim 2"):
+        mine("retrieval", np.ones((0, 3), np.float32), [], [], _pool([0.75]), ["pos"], {}, _cfg(), "v", "r")
     # A single query passed as a 1-D vector instead of a (1, dim) matrix.
     with pytest.raises(ValueError, match="must be 2-D"):
         mine("retrieval", Q[0], ["q"], ["pos"], _pool([0.75]), ["pos"], {}, _cfg(), "v", "r")
