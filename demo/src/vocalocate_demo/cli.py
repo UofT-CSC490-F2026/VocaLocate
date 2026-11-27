@@ -12,6 +12,7 @@
     recipe    the QVIM 2025 winning recipe on a source, one run per negative source (A, B, C, controls)
     recipe-text  the text-hint test on saved recipe models
     app       the VocaLocate web app: index folders, record an imitation, search, preview, drag out
+    serve     the desktop app's backend, headless, from the per-user data dir (what `vocalocate` starts)
 """
 
 from __future__ import annotations
@@ -89,7 +90,7 @@ def _configs(args) -> tuple[TrainConfig, MiningConfig]:
 
 def _parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="vocalocate-demo", description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
-    p.add_argument("--config", type=Path, help="pipeline TOML (default: demo/configs/demo.toml if present)")
+    p.add_argument("--config", type=Path, help="pipeline TOML (default: the bundled configs/demo.toml)")
     p.add_argument("--lake", type=Path, help="lake root; overrides the config file")
     p.add_argument("--workers", type=int, help="pipeline worker processes")
     p.add_argument("-v", "--verbose", action="store_true")
@@ -169,6 +170,10 @@ def _parser() -> argparse.ArgumentParser:
     ap.add_argument("--port", type=int, default=8765)
     _clap_args(ap)
 
+    sv = sub.add_parser("serve", help="run the desktop app's backend headless from the data dir (no other flags needed)")
+    sv.add_argument("--home", type=Path, help="data dir (default: VOCALOCATE_HOME or the per-user app data dir)")
+    sv.add_argument("--port", type=int, help="first port to try (default 8765, else the next free one)")
+
     sm = sub.add_parser("summarize", help="average several runs' results.json (mean ± std over seeds)")
     sm.add_argument("runs", type=Path, nargs="+", help="workdirs or results.json files")
     sm.add_argument("--out", type=Path, help="also write the table to this file")
@@ -190,12 +195,21 @@ def _parser() -> argparse.ArgumentParser:
 def _default_config(args) -> Path | None:
     if args.config:
         return args.config
+    # In a source checkout, demo/configs/demo.toml is the one developers edit. An installed copy has no
+    # such file and uses the bundled one (the settings the checkpoints were trained with).
     here = Path(__file__).resolve().parents[2] / "configs" / "demo.toml"
-    return here if here.exists() else None
+    if here.exists():
+        return here
+    packaged = Path(__file__).resolve().parent / "configs" / "demo.toml"
+    return packaged if packaged.exists() else None
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
+    if args.command == "serve":
+        from .desktop import serve_main
+
+        return serve_main(args.home, args.port)
     # Reports contain characters like "−" and "Δ"; Windows consoles and redirects default to cp1252.
     for stream in (sys.stdout, sys.stderr):
         if hasattr(stream, "reconfigure"):
@@ -236,6 +250,7 @@ def main(argv: list[str] | None = None) -> int:
         examples = args.workdir / "queries" if args.workdir else None
         state = AppState(cfg, args.source, clap=_clap(args) if args.text else None, examples=examples,
                          models=args.models)
+        state.start()  # preload models in the background; boot.state reaches "ready"
         if args.workdir and (args.workdir / "library").is_dir():
             state.add_library("demo", [str(args.workdir / "library")])
         if args.root:
