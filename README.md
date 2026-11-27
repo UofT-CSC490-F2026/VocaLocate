@@ -12,9 +12,9 @@ app built on top.
 | Python source | Covered lines | Total lines | Coverage |
 | --- | ---: | ---: | ---: |
 | Pipeline | 1444 | 1444 | 100.00% |
-| Demo | 2286 | 2286 | 100.00% |
+| Demo | 3176 | 3180 | 99.87% |
 | Modal training | 84 | 84 | 100.00% |
-| **Combined** | 3814 | 3814 | **100.00%** |
+| **Combined** | 4704 | 4708 | **99.92%** |
 
 Scope: first-party VocaLocate Python code. Frontend JavaScript coverage is unmeasured. Terraform is checked separately by the infra workflow. Vendored EfficientAT and the A3/A4 Nanochat experiments are excluded.
 <!-- coverage:end -->
@@ -183,7 +183,7 @@ One line per file. Paths are relative to the folder in each heading.
 | `src/vocalocate_demo/evaluate.py` | Retrieval metrics: Recall@K, MRR, nDCG |
 | `src/vocalocate_demo/experiment.py`, `demo_flow.py` | The end-to-end experiment and the one-command demo |
 | `src/vocalocate_demo/synth.py` | A synthetic sound set with imitations, so the demo runs offline |
-| `src/vocalocate_demo/search.py`, `app.py`, `ui/` | Indexes your folders and serves the local search web app |
+| `src/vocalocate_demo/search.py`, `app.py`, `ui/` | Indexes your folders and serves the local search app; `desktop.py` is the `vocalocate` launcher (data dir, single instance, autostart) |
 | `src/vocalocate_demo/report.py`, `summarize.py` | Write results as markdown and average them over seeds |
 | `modal/recipe_app.py` | Runs every training in its own Modal GPU container, reading from and writing to S3 |
 | `configs/demo.toml`, `configs/vimsketch.toml` | Settings for the synthetic demo and the VimSketch replication |

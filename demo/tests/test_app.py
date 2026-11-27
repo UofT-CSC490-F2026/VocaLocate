@@ -15,6 +15,7 @@ import numpy as np
 import pytest
 
 from vocalocate_pipeline.config import PipelineConfig, SplitConfig
+from vocalocate_demo.search import LibraryIndex
 from vocalocate_demo import app
 from vocalocate_demo.app import AppState, Library, serve
 from vocalocate_demo.demo_flow import run_demo
@@ -60,7 +61,7 @@ def test_text_scores_follow_reindexed_library(tmp_path, monkeypatch):
 
     def index_library(*args, **kwargs):
         clip_ids = list(next(clip_ids_by_scan))
-        return app.LibraryIndex(
+        return LibraryIndex(
             clip_ids=clip_ids,
             paths=[f"{clip_id}.wav" for clip_id in clip_ids],
             projects=[None] * len(clip_ids),
@@ -68,7 +69,7 @@ def test_text_scores_follow_reindexed_library(tmp_path, monkeypatch):
             n_embedded=0,
         )
 
-    def text_scores(cfg, library, index, text, clap):
+    def text_scores(cfg, library, index, text, clap, **kwargs):
         return np.array([clap_scores[clip_id] for clip_id in index.clip_ids])
 
     monkeypatch.setattr(app, "index_library", index_library)
@@ -161,7 +162,8 @@ def test_app_api_end_to_end(tmp_path, monkeypatch):
 
         oversized = http.client.HTTPConnection("127.0.0.1", server.server_address[1], timeout=5)
         try:
-            oversized.request("POST", "/api/search", headers={"Content-Length": str(50 * 1024 * 1024 + 1)})
+            oversized.request("POST", "/api/search", headers={"Content-Length": str(50 * 1024 * 1024 + 1),
+                                                                "Content-Type": "application/json"})
             response = oversized.getresponse()
             assert (response.status, json.loads(response.read())) == (400, {"error": "request too large"})
         finally:
@@ -189,10 +191,10 @@ def test_app_api_end_to_end(tmp_path, monkeypatch):
         res3 = _call(base, "/api/search", {"library": "demo", "model": "metadata", "example": 0, "text": "metallic"})[1]
         assert "text scores" in res3["reused"]
 
-        state.clap = None
-        assert _call(base, "/api/search", {"library": "demo", "example": 0, "text": "metallic"}) == (
-            400, {"error": "text hints need CLAP: start the app with --text"}
-        )
+        state.clap = None  # the hint is ignored (and said so), never a failed search
+        status, res_off = _call(base, "/api/search", {"library": "demo", "example": 0, "text": "metallic"})
+        assert status == 200 and "text_score" not in res_off["results"][0]
+        assert "start the app with --text" in res_off["text_ignored"]
         state.clap = clap
 
         # Uploaded/recorded audio arrives as base64 WAV.
@@ -222,13 +224,16 @@ def test_app_reports_missing_model_and_unindexed_library(tmp_path, caplog):
         state.default_model()
     with pytest.raises(KeyError, match="no trained model 'baseline'"):
         state.model("baseline")
-    with pytest.raises(ValueError, match="is not indexed for model 'metadata'"):
+    with pytest.raises(ValueError, match="library 'demo' is not indexed yet"):
         state.search("demo", "metadata", b"", "", 1)
 
     library = Library(name="demo", roots=[str(tmp_path)])
+    state.libraries["demo"] = library  # _index skips libraries that were removed or replaced
+    with pytest.raises(ValueError, match="is not indexed for model 'metadata'"):
+        state.search("demo", "metadata", b"", "", 1)
     state._index(library)
     assert library.state == "error"
-    assert "no trained models" in library.message
+    assert "no models installed yet" in library.message
     assert library.finished is not None
     assert "indexing demo failed" in caplog.text
 
@@ -244,5 +249,5 @@ def test_reindex_keeps_previous_results_visible_until_background_work_starts(tmp
     current = state.add_library("demo", [str(tmp_path)])
     assert current.indexes == previous.indexes
     assert current.indexes is not previous.indexes
-    thread.assert_called_once_with(target=state._index, args=(current,), daemon=True)
+    thread.assert_called_once_with(target=state._index, args=(current,), name="index-demo", daemon=True)
     thread.return_value.start.assert_called_once_with()
