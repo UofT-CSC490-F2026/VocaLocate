@@ -31,12 +31,18 @@ Metadata is only used here, at training time. The deployed search never reads it
 
 Tests and edge cases (A5 Part 4)
 --------------------------------
-Why this module. `mine` has cyclomatic complexity 40 (radon), the highest of any algorithmic
-function in pipeline/ and demo/: train_recipe is 30, run_library_flow 25, and every other
-function is 26 or less. Only two functions score higher, and both are flat branch chains:
-cli.main (77) dispatches command-line arguments and summarize (55) formats the report.
-recipe.py has the largest module total (115, against 78 here before Part 4), but it is spread
-over 13 orchestration functions. Here, 40 decision points sit in one function: three strategies,
+Why this module. By module total, mining.py is not first. On main before Part 4 its radon
+cyclomatic complexity is 78, below recipe.py (115), flows.py (101) and cli.py (90). (The Part 4
+input checks raised it to 101.) The argument is at the function level. `mine` scores 40, the
+highest of any algorithmic function in pipeline/ and demo/: train_recipe is 30,
+run_library_flow 25, and every other function is 26 or less. Only two functions score higher,
+and both are flat:
+  - cli.main (77) is a 12-way `if args.command == ...` chain in which each branch imports and
+    calls one subcommand.
+  - summarize (55) gets about 35 of its points from 30 comprehensions and 5 conditional
+    expressions that build table strings. Its statements nest only 3 deep, against 5 in `mine`.
+recipe.py's total is spread over 13 orchestration functions. Here, 40 decision points sit in one
+function: three strategies,
 a semi-hard band with strict edges, two false-negative filters, three metadata tiers and two
 fallbacks, all driven by a seeded RNG. And a wrong negative here does not crash anything. It
 quietly trains the model to push away a sound that should match, so the edge cases are mostly
