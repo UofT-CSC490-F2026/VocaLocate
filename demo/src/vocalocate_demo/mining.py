@@ -28,6 +28,78 @@ Random control: a random non-target SFX from the training pool, so we can tell
 whether mining helps beyond simply training for longer (A2 stage 5).
 
 Metadata is only used here, at training time. The deployed search never reads it.
+
+Tests and edge cases (A5 Part 4)
+--------------------------------
+Why this module. By module total, mining.py is not first. On main before Part 4 its radon
+cyclomatic complexity is 78, below recipe.py (115), flows.py (101) and cli.py (90). (The Part 4
+input checks raised it to 101.) The argument is at the function level. `mine` scores 40, the
+highest of any algorithmic function in pipeline/ and demo/: train_recipe is 30,
+run_library_flow 25, and every other function is 26 or less. Only two functions score higher,
+and both are flat:
+  - cli.main (77) is a 12-way `if args.command == ...` chain in which each branch imports and
+    calls one subcommand.
+  - summarize (55) gets about 35 of its points from 30 comprehensions and 5 conditional
+    expressions that build table strings. Its statements nest only 3 deep, against 5 in `mine`.
+recipe.py's total is spread over 13 orchestration functions. Here, 40 decision points sit in one
+function: three strategies,
+a semi-hard band with strict edges, two false-negative filters, three metadata tiers and two
+fallbacks, all driven by a seeded RNG. And a wrong negative here does not crash anything. It
+quietly trains the model to push away a sound that should match, so the edge cases are mostly
+about choosing the *wrong* negative silently.
+
+Each case below is tagged [En] next to the code it guards and in the name of its test in
+demo/tests/test_mining_edge_cases.py. The happy path of each strategy is in
+demo/tests/test_mining.py. To find each case, we went through every comparison, slice and
+fallback in `mine` and asked what happens exactly on the boundary, with nothing to choose from,
+and with input that should never occur. We then fed those inputs to the old code: E9-E13 were
+real bugs it had, and the rest pin down behaviour that later changes must keep.
+
+Positive tests: the miner picks the right negatives.
+  [E1]  Band edges are strict: s_neg == s_pos counts as "above" (too risky), and
+        s_neg == s_pos - band is outside the band and only used as a fallback.
+        test_e1_band_edges_are_strict_and_the_lower_edge_falls_back. Off-by-one at a float boundary
+        is the most likely regression in a band test.
+  [E2]  A near-duplicate of the target (the same audio under another id) is never a negative.
+        test_e2_near_duplicate_of_the_target_is_filtered. Re-uploads are common in SFX
+        libraries, and teaching the model they differ is exactly the false negative we must avoid.
+  [E3]  Retrieval-driven mining only looks top_k deep.
+        test_e3_retrieval_only_looks_top_k_deep. That is the definition of a "real retrieval
+        mistake"; a band candidate at rank 500 is not one.
+  [E4]  Metadata tiers fill highest first, even when a lower tier scores closer.
+        test_e4_metadata_fills_from_the_highest_tier_first. The tier order is the whole point
+        of the metadata-guided approach.
+  [E5]  If every related SFX outranks the positive, one is taken at random rather than none.
+        test_e5_metadata_takes_one_random_related_sfx_when_all_score_above_the_positive.
+        It is the last-resort branch and is easy to break unnoticed.
+  [E6]  Each row records the true 1-based rank (positive included) and the exact scores.
+        test_e6_rows_record_the_true_rank_and_scores. The mining analysis in the report reads them.
+  [E7]  Stats count every query, including ones whose positive is missing from the pool.
+        test_e7_stats_count_skipped_queries_and_average_gaps.
+  [E8]  An SFX with no metadata row (e.g. a library clip) is "unrelated", not a KeyError.
+        test_e8_missing_metadata_is_unrelated_not_an_error.
+  [E14] No queries, an empty pool, or a pool holding only the target and its takes: no rows
+        and no crash, for all three strategies.
+        test_e14_empty_inputs_and_pools_with_nothing_to_mine. Small splits produce these.
+  [E15] The same seed gives the same negatives, and different seeds can differ.
+        test_e15_the_seed_makes_mining_reproducible. Our multi-seed comparisons depend on it.
+  [E16] Two SFX that both lack a category or a recording are not "the same" one, and
+        min_shared_tags=0 makes everything share tags.
+        test_e16_missing_category_or_recording_never_matches.
+
+Negative tests: bad input fails loudly with a ValueError instead of mining wrong negatives.
+  [E9]  Duplicate pool ids: the positive's first copy could be mined as its own negative.
+        test_e9_duplicate_pool_ids_are_rejected
+  [E10] Ids that do not line up with the embedding rows: zip() dropped extras silently or
+        crashed later with an IndexError. test_e10_ids_must_line_up_with_embedding_rows
+  [E11] Imitation and SFX embeddings of different sizes (towers from different checkpoints).
+        test_e11_embedding_dimensions_must_match
+  [E12] NaN or inf embeddings (a diverged checkpoint): retrieval mined nothing, while metadata and
+        random mined NaN-scored negatives. test_e12_non_finite_embeddings_are_rejected
+  [E13] Out-of-range settings, e.g. n_neg=-1, which returned nothing for two strategies and
+        crashed the third. The range edges themselves stay legal.
+        test_e13_invalid_settings_fail_at_construction, test_e13_boundary_settings_are_still_valid
+  Unknown strategy names: test_mining_rejects_unknown_strategy in test_mining.py.
 """
 
 from __future__ import annotations
@@ -52,8 +124,21 @@ class MiningConfig:
     min_shared_tags: int = 2  # metadata-guided: tags needed to count as related across categories
     seed: int = 490
 
+    def __post_init__(self):
+        # [E13] A negative n_neg used to return nothing for two strategies and crash the third
+        # ("negative dimensions are not allowed"). Out-of-range settings now fail here, at
+        # construction, with the setting's name in the message.
+        for name in ("top_k", "n_neg", "min_shared_tags"):
+            if getattr(self, name) < 0:
+                raise ValueError(f"MiningConfig.{name} must be >= 0, got {getattr(self, name)}")
+        if not self.band >= 0:  # also rejects NaN
+            raise ValueError(f"MiningConfig.band must be >= 0, got {self.band}")
+        if not 0.0 <= self.dup_quantile <= 1.0:
+            raise ValueError(f"MiningConfig.dup_quantile must be in [0, 1], got {self.dup_quantile}")
+
 
 def relation(target: SFXMeta, cand: SFXMeta, min_shared_tags: int = 2) -> str:
+    # [E16] `is not None`: two clips that both lack a recording or a category are not "the same".
     if target.recording_id is not None and target.recording_id == cand.recording_id:
         return "same_recording"
     same_cat = target.category is not None and target.category == cand.category
@@ -150,6 +235,35 @@ def _finish(strategy: str, rows: list[dict], n_queries: int, counters: Counter, 
     return Mined(rows=rows, negatives=negatives, stats=stats)
 
 
+def _check_inputs(q_emb, q_ids, pos_ids, pool_emb, pool_ids) -> None:
+    """Reject inputs that used to crash deep inside `mine` or, worse, silently mine wrong negatives."""
+    q_emb, pool_emb = np.asarray(q_emb), np.asarray(pool_emb)
+    if q_emb.ndim != 2 or pool_emb.ndim != 2:
+        raise ValueError(f"embeddings must be 2-D (rows, dim), got {q_emb.shape} and {pool_emb.shape}")
+    # [E10] One imitation id and one positive id per embedding row. zip() used to drop the extras
+    # silently, or index past the end of the embeddings with an IndexError.
+    if not len(q_ids) == len(pos_ids) == q_emb.shape[0]:
+        raise ValueError(
+            f"need one id and one positive per imitation row: {q_emb.shape[0]} rows, "
+            f"{len(q_ids)} q_ids, {len(pos_ids)} pos_ids"
+        )
+    if len(pool_ids) != pool_emb.shape[0]:
+        raise ValueError(f"{len(pool_ids)} pool_ids for {pool_emb.shape[0]} pool embedding rows")
+    # [E11] Both towers must embed into the same space. Checked even when one side has no rows:
+    # matmul still compares the dimensions then (found by the random-input check in a5/).
+    if q_emb.shape[1] != pool_emb.shape[1]:
+        raise ValueError(f"imitation dim {q_emb.shape[1]} != pool dim {pool_emb.shape[1]}")
+    # [E12] NaN or inf (e.g. from a diverged checkpoint) made every comparison False: retrieval
+    # quietly mined nothing while metadata and random mined negatives with NaN scores.
+    if not (np.isfinite(q_emb).all() and np.isfinite(pool_emb).all()):
+        raise ValueError("embeddings contain NaN or inf; is the checkpoint diverged?")
+    # [E9] A clip listed twice in the pool: `index` kept the last copy, so the first copy of the
+    # positive was not recognised as the positive and could be mined as its own negative.
+    if len(set(pool_ids)) != len(pool_ids):
+        dupes = sorted(c for c, n in Counter(pool_ids).items() if n > 1)[:5]
+        raise ValueError(f"pool_ids must be unique; repeated: {dupes}")
+
+
 def mine(
     strategy: str,
     q_emb: np.ndarray,
@@ -165,15 +279,17 @@ def mine(
     """Choose negatives for each (imitation, positive) pair from the training pool."""
     if strategy not in ("retrieval", "metadata", "random"):
         raise ValueError(f"unknown strategy {strategy!r}")
-    rng = np.random.default_rng(cfg.seed)
+    _check_inputs(q_emb, q_ids, pos_ids, pool_emb, pool_ids)
+    rng = np.random.default_rng(cfg.seed)  # [E15] every random choice below comes from this seed
     index = {cid: i for i, cid in enumerate(pool_ids)}
+    # [E8] No metadata row means no category, tags or recording: "unrelated" to everything.
     pool_meta = [meta.get(cid, SFXMeta(None, frozenset(), None)) for cid in pool_ids]
     sims = q_emb @ pool_emb.T
     pool_sims = pool_emb @ pool_emb.T
     off_diag = pool_sims[~np.eye(len(pool_ids), dtype=bool)]
     dup_threshold = float(np.quantile(off_diag, cfg.dup_quantile)) if off_diag.size else 1.0
     order = np.argsort(-sims, axis=1)
-    rank_of = np.empty_like(order)
+    rank_of = np.empty_like(order)  # [E6] 1-based rank of every pool SFX, positive included
     rank_of[np.arange(len(order))[:, None], order] = np.arange(1, order.shape[1] + 1)
 
     relations = _PoolRelations(pool_meta, cfg.min_shared_tags)
@@ -182,12 +298,12 @@ def mine(
     rows, counters = [], Counter()
     for i, (qid, pid) in enumerate(zip(q_ids, pos_ids)):
         if pid not in index:
-            counters["skipped_positive_not_in_pool"] += 1
+            counters["skipped_positive_not_in_pool"] += 1  # [E7], [E14]
             continue
         p = index[pid]
         s_pos = sims[i, p]
         rels = relations.of(p)
-        dup = pool_sims[p] > dup_threshold
+        dup = pool_sims[p] > dup_threshold  # [E2] near-duplicates of the target's audio
         not_p = pool_idx != p
 
         def add(j: int, selection: str):
@@ -197,6 +313,7 @@ def mine(
             )
 
         def in_band(j: int) -> bool:
+            # [E1] Both edges strict: equal to the positive is too risky, and the lower edge is a fallback.
             return s_pos - cfg.band < sims[i, j] < s_pos
 
         if strategy == "random":
@@ -208,7 +325,7 @@ def mine(
         if strategy == "retrieval":
             # Only the first top_k + 1 entries can matter (p may be one of them); the old version
             # walked the whole ranked row in Python for every imitation.
-            top = [int(j) for j in order[i, : cfg.top_k + 1] if j != p][: cfg.top_k]
+            top = [int(j) for j in order[i, : cfg.top_k + 1] if j != p][: cfg.top_k]  # [E3]
             kept = []
             for j in top:
                 if dup[j]:
@@ -235,11 +352,11 @@ def mine(
         tiers = [np.flatnonzero(usable & (rels == t)) for t in METADATA_TIERS]
         pool = [int(j) for tier in tiers for j in tier]
         counters["metadata_pool_size"] += len(pool)
-        if not pool:
+        if not pool:  # [E8], [E14] nothing related to this target
             counters["empty_metadata_pool"] += 1
             continue
         chosen: list[int] = []
-        for tier in tiers:
+        for tier in tiers:  # [E4] highest tier first, whatever the lower tiers score
             s = sims[i, tier]
             band = tier[(s_pos - cfg.band < s) & (s < s_pos)]
             chosen += [int(j) for j in rng.permutation(band)[: cfg.n_neg - len(chosen)]]
@@ -253,7 +370,7 @@ def mine(
             for j in fill:
                 add(j, "fallback")
             if not chosen and not fill:
-                # Everything related scores above the positive: take one at random rather than nothing.
+                # [E5] Everything related scores above the positive: take one at random rather than nothing.
                 add(int(rng.choice(pool)), "random")
     if strategy == "metadata" and q_ids:
         counters["mean_metadata_pool_size"] = counters.pop("metadata_pool_size", 0) // len(q_ids)
