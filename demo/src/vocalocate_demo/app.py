@@ -188,7 +188,6 @@ class AppState:
         self.libraries: dict[str, Library] = {}
         self.models: dict[str, tuple] = {}
         self.query_cache: dict[tuple[str, str], np.ndarray] = {}
-        self.text_cache: dict[tuple[str, str, str], np.ndarray] = {}
         self.alphas = self._read_alphas()
         self.examples = _load_examples(examples) if examples else []
         self.settings = desktop.load_settings(self.home) if self.home else dict(desktop.DEFAULT_SETTINGS)
@@ -473,7 +472,6 @@ class AppState:
         with self.lock:
             if self.libraries.pop(name, None) is None:
                 raise KeyError(f"unknown library {name!r}")
-            self.text_cache = {k: v for k, v in self.text_cache.items() if k[0] != name}
         if self.home is not None:
             with self.settings_lock:
                 self.settings["libraries"] = [e for e in self.settings["libraries"] if e["name"] != name]
@@ -547,7 +545,6 @@ class AppState:
                                          "sec": round(time.time() - t0, 1)}
                 with self.lock:
                     lib.indexes = fresh
-                    self.text_cache = {k: v for k, v in self.text_cache.items() if k[0] != lib.name}
                 lib.state, lib.message, lib.finished = "ready", "Ready to search", time.time()
             except Exception as exc:  # report to the UI instead of killing the thread silently
                 log.exception("indexing %s failed", lib.name)
@@ -601,11 +598,11 @@ class AppState:
             ignored = ("text hints are still loading; showing voice-only results" if self.text_state == "loading"
                        else self.text_error or "text hints are off; start the app with --text to use them")
         elif text:
-            key = (library, model_name, text.lower())
-            scores_text = self.text_cache.get(key)
-            if scores_text is None or len(scores_text) != len(idx.clip_ids):
+            key = text.lower()
+            scores_text = idx.text_score_cache.get(key)
+            if scores_text is None:
                 scores_text = text_scores(self.cfg, library, idx, text, self.clap, lock=self.wh_lock)
-                self.text_cache[key] = scores_text
+                idx.text_score_cache[key] = scores_text
             else:
                 reused.append("text scores")
             alpha = float(self.alphas.get(model_name, 0.5))

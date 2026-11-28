@@ -11,9 +11,11 @@ import urllib.request
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+import numpy as np
 import pytest
 
 from vocalocate_pipeline.config import PipelineConfig, SplitConfig
+from vocalocate_demo.search import LibraryIndex
 from vocalocate_demo import app
 from vocalocate_demo.app import AppState, Library, serve
 from vocalocate_demo.demo_flow import run_demo
@@ -33,6 +35,63 @@ def _call(base, path, body=None):
             return r.status, (json.loads(raw) if r.headers.get_content_type() == "application/json" else raw)
     except urllib.error.HTTPError as e:
         return e.code, json.loads(e.read())
+
+
+@pytest.mark.parametrize("change", ["add", "remove", "replace", "reorder"])
+def test_text_scores_follow_reindexed_library(tmp_path, monkeypatch, change):
+    cfg = PipelineConfig(lake_root=tmp_path / "lake")
+    state = AppState(cfg, "sfx_meta", clap=object())
+    library = app.Library("demo", [str(tmp_path)])
+    state.libraries[library.name] = library
+    model = "metadata"
+    state.models[model] = (None, None, "test-model")
+    monkeypatch.setattr(state, "available_models", lambda: [model])
+    monkeypatch.setattr(app, "embed_query", lambda *_: np.ones(1))
+
+    # Each case starts from the same synthetic library and changes only its index.
+    *baseline, new_clip = [f"sfx-{i}" for i in range(6)]
+    updated = {
+        "add": [*baseline, new_clip],
+        "remove": baseline[1:],
+        "replace": [*baseline[1:], new_clip],
+        "reorder": [*baseline[2:], *baseline[:2]],
+    }[change]
+    snapshots = [baseline, updated]
+    clip_ids_by_scan = iter(snapshots)
+    # Distinct scores expose incorrect position-based reuse in same-size indexes.
+    clap_scores = {clip_id: i / 10 for i, clip_id in enumerate([*baseline, new_clip], 1)}
+    hint = f"hint for {library.name}"
+
+    def index_library(*args, **kwargs):
+        clip_ids = list(next(clip_ids_by_scan))
+        return LibraryIndex(
+            clip_ids=clip_ids,
+            paths=[f"{clip_id}.wav" for clip_id in clip_ids],
+            projects=[None] * len(clip_ids),
+            vectors=np.ones((len(clip_ids), 1)),
+            n_embedded=0,
+        )
+
+    def text_scores(cfg, library, index, text, clap, **kwargs):
+        return np.array([clap_scores[clip_id] for clip_id in index.clip_ids])
+
+    monkeypatch.setattr(app, "index_library", index_library)
+    score_text = Mock(side_effect=text_scores)
+    monkeypatch.setattr(app, "text_scores", score_text)
+
+    # A changed index needs fresh scores; a repeated search on that index should reuse them.
+    for scans, clip_ids in enumerate(snapshots, 1):
+        state._index(library)
+        assert library.state == "ready", library.message
+        result = state.search(library.name, model, b"imitation", hint, k=len(clip_ids))
+        assert "text scores" not in result["reused"]
+        assert {hit["name"]: hit["text_score"] for hit in result["results"]} == {
+            f"{clip_id}.wav": clap_scores[clip_id] for clip_id in clip_ids
+        }
+        repeated = state.search(library.name, model, b"imitation", hint, k=len(clip_ids))
+        assert "text scores" in repeated["reused"]
+        assert repeated["results"] == result["results"]
+        assert score_text.call_count == scans
 
 
 def _tiny_demo(tmp_path, monkeypatch):
