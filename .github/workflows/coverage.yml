@@ -38,6 +38,19 @@ jobs:
         env:
           COVERAGE_FILE: ${{ runner.temp }}/.coverage.demo
         run: python -m pytest -q --cov --cov-config=../.coveragerc --cov-report=
+      - uses: actions/setup-node@v4
+        if: ${{ !cancelled() }}
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: demo/package-lock.json
+      - name: Test search UI (JavaScript)
+        id: ui
+        if: ${{ !cancelled() }}
+        working-directory: demo
+        run: |
+          npm ci --no-audit --no-fund
+          npm run test:ui
       - name: Combine and report
         run: |
           python -m coverage combine "$RUNNER_TEMP/.coverage.pipeline" "$RUNNER_TEMP/.coverage.demo"
@@ -76,6 +89,15 @@ jobs:
           branch_pct = pct(t["covered_branches"], t["num_branches"])
           print(f'| **Combined** | {t["covered_lines"]}/{t["num_statements"]} | **{line_pct:.2f}%** | '
                 f'{t["covered_branches"]}/{t["num_branches"]} | **{branch_pct:.2f}%** |')
+
+          # The search UI is JavaScript, measured by c8 (demo/tests/ui). It is reported on its own
+          # row, outside the combined Python total and the 100% gate.
+          ui = Path("demo/coverage-ui/coverage-summary.json")
+          if ui.exists():
+              u = json.loads(ui.read_text(encoding="utf-8"))["total"]
+              ul, ub = u["lines"], u["branches"]
+              print(f'| Search UI (JavaScript) | {ul["covered"]}/{ul["total"]} | {pct(ul["covered"], ul["total"]):.2f}% | '
+                    f'{ub["covered"]}/{ub["total"]} | {pct(ub["covered"], ub["total"]):.2f}% |')
           print()
 
           # README badge, refreshed on main together with the table.
@@ -90,7 +112,8 @@ jobs:
               f"[![Coverage](https://img.shields.io/badge/coverage-{label}-{color})](#code-coverage)\n",
               encoding="utf-8",
           )
-          print("Scope: first-party VocaLocate Python code. Frontend JavaScript coverage is unmeasured. "
+          print("Scope: first-party VocaLocate Python code, plus the search UI's JavaScript on its own row "
+                "(app.js, measured with c8 under jsdom; not part of the combined total or the gate). "
                 "Terraform is checked separately by the infra workflow. "
                 "Vendored EfficientAT and the A3/A4 Nanochat experiments are excluded.")
           PY
@@ -99,6 +122,7 @@ jobs:
         with:
           name: code-coverage
           path: |
+            demo/coverage-ui/coverage-summary.json
             coverage.json
             coverage.md
             badge.md

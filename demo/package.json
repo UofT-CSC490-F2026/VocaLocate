@@ -1,0 +1,12 @@
+{
+  "name": "vocalocate-demo-ui-tests",
+  "private": true,
+  "description": "Tests and coverage for the search UI (src/vocalocate_demo/ui/app.js).",
+  "scripts": {
+    "test:ui": "c8 --include src/vocalocate_demo/ui/app.js --all --reporter=text --reporter=json-summary --reporter=lcov --report-dir coverage-ui node --test tests/ui/*.test.mjs"
+  },
+  "devDependencies": {
+    "c8": "^10.1.3",
+    "jsdom": "^25.0.1"
+  }
+}

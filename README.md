@@ -39,7 +39,7 @@ What the Python report does not cover, and why:
 | --- | --- |
 | `demo/src/vocalocate_demo/efficientat/` | Vendored third-party code (the EfficientAT MobileNet), kept unchanged from upstream |
 | A3/A4 Nanochat experiments (`a3/`, `a4/`) | Separate course assignments with their own tests, not part of VocaLocate |
-| Search UI JavaScript (`demo/src/vocalocate_demo/ui/`) | Browser code: recording, drag and drop and page rendering need a browser test harness, which is not set up yet. The HTTP API it calls is covered by `demo/tests/test_app.py` |
+| Search UI JavaScript (`demo/src/vocalocate_demo/ui/`) | Not in the Python total or the 100% gate. It has its own row in the table above: `demo/tests/ui/` runs the unmodified `app.js` in jsdom with fake fetch, Web Audio, microphone and clipboard, and c8 measures it (`cd demo && npm ci && npm run test:ui`) |
 | Terraform (`infra/`) | Not Python. The [infra workflow](.github/workflows/infra.yml) runs `terraform validate` and `terraform test` |
 
 The `code-coverage` artifact includes per-file results. Same-repository PRs get a
