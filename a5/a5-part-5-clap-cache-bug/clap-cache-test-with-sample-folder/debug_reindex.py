@@ -70,7 +70,7 @@ def run_scenario(name, before, after, samples):
                 old = library.indexes["metadata"]
                 paths_by_name = {Path(path).name: i for i, path in enumerate(old.paths)}
                 positions = [paths_by_name[samples[i].name] for i in order]
-                library.indexes["metadata"] = app.LibraryIndex(
+                library.indexes["metadata"] = search.LibraryIndex(
                     [old.clip_ids[i] for i in positions], [old.paths[i] for i in positions],
                     [old.projects[i] for i in positions], old.vectors[positions], old.n_embedded,
                 )

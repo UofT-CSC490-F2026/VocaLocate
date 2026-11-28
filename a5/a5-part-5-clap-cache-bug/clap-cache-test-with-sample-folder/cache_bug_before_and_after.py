@@ -1,4 +1,4 @@
-"""Compare this demo against local main and HEAD without changing the checkout."""
+"""Compare the pinned pre-fix commit and HEAD without changing the checkout."""
 
 import argparse
 import os
@@ -11,6 +11,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[3]
 DEMO = Path(__file__).with_name("debug_reindex.py")
+BEFORE_COMMIT = "93f103ea6ff1a327995ea7096f74c54d5821749d"
 
 
 def snapshot(ref, destination):
@@ -33,9 +34,9 @@ def main():
     scenarios = ("add", "remove", "replace", "reorder") if args.scenario == "all" else (args.scenario,)
     results = {}
     with tempfile.TemporaryDirectory(prefix="vocalocate-compare-") as tmp:
-        # Local main is the before version; HEAD is the current branch's committed version.
+        # The pre-fix commit is the before version; HEAD is the current committed version.
         # This does not check out either ref or include uncommitted changes.
-        for label, ref in (("BEFORE (local main)", "main"), ("AFTER (current HEAD)", "HEAD")):
+        for label, ref in (("BEFORE (pre-fix commit)", BEFORE_COMMIT), ("AFTER (current HEAD)", "HEAD")):
             folder = Path(tmp) / label.split()[0].lower()
             folder.mkdir()
             commit = snapshot(ref, folder)
@@ -55,8 +56,8 @@ def main():
                 results[(ref, scenario)] = result.returncode
     if any(results[("HEAD", scenario)] for scenario in scenarios):
         return 1
-    if any(not results[("main", scenario)] for scenario in scenarios):
-        print("\nNote: at least one scenario also passed on local main; it may already include the fix.")
+    if any(not results[(BEFORE_COMMIT, scenario)] for scenario in scenarios):
+        print("\nNote: at least one scenario passed on the pre-fix commit; inspect its output.")
     return 0
 
 
