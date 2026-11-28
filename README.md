@@ -1,7 +1,7 @@
 # VocaLocate
 
 <!-- coverage-badge:start -->
-[![Coverage](https://img.shields.io/badge/coverage-updated%20on%20main-lightgrey)](#code-coverage)
+[![Coverage](https://img.shields.io/badge/coverage-100%25%20lines%20%7C%20100%25%20branches-brightgreen)](#code-coverage)
 <!-- coverage-badge:end -->
 
 VocaLocate lets a video editor or sound designer find a sound effect in their own library by
@@ -13,12 +13,12 @@ app built on top.
 ## Code coverage
 
 <!-- coverage:start -->
-| Python source | Covered lines | Total lines | Coverage |
-| --- | ---: | ---: | ---: |
-| Pipeline | 1444 | 1444 | 100.00% |
-| Demo | 3174 | 3178 | 99.87% |
-| Modal training | 84 | 84 | 100.00% |
-| **Combined** | 4702 | 4706 | **99.92%** |
+| Python source | Lines | Line coverage | Branches | Branch coverage |
+| --- | ---: | ---: | ---: | ---: |
+| Pipeline | 1444/1444 | 100.00% | 382/382 | 100.00% |
+| Demo | 3202/3202 | 100.00% | 962/962 | 100.00% |
+| Modal training | 84/84 | 100.00% | 22/22 | 100.00% |
+| **Combined** | 4730/4730 | **100.00%** | 1366/1366 | **100.00%** |
 
 Scope: first-party VocaLocate Python code. Frontend JavaScript coverage is unmeasured. Terraform is checked separately by the infra workflow. Vendored EfficientAT and the A3/A4 Nanochat experiments are excluded.
 <!-- coverage:end -->
