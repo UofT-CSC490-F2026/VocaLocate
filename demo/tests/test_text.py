@@ -90,3 +90,19 @@ def test_clap_batches_and_normalizes_both_feature_return_types(tmp_path, monkeyp
 def test_clap_rejects_unknown_backend():
     with pytest.raises(ValueError, match="unknown CLAP backend"):
         ClapScorer(backend="invalid")
+
+
+def test_clap_uses_an_explicit_device_without_probing_cuda(monkeypatch):
+    probe = Mock(return_value=True)
+    monkeypatch.setattr(torch.cuda, "is_available", probe)
+    model = Mock()
+    model.to.return_value.eval.return_value = model
+    transformers = SimpleNamespace(AutoTokenizer=Mock(), ClapFeatureExtractor=Mock(), ClapModel=Mock())
+    transformers.ClapModel.from_pretrained.return_value = model
+    monkeypatch.setitem(sys.modules, "transformers", transformers)
+
+    scorer = ClapScorer(model_name="fixture-clap", device="cpu")
+
+    assert scorer.device == torch.device("cpu")
+    model.to.assert_called_once_with(torch.device("cpu"))
+    probe.assert_not_called()

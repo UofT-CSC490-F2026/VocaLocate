@@ -429,3 +429,39 @@ def test_cuda_recipe_configures_cudnn_and_releases_cache(tmp_path, monkeypatch):
     assert torch.backends.cudnn.benchmark is True
     assert result["models"]["shared"]["gpu"] == "Test GPU"
     empty_cache.assert_called_once_with()
+
+
+def test_uncategorised_reference_gets_no_same_class_pool(tmp_path):
+    from vocalocate_demo.recipe import same_class_pools
+
+    dataset = _recipe_dataset(tmp_path)
+    dataset.candidates.loc[dataset.candidates.clip_id == "anchor", "category"] = None
+    unlabelled = dataset.candidates.iloc[[0]].assign(clip_id="unlabelled", recording_id="loose")
+    dataset.candidates = pd.concat([dataset.candidates, unlabelled], ignore_index=True)
+    # Two recordings that both lack a category are not the same class, even with equal tags.
+    assert same_class_pools(dataset, RECIPES["same_class_extras"]) == {"anchor": []}
+
+
+def test_benchmark_selection_keeps_the_earliest_best_epoch(tmp_path, monkeypatch):
+    dataset, bench = _recipe_dataset(tmp_path), _recipe_dataset(tmp_path, split="test")
+    bench_mrrs = iter([0.5, 0.5, 0.25])  # epoch 2 only ties epoch 1, epoch 3 is worse
+    monkeypatch.setattr(recipe, "evaluate_split", lambda model, ds, split, tcfg: {
+        "mrr": next(bench_mrrs) if ds is bench else 0.0})
+    cfg = train.TrainConfig(encoder="cnn", frames=32, device="cpu")
+    _, hist, bench_best = recipe.train_recipe(dataset, cfg, replace(RECIPES["shared"], epochs=3, amp=False), bench)
+    assert [h["bench_mrr"] for h in hist] == [0.5, 0.5, 0.25]
+    assert (bench_best["epoch"], bench_best["mrr"]) == (1, 0.5)
+
+
+def test_cpu_recipe_reports_no_gpu_and_leaves_the_cuda_cache_alone(tmp_path, monkeypatch):
+    cfg = PipelineConfig(lake_root=tmp_path / "lake")
+    dataset = _recipe_dataset(tmp_path, split="test")
+    dataset.candidates["split"] = "train"
+    monkeypatch.setattr(recipe, "load_dataset", lambda cfg, sources: dataset)
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+    empty_cache = Mock()
+    monkeypatch.setattr(torch.cuda, "empty_cache", empty_cache)
+    result = recipe.run_recipe_suite(cfg, "vis", train.TrainConfig(device="cpu", encoder="cnn"), ["shared"],
+                                     bench=None, overrides={"epochs": 1, "amp": False})
+    assert result["models"]["shared"]["gpu"] is None
+    empty_cache.assert_not_called()

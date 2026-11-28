@@ -48,8 +48,12 @@ jobs:
           from pathlib import Path
 
           report = json.loads(Path("coverage.json").read_text(encoding="utf-8"))
-          print("| Python source | Covered lines | Total lines | Coverage |")
-          print("| --- | ---: | ---: | ---: |")
+
+          def pct(covered, total):
+              return 100 * covered / total if total else 100.0
+
+          print("| Python source | Lines | Line coverage | Branches | Branch coverage |")
+          print("| --- | ---: | ---: | ---: | ---: |")
           for label, prefix in (
               ("Pipeline", "pipeline/vocalocate_pipeline/"),
               ("Demo", "demo/src/vocalocate_demo/"),
@@ -59,15 +63,33 @@ jobs:
                   entry["summary"] for name, entry in report["files"].items()
                   if name.startswith(prefix)
               ]
-              total = sum(entry["num_statements"] for entry in files)
-              if not total:
+              lines = sum(entry["num_statements"] for entry in files)
+              if not lines:
                   raise SystemExit(f"No executable Python lines found for {label}.")
-              covered = sum(entry["covered_lines"] for entry in files)
-              print(f"| {label} | {covered} | {total} | {100 * covered / total:.2f}% |")
-          total = report["totals"]
-          print(f'| **Combined** | {total["covered_lines"]} | {total["num_statements"]} | '
-                f'**{total["percent_covered_display"]}%** |')
+              hit = sum(entry["covered_lines"] for entry in files)
+              branches = sum(entry["num_branches"] for entry in files)
+              taken = sum(entry["covered_branches"] for entry in files)
+              print(f"| {label} | {hit}/{lines} | {pct(hit, lines):.2f}% | "
+                    f"{taken}/{branches} | {pct(taken, branches):.2f}% |")
+          t = report["totals"]
+          line_pct = pct(t["covered_lines"], t["num_statements"])
+          branch_pct = pct(t["covered_branches"], t["num_branches"])
+          print(f'| **Combined** | {t["covered_lines"]}/{t["num_statements"]} | **{line_pct:.2f}%** | '
+                f'{t["covered_branches"]}/{t["num_branches"]} | **{branch_pct:.2f}%** |')
           print()
+
+          # README badge, refreshed on main together with the table.
+          def floor1(x):  # round down, so 99.97% never shows as 100%
+              return f"{int(x * 10) / 10:g}"
+
+          worst = min(line_pct, branch_pct)
+          color = "brightgreen" if worst >= 95 else "yellowgreen" if worst >= 80 else "orange"
+          label = f"{floor1(line_pct)}%25 lines | {floor1(branch_pct)}%25 branches"
+          label = label.replace(" ", "%20").replace("|", "%7C")
+          Path("badge.md").write_text(
+              f"[![Coverage](https://img.shields.io/badge/coverage-{label}-{color})](#code-coverage)\n",
+              encoding="utf-8",
+          )
           print("Scope: first-party VocaLocate Python code. Frontend JavaScript coverage is unmeasured. "
                 "Terraform is checked separately by the infra workflow. "
                 "Vendored EfficientAT and the A3/A4 Nanochat experiments are excluded.")
@@ -79,7 +101,31 @@ jobs:
           path: |
             coverage.json
             coverage.md
+            badge.md
           if-no-files-found: error
+
+  gate:
+    # A separate job, so the PR comment and README still update when coverage drops:
+    # reviewers see the new numbers, and this check turns red.
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: code-coverage
+      - name: Require 100% line and branch coverage
+        run: |
+          python - <<'PY'
+          import json, sys
+          t = json.load(open("coverage.json", encoding="utf-8"))["totals"]
+          missing = {
+              "lines": t["num_statements"] - t["covered_lines"],
+              "branches": t["num_branches"] - t["covered_branches"],
+          }
+          print(f"uncovered: {missing}")
+          if any(missing.values()):
+              sys.exit("Coverage fell below 100%. See the coverage table for the files that need tests.")
+          PY
 
   comment:
     needs: test
@@ -131,11 +177,14 @@ jobs:
           from pathlib import Path
 
           path = Path("README.md")
-          start, end = "<!-- coverage:start -->", "<!-- coverage:end -->"
-          before, after = path.read_text(encoding="utf-8").split(start)
-          _, after = after.split(end)
-          report = Path("coverage.md").read_text(encoding="utf-8").strip()
-          path.write_text(f"{before}{start}\n{report}\n{end}{after}", encoding="utf-8")
+          text = path.read_text(encoding="utf-8")
+          for name, source in (("coverage", "coverage.md"), ("coverage-badge", "badge.md")):
+              start, end = f"<!-- {name}:start -->", f"<!-- {name}:end -->"
+              before, after = text.split(start)
+              _, after = after.split(end)
+              block = Path(source).read_text(encoding="utf-8").strip()
+              text = f"{before}{start}\n{block}\n{end}{after}"
+          path.write_text(text, encoding="utf-8")
           PY
           if git diff --quiet -- README.md; then
             exit 0
