@@ -19,8 +19,9 @@ app built on top.
 | Demo | 3202/3202 | 100.00% | 962/962 | 100.00% |
 | Modal training | 84/84 | 100.00% | 22/22 | 100.00% |
 | **Combined** | 4730/4730 | **100.00%** | 1366/1366 | **100.00%** |
+| Search UI (JavaScript) | 1324/1328 | 99.70% | 896/933 | 96.03% |
 
-Scope: first-party VocaLocate Python code. Frontend JavaScript coverage is unmeasured. Terraform is checked separately by the infra workflow. Vendored EfficientAT and the A3/A4 Nanochat experiments are excluded.
+Scope: first-party VocaLocate Python code, plus the search UI's JavaScript on its own row (app.js, measured with c8 under jsdom; not part of the combined total or the gate). Terraform is checked separately by the infra workflow. Vendored EfficientAT and the A3/A4 Nanochat experiments are excluded.
 <!-- coverage:end -->
 
 GitHub Actions runs both pytest suites, then combines their line **and branch** coverage for
