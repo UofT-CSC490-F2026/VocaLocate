@@ -33,13 +33,17 @@ against the combined percentage.
 The `gate` job fails the check if line or branch coverage drops below 100%. It runs as a
 separate job, so the PR comment and this table still update and show where the gap is.
 
+The search UI's JavaScript (`demo/src/vocalocate_demo/ui/app.js`) has its own row in the table:
+`demo/tests/ui/` runs the unmodified `app.js` in jsdom with fakes for the engine's HTTP API,
+Web Audio, the microphone and the clipboard, and c8 measures it (`cd demo && npm ci && npm run test:ui`).
+That row is not part of the combined total or the 100% gate.
+
 What the Python report does not cover, and why:
 
 | Excluded | Why |
 | --- | --- |
 | `demo/src/vocalocate_demo/efficientat/` | Vendored third-party code (the EfficientAT MobileNet), kept unchanged from upstream |
 | A3/A4 Nanochat experiments (`a3/`, `a4/`) | Separate course assignments with their own tests, not part of VocaLocate |
-| Search UI JavaScript (`demo/src/vocalocate_demo/ui/`) | Not in the Python total or the 100% gate. It has its own row in the table above: `demo/tests/ui/` runs the unmodified `app.js` in jsdom with fake fetch, Web Audio, microphone and clipboard, and c8 measures it (`cd demo && npm ci && npm run test:ui`) |
 | Terraform (`infra/`) | Not Python. The [infra workflow](.github/workflows/infra.yml) runs `terraform validate` and `terraform test` |
 
 The `code-coverage` artifact includes per-file results. Same-repository PRs get a
